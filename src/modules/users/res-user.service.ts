@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UpdateUserDto } from '../dto/update-user.dto';
-import { SendMessageDto } from '../dto/send-message.dto';
-import { UserProfileService } from './user-profile.service';
-import { UserConnectionsService } from './user-connections.service';
-import { UserAlbumsService } from './user-albums.service';
-import { UserMessagingService } from './user-messaging.service';
+import { UpdateUserDto } from './dto/user-response';
+import { SendMessageDto } from './dto/send-message.dto';
+import { UserProfileService } from './service/user-profile.service';
+import { UserConnectionsService } from './service/user-connections.service';
+import { UserAlbumsService } from './service/user-albums.service';
+import { UserMessagingService } from './service/user-messaging.service';
 
 @Injectable()
 export class ResUserService {
@@ -27,8 +27,8 @@ export class ResUserService {
     return this.profile.updateProfile(id, dto);
   }
 
-  async searchUsers(search?: string) {
-    return this.profile.searchUsers(search);
+  async searchUsers(search?: string, page?: number, limit?: number, sort?: string) {
+    return this.profile.searchUsers({ search, page, limit, sort });
   }
 
   async getStats(userId: string) {

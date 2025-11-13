@@ -3,7 +3,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ModuleRef } from '@nestjs/core';
 import { UserBasicRole } from '@prisma/client';
-import { ResUserService } from '../../modules/users/service/res-user.service';
+import { ResUserService } from '../../modules/users/res-user.service';
+import { ConfigService } from '@nestjs/config';
 
 
 interface MyJwtPayload {
@@ -21,12 +22,12 @@ export class AccountStrategy
 {
   private accountService: ResUserService;
 
-  constructor(private readonly moduleRef: ModuleRef) {
+  constructor(private readonly moduleRef: ModuleRef, private readonly configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_TOKEN_SECRET,
-      issuer: process.env.JWT_ISSUER,
+      secretOrKey: configService.get<string>('jwt.secret') || process.env.JWT_SECRET || 'secretKey',
+      issuer: configService.get<string>('jwt.issuer') ?? process.env.JWT_ISSUER ?? 'api',
     });
   }
 

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { UpdateUserDto } from '../dto/update-user.dto'
+import { UpdateUserDto } from '../dto/user-response'
 
 @Injectable()
 export class UserProfileService {
@@ -46,7 +46,8 @@ export class UserProfileService {
     return { message: 'Profile updated successfully', user }
   }
 
-  async searchUsers(search?: string) {
+  async searchUsers(params: { search?: string; page?: number; limit?: number; sort?: string }) {
+    const search = params?.search
     const where = search
       ? {
           OR: [
@@ -55,8 +56,23 @@ export class UserProfileService {
           ],
         }
       : {}
-    const users = await this.prisma.resUser.findMany({ where, orderBy: { created_at: 'asc' } })
-    return { message: 'Users fetched', users }
+
+    let orderBy: Record<string, 'asc' | 'desc'> = { created_at: 'asc' }
+    if (params?.sort) {
+      const [field, dir] = String(params.sort).split(':')
+      if (field) orderBy = { [field]: (dir?.toLowerCase() === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc' }
+    }
+
+    const take = params?.limit && params.limit > 0 ? params.limit : 20
+    const page = params?.page && params.page > 0 ? params.page : 1
+    const skip = (page - 1) * take
+
+    const [users, total] = await Promise.all([
+      this.prisma.resUser.findMany({ where, orderBy, take, skip }),
+      this.prisma.resUser.count({ where }),
+    ])
+
+    return { message: 'Users fetched', users, page, limit: take, total }
   }
 
   async uploadAvatar(userId: string, fileUrl: string) {

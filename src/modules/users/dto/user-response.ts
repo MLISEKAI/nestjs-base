@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsDateString, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Min } from 'class-validator';
 
 export class UserResponseDto {
   id: string;
@@ -47,4 +48,34 @@ export class UploadAvatarDto {
   @IsNotEmpty()
   @IsString()
   fileUrl: string;
+}
+
+export class SearchUsersQueryDto {
+  @ApiPropertyOptional({ description: 'Từ khóa tìm kiếm' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: 'Trang hiện tại', default: 1 })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Số lượng mỗi trang', default: 20 })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  @Min(1)
+  limit?: number;
+
+ @ApiPropertyOptional({ 
+    description: 'Sắp xếp, ví dụ: created_at:asc hoặc nickname:desc', 
+    example: 'created_at:asc' 
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\w+:(asc|desc)$/i)
+  sort?: string;
 }

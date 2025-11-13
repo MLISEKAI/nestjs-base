@@ -25,7 +25,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new ResponseExceptionFilter());
 
-  const PORT = 3000;
+  const PORT = 3001;
   const HOST = '0.0.0.0';
   await app.listen(PORT, HOST);
 }

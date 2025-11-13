@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEmail,
@@ -82,4 +82,55 @@ export class LoginDto {
   @IsNotEmpty()
   @IsString()
   password: string;
+}
+
+export class LoginOtpDto {
+  @ApiProperty({ description: 'Phone number for OTP login', example: '+84912345678' })
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+
+  @ApiProperty({ description: 'OTP code (mock: 123456)', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  otp: string;
+}
+
+export class LoginOAuthDto {
+  @ApiProperty({ description: 'Provider', example: 'google', enum: ['google', 'facebook', 'anonymous'] })
+  @IsString()
+  @IsNotEmpty()
+  provider: 'google' | 'facebook' | 'anonymous';
+
+  @ApiProperty({ description: 'Provider unique id', example: 'google-uid-123' })
+  @IsString()
+  @IsNotEmpty()
+  provider_id: string;
+
+  @ApiPropertyOptional({ description: 'Email from provider', example: 'user@example.com' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ description: 'Preferred nickname', example: 'NguyenVanA' })
+  @IsOptional()
+  @IsString()
+  nickname?: string;
+}
+
+export class LinkProviderDto {
+  @ApiProperty({ description: 'Provider', example: 'google', enum: ['google', 'facebook', 'phone', 'password'] })
+  @IsString()
+  @IsNotEmpty()
+  provider: 'google' | 'facebook' | 'phone' | 'password';
+
+  @ApiProperty({ description: 'Reference id for provider', example: 'user@example.com or +849...' })
+  @IsString()
+  @IsNotEmpty()
+  ref_id: string;
+
+  @ApiPropertyOptional({ description: 'Password hash (only for password provider)', example: '$2b$10$...' })
+  @IsOptional()
+  @IsString()
+  hash?: string;
 }

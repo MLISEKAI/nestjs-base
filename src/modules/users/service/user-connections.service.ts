@@ -97,9 +97,24 @@ export class UserConnectionsService {
       id: u.id,
       nickname: u.nickname,
       avatar: u.avatar,
+      bio : u.bio,
       is_following: followingSet.has(u.id),
       is_friend: friendSet.has(u.id),
     }))
+  }
+
+  async attachStatus(currentUserId: string | null, users: any[]): Promise<UserConnectionDto[]> {
+    if (!currentUserId) {
+      return users.map(u => ({
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar,
+        bio : u.bio,
+        is_following: false,
+        is_friend: false,
+      }))
+    }
+    return this.attachFollowStatus(currentUserId, users)
   }
 
   async getFollowing(userId: string) {

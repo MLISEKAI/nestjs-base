@@ -68,7 +68,7 @@ import { GiftsService } from './service/gifts.service';
     SupportService,
     PostService,
     AlbumService,
-    GiftsService
+    GiftsService,
   ],
 })
 export class ProfileModuleDb {}
