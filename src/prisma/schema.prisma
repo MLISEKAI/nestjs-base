@@ -62,11 +62,10 @@ model ResUser {
 
   loveSpace          ResLoveSpace?
   feedbacks          ResFeedback[]
-  locations          ResLocation?
+  location          ResLocation?
   contributions      ResContribution?
   interests          ResInterest[]
   supporters         ResSupporter[]
-  relationships      ResRelationship[]
   roomStatus         ResRoomStatus?
   post               ResPost[]
   giftMilestones     ResGiftMilestone[]
@@ -79,6 +78,8 @@ model ResUser {
   referralsAsReferred  ResReferral[]    @relation("Referred")
   profileViewsAsViewer ResProfileView[] @relation("Viewer")
   profileViewsAsTarget ResProfileView[] @relation("Target")
+  relationships        ResRelationship[] @relation("UserRelationships")
+  relationshipsRelated ResRelationship[] @relation("UserRelated")
 
   @@index([union_id, deleted_at])
   @@index([union_id])
@@ -503,10 +504,8 @@ model ResSupporter {
   supporter_id String
   amount       Int
 
-  user      ResUser  @relation("SupportedUser", fields: [user_id], references: [id], onDelete: Cascade)
-  supporter ResUser  @relation("SupporterUser", fields: [supporter_id], references: [id], onDelete: Cascade)
-  resUser   ResUser? @relation(fields: [resUserId], references: [id])
-  resUserId String?
+  user      ResUser @relation("SupportedUser", fields: [user_id], references: [id], onDelete: Cascade)
+  supporter ResUser @relation("SupporterUser", fields: [supporter_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, supporter_id])
   @@map("res_supporter")
@@ -518,7 +517,9 @@ model ResRelationship {
   user_id         String
   related_user_id String
   type            String
-  user            ResUser @relation(fields: [user_id], references: [id])
+
+  user         ResUser @relation("UserRelationships", fields: [user_id], references: [id])
+  related_user ResUser @relation("UserRelated", fields: [related_user_id], references: [id])
 
   @@map("res_relationship")
 }
@@ -542,4 +543,5 @@ model ResPost {
   user ResUser @relation(fields: [user_id], references: [id])
 
   @@map("res_post")
+  @@index([user_id])
 }
