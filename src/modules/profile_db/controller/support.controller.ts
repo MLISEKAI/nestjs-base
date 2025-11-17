@@ -15,11 +15,11 @@ export class SupportController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'sup-1' },
-        email: { type: 'string', example: 'support@company.com' },
-        phone: { type: 'string', example: '+84901234567' },
-        created_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
-        updated_at: { type: 'string', example: '2025-11-12T00:10:00.000Z' },
+        id: { example: 'sup-1' },
+        email: { example: 'support@company.com' },
+        phone: { example: '+84901234567' },
+        created_at: { example: '2025-11-12T00:00:00.000Z' },
+        updated_at: { example: '2025-11-12T00:10:00.000Z' },
       },
     },
   })

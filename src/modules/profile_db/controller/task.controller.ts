@@ -19,10 +19,10 @@ export class TaskController {
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string', example: 'task-1' },
-          user_id: { type: 'string', example: 'user-1' },
-          title: { type: 'string', example: 'Do something' },
-          is_done: { type: 'boolean', example: false },
+          id: { example: 'task-1' },
+          user_id: { example: 'user-1' },
+          title: { example: 'Do something' },
+          is_done: { example: false },
         },
       },
     },

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaModule } from 'src/prisma/prisma.module';
 
 import { ProfileServiceDb } from './profile_db.service';
 import { ProfileViewsControllerDb } from './profile-views_db/profile-views_db.controller';
@@ -18,6 +18,7 @@ import { TaskController } from './controller/task.controller';
 import { UserProfileController } from './controller/user-profile.controller';
 import { VipController } from './controller/vip.controller';
 import { WalletController } from './controller/wallet.controller';
+import { ReferralController } from './controller/referral.controller';
 
 import { AlbumService } from './service/album.service';
 import { ClanService } from './service/clan.service';
@@ -32,9 +33,10 @@ import { UserProfileService } from './service/user-profile.service';
 import { VipService } from './service/vip.service';
 import { WalletService } from './service/wallet.service';
 import { GiftsService } from './service/gifts.service';
+import { ReferralService } from './service/referral.service';
 
 @Module({
-  imports: [],
+  imports: [PrismaModule],
   controllers: [
     ProfileViewsControllerDb,
     UserProfileController,
@@ -48,12 +50,11 @@ import { GiftsService } from './service/gifts.service';
     ClanController,
     FeedbackController,
     SupportController,
-    GiftsController,
+    ReferralController,
     AlbumController,
     PostController,
   ],
   providers: [
-    PrismaService,
     ProfileServiceDb,
     UserProfileService,
     ProfileViewsServiceDb,
@@ -66,6 +67,7 @@ import { GiftsService } from './service/gifts.service';
     ClanService,
     FeedbackService,
     SupportService,
+    ReferralService,
     PostService,
     AlbumService,
     GiftsService,

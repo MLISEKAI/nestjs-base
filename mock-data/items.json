@@ -1,0 +1,27 @@
+[
+  {
+    "id": "res-item-1",
+    "name": "Health Potion",
+    "type": "consumable",
+    "rarity": "common",
+    "price": "50.00",
+    "image_url": "https://img.com/potion.png"
+  },
+  {
+    "id": "res-item-2",
+    "name": "Magic Scroll",
+    "type": "consumable",
+    "rarity": "rare",
+    "price": "200.00",
+    "image_url": "https://img.com/scroll.png"
+  },
+  {
+    "id": "res-item-3",
+    "name": "Legendary Sword",
+    "type": "weapon",
+    "rarity": "legendary",
+    "price": "1000.00",
+    "image_url": "https://img.com/sword.png"
+  }
+]
+

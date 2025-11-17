@@ -19,10 +19,10 @@ export class InventoryController {
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string', example: 'inv-1' },
-          user_id: { type: 'string', example: 'user-1' },
-          item_id: { type: 'string', example: 'res-item-1' },
-          quantity: { type: 'number', example: 1 },
+          id: { example: 'inv-1' },
+          user_id: { example: 'user-1' },
+          item_id: { example: 'res-item-1' },
+          quantity: { example: 1 },
         },
       },
     },

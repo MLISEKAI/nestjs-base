@@ -2,7 +2,7 @@ import { Controller, Get, Patch, Delete, Param, Body, Query, UsePipes, Validatio
 import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { UserProfileService } from '../service/user-profile.service';
 import { ProfileServiceDb } from '../profile_db.service';
-import { UpdateUserProfileDto, UserProfileDto } from '../dto/profile.dto';
+import { UpdateUserProfileDto } from '../dto/profile.dto';
 import { StatsQueryDto } from '../dto/stats-query.dto';
 
 @ApiTags('Profile')
@@ -19,31 +19,31 @@ export class UserProfileController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'user-1' },
-        union_id: { type: 'string', example: 'union-1' },
-        role: { type: 'string', example: 'user' },
-        nickname: { type: 'string', example: 'NguyenVanA' },
-        bio: { type: 'string', example: 'I love coding' },
-        avatar: { type: 'string', example: 'https://avatar.com/a.png' },
-        gender: { type: 'string', example: 'male' },
-        birthday: { type: 'string', example: '2000-01-01T00:00:00.000Z' },
+        id: { example: 'user-1' },
+        union_id: { example: 'union-1' },
+        role: { example: 'user' },
+        nickname: { example: 'NguyenVanA' },
+        bio: { example: 'I love coding' },
+        avatar: { example: 'https://avatar.com/a.png' },
+        gender: { example: 'male' },
+        birthday: { example: '2000-01-01T00:00:00.000Z' },
         albums: {
           type: 'array',
           items: {
             type: 'object',
             properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              image_url: { type: 'string' },
+              id: { example: 'album-1' },
+              title: { example: 'Summer Memories' },
+              image_url: { example: 'https://img.com/cover1.png' },
               photos: {
                 type: 'array',
                 items: {
                   type: 'object',
                   properties: {
-                    id: { type: 'string' },
-                    album_id: { type: 'string' },
-                    image_url: { type: 'string' },
-                    created_at: { type: 'string' },
+                    id: { example: 'photo-1' },
+                    album_id: { example: 'album-1' },
+                    image_url: { example: 'https://img.com/1.png' },
+                    created_at: { example: '2025-01-01T00:00:00.000Z' },
                   },
                 },
               },
@@ -53,24 +53,24 @@ export class UserProfileController {
         wallet: {
           type: 'object',
           properties: {
-            id: { type: 'string' },
-            balance: { type: 'number' },
-            currency: { type: 'string' },
+            id: { example: 'wallet-1' },
+            balance: { example: 1000 },
+            currency: { example: 'gem' },
           },
         },
         vipStatus: {
           type: 'object',
           properties: {
-            id: { type: 'string' },
-            is_vip: { type: 'boolean' },
-            expiry: { type: 'string' },
+            id: { example: 'vip-1' },
+            is_vip: { example: true },
+            expiry: { example: '2025-12-31T00:00:00.000Z' },
           },
         },
-        statusBadge: { type: 'string', example: 'Bronze' },
-        isAccountLocked: { type: 'boolean', example: false },
-        isBlockedByMe: { type: 'boolean', example: false },
-        hasBlockedMe: { type: 'boolean', example: false },
-        relationshipStatus: { type: 'string', example: 'single' },
+        statusBadge: { example: 'Bronze' },
+        isAccountLocked: { example: false },
+        isBlockedByMe: { example: false },
+        hasBlockedMe: { example: false },
+        relationshipStatus: { example: 'single' },
       },
     },
   })
@@ -98,10 +98,10 @@ export class UserProfileController {
     schema: {
       type: 'object',
       properties: {
-        posts: { type: 'number', example: 10 },
-        followers: { type: 'number', example: 100 },
-        following: { type: 'number', example: 50 },
-        totalViews: { type: 'number', example: 500 },
+        posts: { example: 10 },
+        followers: { example: 100 },
+        following: { example: 50 },
+        totalViews: { example: 500 },
       },
     },
   })
@@ -116,11 +116,11 @@ export class UserProfileController {
     schema: {
       type: 'object',
       properties: {
-        roomId: { type: 'string', example: 'room-123' },
-        status: { type: 'string', example: 'active', description: 'Trạng thái phòng (active, offline, in-game, etc.)' },
-        participants: { type: 'number', example: 5 },
-        role: { type: 'string', example: 'host', description: 'Vai trò của user trong phòng' },
-        joinedAt: { type: 'string', example: '2025-11-12T08:00:00Z', description: 'Thời gian user vào phòng' },
+        roomId: { example: 'room-123' },
+        status: { example: 'active', description: 'Trạng thái phòng (active, offline, in-game, etc.)' },
+        participants: { example: 5 },
+        role: { example: 'host', description: 'Vai trò của user trong phòng' },
+        joinedAt: { example: '2025-11-12T08:00:00Z', description: 'Thời gian user vào phòng' },
       },
     },
   })
@@ -137,9 +137,9 @@ export class UserProfileController {
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string', example: 'interest-1' },
-          name: { type: 'string', example: 'Football' },
-          category: { type: 'string', example: 'Sports' },
+          id: { example: 'interest-1' },
+          name: { example: 'Football' },
+          category: { example: 'Sports' },
         },
       },
     },
@@ -155,10 +155,10 @@ export class UserProfileController {
     schema: {
       type: 'object',
       properties: {
-        posts: { type: 'number', example: 12 },
-        comments: { type: 'number', example: 34 },
-        likesReceived: { type: 'number', example: 120 },
-        shares: { type: 'number', example: 5 },
+        posts: { example: 12 },
+        comments: { example: 34 },
+        likesReceived: { example: 120 },
+        shares: { example: 5 },
       },
     },
   })

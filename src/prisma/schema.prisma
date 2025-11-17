@@ -65,15 +65,14 @@ model ResUser {
   location          ResLocation?
   contributions      ResContribution?
   interests          ResInterest[]
-  supporters         ResSupporter[]
   roomStatus         ResRoomStatus?
   post               ResPost[]
   giftMilestones     ResGiftMilestone[]
   walletTransactions ResWalletTransaction[]
   inventories        ResInventory[]
 
-  supportedUsers       ResSupporter[]   @relation("SupportedUser")
-  supportersFrom       ResSupporter[]   @relation("SupporterUser")
+  supporters ResSupporter[] @relation("UserSupported")   // Người này được supporter
+  supporting ResSupporter[] @relation("UserSupporter")   // Người này đi supporter người khác
   referralsAsReferrer  ResReferral[]    @relation("Referrer")
   referralsAsReferred  ResReferral[]    @relation("Referred")
   profileViewsAsViewer ResProfileView[] @relation("Viewer")
@@ -499,16 +498,13 @@ model ResInterest {
 
 // Supporter
 model ResSupporter {
-  id           String @id @default(uuid())
+  id           String   @id @default(uuid())
   user_id      String
   supporter_id String
   amount       Int
 
-  user      ResUser @relation("SupportedUser", fields: [user_id], references: [id], onDelete: Cascade)
-  supporter ResUser @relation("SupporterUser", fields: [supporter_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, supporter_id])
-  @@map("res_supporter")
+  user      ResUser @relation("UserSupported", fields: [user_id], references: [id], onDelete: Cascade)
+  supporter ResUser @relation("UserSupporter", fields: [supporter_id], references: [id], onDelete: Cascade)
 }
 
 // Relationship

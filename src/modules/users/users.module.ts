@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaModule } from 'src/prisma/prisma.module';
 import { UserProfileService } from './service/user-profile.service';
 import { UserConnectionsService } from './service/user-connections.service';
 import { UserMessagingService } from './service/user-messaging.service';
@@ -10,10 +10,10 @@ import { ConnectionsController } from './controller/connections.controller';
 import { UserController } from './controller/users.controller';
 
 @Module({
+  imports: [PrismaModule],
   controllers: [UserController, MessagesController, ConnectionsController],
   providers: [
     ResUserService,
-    PrismaService,
     UserProfileService,
     UserConnectionsService,
     UserMessagingService,

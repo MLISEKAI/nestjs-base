@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto, LoginDto, LoginOtpDto, LoginOAuthDto, LinkProviderDto } from './dto/auth.dto';
-import { ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBody, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Auth')
@@ -39,6 +39,7 @@ export class AuthController {
 
   @Post('link')
   @ApiOperation({ summary: 'Link provider to current account' })
+  @ApiBearerAuth('JWT-auth')
   @ApiBody({ type: LinkProviderDto })
   @UseGuards(AuthGuard('account-auth'))
   link(@Body() body: LinkProviderDto, @Req() req: any) {

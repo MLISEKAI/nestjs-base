@@ -17,11 +17,11 @@ export class LoveSpaceController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'ls-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        bio: { type: 'string', example: 'We met in 2020' },
-        created_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
-        updated_at: { type: 'string', example: '2025-11-12T00:10:00.000Z' },
+        id: { example: 'ls-1' },
+        user_id: { example: 'user-1' },
+        bio: { example: 'We met in 2020' },
+        created_at: { example: '2025-11-12T00:00:00.000Z' },
+        updated_at: { example: '2025-11-12T00:10:00.000Z' },
       },
     },
   })
@@ -37,11 +37,11 @@ export class LoveSpaceController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'ls-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        bio: { type: 'string', example: 'We met in 2020' },
-        created_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
-        updated_at: { type: 'string', example: '2025-11-12T00:10:00.000Z' },
+        id: { example: 'ls-1' },
+        user_id: { example: 'user-1' },
+        bio: { example: 'We met in 2020' },
+        created_at: { example: '2025-11-12T00:00:00.000Z' },
+        updated_at: { example: '2025-11-12T00:10:00.000Z' },
       },
     },
   })
@@ -57,11 +57,11 @@ export class LoveSpaceController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'ls-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        bio: { type: 'string', example: 'We met in 2020' },
-        created_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
-        updated_at: { type: 'string', example: '2025-11-12T00:10:00.000Z' },
+        id: { example: 'ls-1' },
+        user_id: { example: 'user-1' },
+        bio: { example: 'We met in 2020' },
+        created_at: { example: '2025-11-12T00:00:00.000Z' },
+        updated_at: { example: '2025-11-12T00:10:00.000Z' },
       },
     },
   })
@@ -73,7 +73,7 @@ export class LoveSpaceController {
   @ApiOperation({ summary: 'Xóa Love Space' })
   @ApiOkResponse({
     description: 'Kết quả xóa',
-    schema: { type: 'object', properties: { message: { type: 'string', example: 'Love Space deleted' } } },
+    schema: { type: 'object', properties: { message: { example: 'Love Space deleted' } } },
   })
   deleteLoveSpace(@Param('user_id') userId: string) {
     return this.loveSpace.deleteLoveSpace(userId);

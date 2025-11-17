@@ -31,21 +31,62 @@ export class GiftsController {
 
   @Get('categories')
   @ApiOperation({ summary: 'Danh mục quà tặng' })
-  @ApiOkResponse({ description: 'Danh sách danh mục quà tặng' })
+  @ApiOkResponse({ 
+    description: 'Danh sách danh mục quà tặng',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { example: 'cat-1' },
+          name: { example: 'Flowers' },
+          icon: { example: 'https://icon.com/flower.png' },
+        },
+      },
+    },
+  })
   getCategories() {
     return this.service.getGiftCategories();
   }
 
   @Get('items')
   @ApiOperation({ summary: 'Danh sách item quà tặng' })
-  @ApiOkResponse({ description: 'Danh sách item quà tặng' })
+  @ApiOkResponse({ 
+    description: 'Danh sách item quà tặng',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { example: 'gift-item-1' },
+          name: { example: 'Rose' },
+          price: { example: 100 },
+          category_id: { example: 'cat-1' },
+          image_url: { example: 'https://img.com/rose.png' },
+        },
+      },
+    },
+  })
   getItems(@Query('category_id') categoryId?: string) {
     return this.service.getGiftItems(categoryId);
   }
 
   @Get('milestones')
   @ApiOperation({ summary: 'Mốc quà tặng của user' })
-  @ApiOkResponse({ description: 'Danh sách mốc quà tặng' })
+  @ApiOkResponse({ 
+    description: 'Danh sách mốc quà tặng',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          milestone: { example: '100 gifts' },
+          achieved: { example: true },
+          achieved_at: { example: '2025-01-01T00:00:00.000Z' },
+        },
+      },
+    },
+  })
   getMilestones(@Param('user_id') userId: string) {
     return this.service.getGiftMilestones(userId);
   }
@@ -82,7 +123,7 @@ export class GiftsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Xóa quà tặng' })
-  @ApiOkResponse({ description: 'Quà tặng đã bị xóa', schema: { type: 'object', properties: { message: { type: 'string', example: 'Gift deleted' } } } })
+  @ApiOkResponse({ description: 'Quà tặng đã bị xóa', schema: { type: 'object', properties: { message: { example: 'Gift deleted' } } } })
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }

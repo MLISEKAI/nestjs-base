@@ -1,0 +1,17 @@
+[
+  {
+    "id": "contrib-1",
+    "user_id": "user-1",
+    "points": 150,
+    "created_at": "2025-01-01T00:00:00.000Z",
+    "updated_at": "2025-01-20T00:00:00.000Z"
+  },
+  {
+    "id": "contrib-2",
+    "user_id": "user-2",
+    "points": 80,
+    "created_at": "2025-01-02T00:00:00.000Z",
+    "updated_at": "2025-01-15T00:00:00.000Z"
+  }
+]
+

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "vip-1",
+    "user_id": "user-1",
+    "is_vip": true,
+    "expiry": "2025-12-31T23:59:59.000Z"
+  },
+  {
+    "id": "vip-2",
+    "user_id": "user-2",
+    "is_vip": false,
+    "expiry": null
+  },
+  {
+    "id": "vip-3",
+    "user_id": "user-3",
+    "is_vip": true,
+    "expiry": "2026-06-30T23:59:59.000Z"
+  }
+]
+

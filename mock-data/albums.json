@@ -1,0 +1,24 @@
+[
+  {
+    "id": "album-1",
+    "user_id": "user-1",
+    "title": "Summer Memories",
+    "image_url": "https://img.com/cover1.png",
+    "created_at": "2025-01-15T00:00:00.000Z"
+  },
+  {
+    "id": "album-2",
+    "user_id": "user-1",
+    "title": "Travel Photos",
+    "image_url": "https://img.com/cover2.png",
+    "created_at": "2025-02-01T00:00:00.000Z"
+  },
+  {
+    "id": "album-3",
+    "user_id": "user-2",
+    "title": "Nature Photography",
+    "image_url": "https://img.com/cover3.png",
+    "created_at": "2025-02-10T00:00:00.000Z"
+  }
+]
+

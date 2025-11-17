@@ -22,10 +22,10 @@ export class StoreController {
           items: {
             type: 'object',
             properties: {
-              id: { type: 'string', example: 'item-1' },
-              name: { type: 'string', example: 'Sword' },
-              price: { type: 'number', example: 100 },
-              user_id: { type: 'string', example: 'user-1' },
+              id: { example: 'item-1' },
+              name: { example: 'Sword' },
+              price: { example: 100 },
+              user_id: { example: 'user-1' },
             },
           },
         },

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "item-1",
+    "name": "Sword",
+    "price": "100.00",
+    "user_id": null
+  },
+  {
+    "id": "item-2",
+    "name": "Shield",
+    "price": "150.00",
+    "user_id": null
+  },
+  {
+    "id": "item-3",
+    "name": "Magic Potion",
+    "price": "200.00",
+    "user_id": "user-1"
+  }
+]
+

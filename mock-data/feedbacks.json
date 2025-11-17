@@ -1,0 +1,15 @@
+[
+  {
+    "id": "fb-1",
+    "user_id": "user-1",
+    "content": "This app is great! Love the features.",
+    "created_at": "2025-01-20T10:00:00.000Z"
+  },
+  {
+    "id": "fb-2",
+    "user_id": "user-2",
+    "content": "Could use some improvements in UI",
+    "created_at": "2025-01-21T14:00:00.000Z"
+  }
+]
+

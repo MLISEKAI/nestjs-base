@@ -1,0 +1,21 @@
+[
+  {
+    "id": "gift-1",
+    "sender_id": "user-2",
+    "receiver_id": "user-1",
+    "gift_item_id": "gift-item-1",
+    "message": "For you",
+    "quantity": 1,
+    "created_at": "2025-01-20T12:00:00.000Z"
+  },
+  {
+    "id": "gift-2",
+    "sender_id": "user-3",
+    "receiver_id": "user-1",
+    "gift_item_id": "gift-item-2",
+    "message": "Happy birthday!",
+    "quantity": 2,
+    "created_at": "2025-01-21T10:00:00.000Z"
+  }
+]
+

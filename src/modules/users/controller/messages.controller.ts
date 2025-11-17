@@ -12,7 +12,19 @@ export class MessagesController {
   @ApiOperation({ summary: 'Gửi tin nhắn đến user khác' })
   @ApiParam({ name: 'id', description: 'ID người gửi' })
   @ApiBody({ type: SendMessageDto })
-  @ApiOkResponse({ description: 'Tin nhắn đã gửi' })
+  @ApiOkResponse({ 
+    description: 'Tin nhắn đã gửi',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { example: 'msg-123' },
+        senderId: { example: 'user-1' },
+        recipientId: { example: 'user-456' },
+        content: { example: 'Xin chào, bạn khỏe không?' },
+        created_at: { example: '2025-01-01T00:00:00.000Z' },
+      },
+    },
+  })
   async sendMessage(@Param('id') senderId: string, @Body() dto: SendMessageDto) {
     return this.messagingService.sendMessage(senderId, dto);
   }

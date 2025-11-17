@@ -1,0 +1,17 @@
+[
+  {
+    "id": "ref-1",
+    "referrer_id": "user-1",
+    "referred_id": "user-2",
+    "reward_amount": 100,
+    "created_at": "2025-01-15T00:00:00.000Z"
+  },
+  {
+    "id": "ref-2",
+    "referrer_id": "user-1",
+    "referred_id": "user-3",
+    "reward_amount": 100,
+    "created_at": "2025-01-18T00:00:00.000Z"
+  }
+]
+

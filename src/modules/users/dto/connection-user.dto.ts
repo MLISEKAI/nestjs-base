@@ -1,26 +1,21 @@
-import { ApiProperty } from "@nestjs/swagger"
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export interface UserConnectionDto {
-  id: string
-  nickname: string
-  avatar?: string
-  is_following: boolean
-  is_friend: boolean
-}
-
+/**
+ * User connection DTO (for followers, following, friends)
+ */
 export class UserConnectionDto {
-  @ApiProperty({ example: 'user-id-123' })
-  id: string
+  @ApiProperty({ example: 'user-id-123', description: 'User ID' })
+  id: string;
 
-  @ApiProperty({ example: 'Nguyen Van A' })
-  nickname: string
+  @ApiProperty({ example: 'Nguyen Van A', description: 'User nickname' })
+  nickname: string;
 
-  @ApiProperty({ example: 'https://example.com/avatar.jpg', required: false })
-  avatar?: string
+  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg', description: 'Avatar URL' })
+  avatar?: string;
 
-  @ApiProperty({ example: true })
-  is_following: boolean
+  @ApiProperty({ example: true, description: 'Is following this user' })
+  is_following: boolean;
 
-  @ApiProperty({ example: false })
-  is_friend: boolean
+  @ApiProperty({ example: false, description: 'Is friend with this user' })
+  is_friend: boolean;
 }

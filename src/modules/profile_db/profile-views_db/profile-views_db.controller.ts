@@ -20,10 +20,10 @@ export class ProfileViewsControllerDb {
       schema: {
         type: 'object',
         properties: {
-          id: { type: 'string', example: 'pv-1' },
-          target_user_id: { type: 'string', example: 'user-2' },
-          viewer_id: { type: 'string', example: 'user-1' },
-          viewed_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
+          id: { example: 'pv-1' },
+          target_user_id: { example: 'user-2' },
+          viewer_id: { example: 'user-1' },
+          viewed_at: { example: '2025-11-12T00:00:00.000Z' },
         },
       },
     })
@@ -41,10 +41,10 @@ export class ProfileViewsControllerDb {
       schema: {
         type: 'object',
         properties: {
-          id: { type: 'string', example: 'pv-1' },
-          target_user_id: { type: 'string', example: 'user-2' },
-          viewer_id: { type: 'string', example: 'user-1' },
-          viewed_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
+          id: { example: 'pv-1' },
+          target_user_id: { example: 'user-2' },
+          viewer_id: { example: 'user-1' },
+          viewed_at: { example: '2025-11-12T00:00:00.000Z' },
         },
       },
     })
@@ -65,8 +65,8 @@ export class ProfileViewsControllerDb {
           items: {
             type: 'object',
             properties: {
-              viewer_id: { type: 'string' },
-              viewed_at: { type: 'string' },
+              viewer_id: { example: 'user-1' },
+              viewed_at: { example: '2025-11-12T00:00:00.000Z' },
             },
           },
         },
@@ -75,9 +75,9 @@ export class ProfileViewsControllerDb {
           items: {
             type: 'object',
             properties: {
-              viewer_id: { type: 'string' },
-              viewed_at: { type: 'string' },
-              viewer_name: { type: 'string' },
+              viewer_id: { example: 'user-1' },
+              viewed_at: { example: '2025-11-12T00:00:00.000Z' },
+              viewer_name: { example: 'NguyenVanA' },
             },
           },
         },
@@ -98,13 +98,13 @@ export class ProfileViewsControllerDb {
     schema: {
       type: 'object',
       properties: {
-        user_id: { type: 'string' },
+        user_id: { example: 'user-1' },
         features: {
           type: 'object',
           properties: {
-            profile_view_full: { type: 'boolean' },
-            boost_post: { type: 'boolean' },
-            invisible_mode: { type: 'boolean' },
+            profile_view_full: { example: false },
+            boost_post: { example: false },
+            invisible_mode: { example: false },
           },
         },
       },

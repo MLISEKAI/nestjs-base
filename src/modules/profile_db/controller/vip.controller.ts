@@ -17,10 +17,10 @@ export class VipController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'vip-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        is_vip: { type: 'boolean', example: true },
-        expiry: { type: 'string', example: '2025-12-31T00:00:00.000Z' },
+        id: { example: 'vip-1' },
+        user_id: { example: 'user-1' },
+        is_vip: { example: true },
+        expiry: { example: '2025-12-31T00:00:00.000Z' },
       },
     },
   })
@@ -36,10 +36,10 @@ export class VipController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'vip-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        is_vip: { type: 'boolean', example: true },
-        expiry: { type: 'string', example: '2025-12-31T00:00:00.000Z' },
+        id: { example: 'vip-1' },
+        user_id: { example: 'user-1' },
+        is_vip: { example: true },
+        expiry: { example: '2025-12-31T00:00:00.000Z' },
       },
     },
   })
@@ -55,10 +55,10 @@ export class VipController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'vip-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        is_vip: { type: 'boolean', example: false },
-        expiry: { type: 'string', example: '2026-12-31T00:00:00.000Z' },
+        id: { example: 'vip-1' },
+        user_id: { example: 'user-1' },
+        is_vip: { example: false },
+        expiry: { example: '2026-12-31T00:00:00.000Z' },
       },
     },
   })

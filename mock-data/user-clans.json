@@ -1,0 +1,21 @@
+[
+  {
+    "id": "uc-1",
+    "user_id": "user-1",
+    "clan_id": "clan-1",
+    "rank": "Leader"
+  },
+  {
+    "id": "uc-2",
+    "user_id": "user-2",
+    "clan_id": "clan-1",
+    "rank": "Member"
+  },
+  {
+    "id": "uc-3",
+    "user_id": "user-3",
+    "clan_id": "clan-2",
+    "rank": "Officer"
+  }
+]
+

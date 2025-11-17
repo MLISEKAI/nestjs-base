@@ -1,0 +1,23 @@
+[
+  {
+    "id": "milestone-1",
+    "user_id": "user-1",
+    "milestone": 100,
+    "current": 50,
+    "reward_name": "Bronze Badge",
+    "icon_url": "https://img.com/bronze.png",
+    "is_unlocked": false,
+    "created_at": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "milestone-2",
+    "user_id": "user-1",
+    "milestone": 500,
+    "current": 50,
+    "reward_name": "Silver Badge",
+    "icon_url": "https://img.com/silver.png",
+    "is_unlocked": false,
+    "created_at": "2025-01-01T00:00:00.000Z"
+  }
+]
+

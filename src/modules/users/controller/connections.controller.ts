@@ -11,7 +11,17 @@ export class ConnectionsController {
   @Get(':id/stats')
   @ApiOperation({ summary: 'Lấy thông tin tổng quan (followers, following, friends)' })
   @ApiParam({ name: 'id', description: 'ID của user' })
-  @ApiOkResponse({ description: 'Stats', schema: { type: 'object', properties: { followers: { type: 'number' }, following: { type: 'number' }, friends: { type: 'number' } } } })
+  @ApiOkResponse({ 
+    description: 'Stats', 
+    schema: { 
+      type: 'object', 
+      properties: { 
+        followers: { example: 100 }, 
+        following: { example: 50 }, 
+        friends: { example: 25 } 
+      } 
+    } 
+  })
   async getStats(@Param('id') id: string) {
     return this.connectionsService.getStats(id);
   }

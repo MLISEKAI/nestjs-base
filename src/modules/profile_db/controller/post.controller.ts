@@ -17,10 +17,10 @@ export class PostController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'post-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        content: { type: 'string', example: 'Hello world' },
-        created_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
+        id: { example: 'post-1' },
+        user_id: { example: 'user-1' },
+        content: { example: 'Hello world' },
+        created_at: { example: '2025-11-12T00:00:00.000Z' },
       },
     },
   })
@@ -36,10 +36,10 @@ export class PostController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'post-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        content: { type: 'string', example: 'Updated content' },
-        created_at: { type: 'string', example: '2025-11-12T00:00:00.000Z' },
+        id: { example: 'post-1' },
+        user_id: { example: 'user-1' },
+        content: { example: 'Updated content' },
+        created_at: { example: '2025-11-12T00:00:00.000Z' },
       },
     },
   })
@@ -55,7 +55,7 @@ export class PostController {
   @ApiOperation({ summary: 'Xóa bài viết' })
   @ApiOkResponse({
     description: 'Kết quả xóa',
-    schema: { type: 'object', properties: { message: { type: 'string', example: 'Post deleted' } } },
+    schema: { type: 'object', properties: { message: { example: 'Post deleted' } } },
   })
   deletePost(@Param('user_id') userId: string, @Param('post_id') postId: string) {
     return this.posts.deletePost(userId, postId);

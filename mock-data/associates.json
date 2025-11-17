@@ -1,0 +1,54 @@
+[
+  {
+    "id": "assoc-1",
+    "user_id": "user-1",
+    "email": "nguyenvana@example.com",
+    "phone_number": "+84912345678",
+    "ref_id": "nguyenvana@example.com",
+    "hash": "$2b$10$exampleHash1",
+    "provider": "password",
+    "created_at": "2025-01-01T00:00:00.000Z",
+    "updated_at": "2025-01-01T00:00:00.000Z",
+    "deleted_at": null,
+    "is_deleted": false
+  },
+  {
+    "id": "assoc-2",
+    "user_id": "user-2",
+    "email": "tranthib@example.com",
+    "phone_number": "+84987654321",
+    "ref_id": "tranthib@example.com",
+    "hash": "$2b$10$exampleHash2",
+    "provider": "password",
+    "created_at": "2025-01-02T00:00:00.000Z",
+    "updated_at": "2025-01-02T00:00:00.000Z",
+    "deleted_at": null,
+    "is_deleted": false
+  },
+  {
+    "id": "assoc-3",
+    "user_id": "user-1",
+    "email": null,
+    "phone_number": null,
+    "ref_id": "google-uid-123456",
+    "hash": null,
+    "provider": "google",
+    "created_at": "2025-01-10T00:00:00.000Z",
+    "updated_at": "2025-01-10T00:00:00.000Z",
+    "deleted_at": null,
+    "is_deleted": false
+  },
+  {
+    "id": "c67956f2-24fb-496d-bb69-d0d4c602fc81",
+    "user_id": "9d00ba5d-b6b4-4a5a-8e64-a19512cdab15",
+    "email": "user@example.com",
+    "phone_number": "+849123456789",
+    "ref_id": "user@example.com",
+    "hash": "$2b$10$RyvrSOBPukZl3xcsvBGUOeeGBy8yTjqe0blAyRT3VMesp/hyQbZ6m",
+    "provider": "password",
+    "created_at": "2025-11-17T04:53:25.216Z",
+    "updated_at": "2025-11-17T04:53:25.216Z",
+    "deleted_at": null,
+    "is_deleted": false
+  }
+]

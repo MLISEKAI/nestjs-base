@@ -1,19 +1,39 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Min } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
 export class UserResponseDto {
+  @ApiProperty({ example: 'user-123', description: 'ID của user' })
   id: string;
-  nickname : string;
+
+  @ApiProperty({ example: 'NguyenVanA', description: 'Nickname của user' })
+  nickname: string;
+
+  @ApiPropertyOptional({ example: 'I love coding', description: 'Bio của user' })
   bio?: string;
+
+  @ApiPropertyOptional({ example: 'https://avatar.com/a.png', description: 'URL avatar' })
   avatar?: string;
+
+  @ApiPropertyOptional({ example: 'male', description: 'Giới tính' })
   gender?: string;
+
+  @ApiProperty({ example: '2025-01-01T00:00:00.000Z', description: 'Ngày tạo' })
   created_at: Date;
 }
 
 export class ConnectionsResponseDto {
-  @ApiProperty({ type: [UserResponseDto] })
+  @ApiProperty({ type: [UserResponseDto], description: 'Danh sách users' })
   users: UserResponseDto[];
+
+  @ApiPropertyOptional({ example: 1, description: 'Trang hiện tại' })
+  page?: number;
+
+  @ApiPropertyOptional({ example: 20, description: 'Số lượng mỗi trang' })
+  limit?: number;
+
+  @ApiPropertyOptional({ example: 100, description: 'Tổng số lượng' })
+  total?: number;
 }
 
 export class UpdateUserDto {
@@ -43,39 +63,13 @@ export class UpdateUserDto {
   birthday?: string;
 }
 
-export class UploadAvatarDto {
-  @ApiProperty({ example: 'https://example.com/avatar.jpg' })
-  @IsNotEmpty()
-  @IsString()
-  fileUrl: string;
-}
+// Re-export from common for consistency
+export { FileUploadDto as UploadAvatarDto } from '../../../common/dto/file-upload.dto';
 
-export class SearchUsersQueryDto {
-  @ApiPropertyOptional({ description: 'Từ khóa tìm kiếm' })
-  @IsOptional()
-  @IsString()
-  search?: string;
-
-  @ApiPropertyOptional({ description: 'Trang hiện tại', default: 1 })
-  @IsOptional()
-  @IsInt()
-  @Type(() => Number)
-  @Min(1)
-  page?: number;
-
-  @ApiPropertyOptional({ description: 'Số lượng mỗi trang', default: 20 })
-  @IsOptional()
-  @IsInt()
-  @Type(() => Number)
-  @Min(1)
-  limit?: number;
-
- @ApiPropertyOptional({ 
-    description: 'Sắp xếp, ví dụ: created_at:asc hoặc nickname:desc', 
-    example: 'created_at:asc' 
-  })
-  @IsOptional()
-  @IsString()
-  @Matches(/^\w+:(asc|desc)$/i)
-  sort?: string;
+/**
+ * Search users query DTO
+ * Extends BaseQueryDto which already includes page, limit, search, and sort
+ */
+export class SearchUsersQueryDto extends BaseQueryDto {
+  // All properties (page, limit, search, sort) are inherited from BaseQueryDto
 }

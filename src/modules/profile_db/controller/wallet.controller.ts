@@ -17,10 +17,10 @@ export class WalletController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'wallet-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        balance: { type: 'number', example: 1000 },
-        currency: { type: 'string', example: 'gem' },
+        id: { example: 'wallet-1' },
+        user_id: { example: 'user-1' },
+        balance: { example: 1000 },
+        currency: { example: 'gem' },
       },
     },
   })
@@ -36,10 +36,10 @@ export class WalletController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'wallet-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        balance: { type: 'number', example: 0 },
-        currency: { type: 'string', example: 'gem' },
+        id: { example: 'wallet-1' },
+        user_id: { example: 'user-1' },
+        balance: { example: 0 },
+        currency: { example: 'gem' },
       },
     },
   })
@@ -55,10 +55,10 @@ export class WalletController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: 'wallet-1' },
-        user_id: { type: 'string', example: 'user-1' },
-        balance: { type: 'number', example: 1500 },
-        currency: { type: 'string', example: 'gold' },
+        id: { example: 'wallet-1' },
+        user_id: { example: 'user-1' },
+        balance: { example: 1500 },
+        currency: { example: 'gold' },
       },
     },
   })

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "pv-1",
+    "viewer_id": "user-2",
+    "target_user_id": "user-1",
+    "viewed_at": "2025-01-20T10:00:00.000Z"
+  },
+  {
+    "id": "pv-2",
+    "viewer_id": "user-3",
+    "target_user_id": "user-1",
+    "viewed_at": "2025-01-21T14:00:00.000Z"
+  },
+  {
+    "id": "pv-3",
+    "viewer_id": "user-1",
+    "target_user_id": "user-2",
+    "viewed_at": "2025-01-22T09:00:00.000Z"
+  }
+]
+
