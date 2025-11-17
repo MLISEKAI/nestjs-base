@@ -5,11 +5,12 @@ import { ModuleRef } from '@nestjs/core';
 import { UserBasicRole } from '@prisma/client';
 import { ResUserService } from '../../modules/users/res-user.service';
 import { ConfigService } from '@nestjs/config';
-
+import { PrismaService } from '../../prisma/prisma.service';
 
 interface MyJwtPayload {
-  sub: string;          
-  role: UserBasicRole;  
+  sub: string;
+  role: UserBasicRole;
+  jti?: string;
   iat?: number;
   exp?: number;
   iss?: string;
@@ -22,7 +23,11 @@ export class AccountStrategy
 {
   private accountService: ResUserService;
 
-  constructor(private readonly moduleRef: ModuleRef, private readonly configService: ConfigService) {
+  constructor(
+    private readonly moduleRef: ModuleRef,
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -38,6 +43,15 @@ export class AccountStrategy
   async validate(payload: MyJwtPayload) {
     if (!payload.sub) {
       throw new UnauthorizedException('Invalid token payload: missing sub');
+    }
+
+    if (!payload.jti) {
+      throw new UnauthorizedException('Invalid token payload: missing jti');
+    }
+
+    const blacklisted = await this.prisma.resTokenBlacklist.findUnique({ where: { jti: payload.jti } });
+    if (blacklisted) {
+      throw new UnauthorizedException('Token has been revoked');
     }
 
     const user = await this.accountService.findUser(payload.sub);

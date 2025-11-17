@@ -82,6 +82,11 @@ export class LoginDto {
   @IsNotEmpty()
   @IsString()
   password: string;
+
+  @ApiPropertyOptional({ description: 'Two-factor authentication code', example: '123456' })
+  @IsOptional()
+  @IsString()
+  twoFactorCode?: string;
 }
 
 export class LoginOtpDto {
@@ -116,6 +121,11 @@ export class LoginOAuthDto {
   @IsOptional()
   @IsString()
   nickname?: string;
+
+  @ApiPropertyOptional({ description: 'Two-factor authentication code', example: '' })
+  @IsOptional()
+  @IsString()
+  twoFactorCode?: string;
 }
 
 export class LinkProviderDto {
@@ -133,4 +143,57 @@ export class LinkProviderDto {
   @IsOptional()
   @IsString()
   hash?: string;
+}
+
+export class RequestEmailCodeDto {
+  @ApiProperty({ description: 'Email to verify', example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+}
+
+export class VerifyEmailCodeDto extends RequestEmailCodeDto {
+  @ApiProperty({ description: 'Verification code', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
+
+export class RequestPhoneCodeDto {
+  @ApiProperty({ description: 'Phone number in E.164 format', example: '+84912345678' })
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+}
+
+export class VerifyPhoneCodeDto extends RequestPhoneCodeDto {
+  @ApiProperty({ description: 'Verification code', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
+
+export class TwoFactorCodeDto {
+  @ApiProperty({ description: 'Two-factor authentication code', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
+
+export class VerifyTwoFactorLoginDto {
+  @ApiProperty({ description: 'Temporary 2FA token returned from login', example: 'temp-token-value' })
+  @IsString()
+  @IsNotEmpty()
+  temp_token: string;
+
+  @ApiProperty({ description: 'Two-factor authentication code', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
+
+export class RefreshTokenDto {
+  @ApiProperty({ description: 'Refresh token', example: 'refresh-token-value' })
+  @IsString()
+  @IsNotEmpty()
+  refresh_token: string;
 }

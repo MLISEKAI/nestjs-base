@@ -29,7 +29,7 @@ export class BaseQueryDto {
   limit: number = 20;
 
   @ApiPropertyOptional({ 
-    example: 'keyword', 
+    example: '', 
     description: 'Search keyword' 
   })
   @IsOptional()

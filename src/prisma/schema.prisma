@@ -79,6 +79,10 @@ model ResUser {
   profileViewsAsTarget ResProfileView[] @relation("Target")
   relationships        ResRelationship[] @relation("UserRelationships")
   relationshipsRelated ResRelationship[] @relation("UserRelated")
+  verificationCodes    ResVerificationCode[]
+  refreshTokens        ResRefreshToken[]
+  blacklistedTokens    ResTokenBlacklist[]
+  twoFactor            ResTwoFactor?
 
   @@index([union_id, deleted_at])
   @@index([union_id])
@@ -100,6 +104,8 @@ model ResAssociate {
   ref_id       String
   hash         String?
   provider     ProviderEnum
+  email_verified Boolean   @default(false)
+  phone_verified Boolean   @default(false)
 
   // Relation
   user ResUser @relation(fields: [user_id], references: [id])
@@ -540,4 +546,72 @@ model ResPost {
 
   @@map("res_post")
   @@index([user_id])
+}
+
+model ResTokenBlacklist {
+  id         String   @id @default(uuid())
+  user_id    String?
+  jti        String   @unique
+  reason     String?
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user ResUser? @relation(fields: [user_id], references: [id])
+
+  @@index([expires_at])
+  @@map("res_token_blacklist")
+}
+
+model ResVerificationCode {
+  id         String                 @id @default(uuid())
+  user_id    String?
+  target     String
+  type       VerificationCodeType
+  code       String
+  expires_at DateTime
+  verified_at DateTime?
+  attempts   Int                    @default(0)
+  context    String?
+  created_at DateTime               @default(now())
+
+  user ResUser? @relation(fields: [user_id], references: [id])
+
+  @@index([target, type])
+  @@map("res_verification_code")
+}
+
+model ResRefreshToken {
+  id             String   @id @default(uuid())
+  user_id        String
+  token_hash     String
+  expires_at     DateTime
+  revoked_at     DateTime?
+  created_at     DateTime @default(now())
+  created_by_ip  String?
+  replaced_by_id String?
+
+  user ResUser @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("res_refresh_token")
+}
+
+model ResTwoFactor {
+  id           String   @id @default(uuid())
+  user_id      String   @unique
+  secret       String
+  enabled      Boolean  @default(false)
+  verified_at  DateTime?
+  backup_codes String[] @default([])
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  user ResUser @relation(fields: [user_id], references: [id])
+
+  @@map("res_two_factor")
+}
+
+enum VerificationCodeType {
+  email
+  phone
 }

@@ -4,10 +4,13 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ResponseInterceptor } from './common/response.interceptor';
 import { ResponseExceptionFilter } from './common/response-exception.filter';
+import helmet from 'helmet';
+import { SanitizeInputPipe } from './common/pipes/sanitize-input.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use(helmet());
   app.enableCors({
     origin: '*',
   });
@@ -32,7 +35,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.useGlobalPipes(
+    new SanitizeInputPipe(),
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidUnknownValues: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new ResponseExceptionFilter());
 
