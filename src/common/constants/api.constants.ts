@@ -31,4 +31,3 @@ export const RESPONSE_MESSAGES = {
   FORBIDDEN: 'Forbidden',
   SERVER_ERROR: 'Internal server error',
 } as const;
-

@@ -30,4 +30,3 @@ export interface ISuccessResponse<T> {
   data: T;
   traceId: string;
 }
-

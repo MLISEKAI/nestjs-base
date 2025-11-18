@@ -13,4 +13,3 @@ export function generateUUID(): string {
 export function generateShortId(): string {
   return randomUUID().split('-')[0];
 }
-

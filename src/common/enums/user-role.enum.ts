@@ -6,4 +6,3 @@ export enum UserRole {
   USER = 'user',
   GUEST = 'guest',
 }
-

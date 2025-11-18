@@ -37,4 +37,3 @@ export interface IUserProfile extends IUser {
   friends_count?: number;
   posts_count?: number;
 }
-

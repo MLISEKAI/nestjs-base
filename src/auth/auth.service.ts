@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterUserDto, LoginDto, LoginOtpDto, LoginOAuthDto, VerifyTwoFactorLoginDto } from './dto/auth.dto';
@@ -6,18 +6,21 @@ import * as crypto from 'crypto';
 import { TokenService } from './security/token.service';
 import { VerificationService } from './security/verification.service';
 import { TwoFactorService } from './security/two-factor.service';
+import { AuthRateLimitService } from './security/auth-rate-limit.service';
 import { ConfigService } from '@nestjs/config';
 import { ResAssociate, ResUser } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   private readonly isProduction: boolean;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
     private readonly verificationService: VerificationService,
     private readonly twoFactorService: TwoFactorService,
+    private readonly authRateLimit: AuthRateLimitService,
     private readonly configService: ConfigService,
   ) {
     this.isProduction = (this.configService.get<string>('NODE_ENV') ?? process.env.NODE_ENV ?? 'development') === 'production';
@@ -86,6 +89,7 @@ export class AuthService {
 
   async login(dto: LoginDto, ipAddress?: string) {
     const ref = dto.ref_id.includes('@') ? this.normalizeEmail(dto.ref_id) : dto.ref_id.trim();
+    this.authRateLimit.checkLogin(ref, ipAddress);
     const associate = await this.prisma.resAssociate.findFirst({
       where: {
         OR: [
@@ -96,10 +100,16 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!associate) throw new UnauthorizedException('User not found');
+    if (!associate) {
+      this.logger.warn(`Login failed: user not found`, { ref, ipAddress });
+      throw new UnauthorizedException('User not found');
+    }
 
     const isValid = associate.hash ? await bcrypt.compare(dto.password, associate.hash) : false;
-    if (!isValid) throw new UnauthorizedException('Invalid password');
+    if (!isValid) {
+      this.logger.warn(`Login failed: invalid password`, { ref, ipAddress, userId: associate.user.id });
+      throw new UnauthorizedException('Invalid password');
+    }
 
     this.ensureVerifiedContact(associate);
 
@@ -126,6 +136,7 @@ export class AuthService {
   }
 
   async loginOtp(dto: LoginOtpDto, ipAddress?: string) {
+    this.authRateLimit.checkOtp(dto.phone, ipAddress);
     await this.verificationService.verifyPhoneCode(dto.phone, dto.otp);
     let associate = await this.prisma.resAssociate.findFirst({
       where: { phone_number: dto.phone },
@@ -159,7 +170,7 @@ export class AuthService {
   }
 
   async loginOAuth(dto: LoginOAuthDto, ipAddress?: string) {
-    let associate = await this.prisma.resAssociate.findFirst({
+    const associate = await this.prisma.resAssociate.findFirst({
       where: { provider: dto.provider, ref_id: dto.provider_id },
       include: { user: true },
     });
@@ -224,13 +235,23 @@ export class AuthService {
     return this.buildAuthResponse(user, ipAddress);
   }
 
-  async linkProvider(userId: string, provider: 'google' | 'facebook' | 'phone' | 'password', refId: string, hash?: string) {
+  async linkProvider(
+    userId: string,
+    provider: 'google' | 'facebook' | 'phone' | 'password',
+    refId: string,
+    password?: string,
+    hash?: string,
+  ) {
     const exists = await this.prisma.resAssociate.findFirst({ where: { provider, ref_id: refId } });
     if (exists) throw new BadRequestException('Provider already linked to another account');
     const data: any = { user_id: userId, provider, ref_id: refId };
     if (provider === 'password') {
-      if (!hash) throw new BadRequestException('Password hash required');
-      data.hash = hash;
+      let finalHash = hash;
+      if (!finalHash && password) {
+        finalHash = await bcrypt.hash(password, 12);
+      }
+      if (!finalHash) throw new BadRequestException('Password or hash required');
+      data.hash = finalHash;
       data.email = this.normalizeEmail(refId);
       data.email_verified = false;
     }

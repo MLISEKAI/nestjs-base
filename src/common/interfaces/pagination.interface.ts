@@ -26,4 +26,3 @@ export interface IPaginationQuery {
   search?: string;
   sort?: string;
 }
-

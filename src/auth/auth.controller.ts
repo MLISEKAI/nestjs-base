@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Req, UseGuards, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import type { GoogleProfile } from './strategy/google.strategy';
 import {
   RegisterUserDto,
   LoginDto,
@@ -18,6 +19,7 @@ import { ApiTags, ApiBody, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
+import { AuthGuard as NestAuthGuard } from '@nestjs/passport';
 
 const ONE_MINUTE = 60_000;
 const FIVE_MINUTES = 300_000;
@@ -69,11 +71,35 @@ export class AuthController {
   }
 
   @Post('login/oauth')
-  @ApiOperation({ summary: 'Đăng nhập qua OAuth provider' })
+  @ApiOperation({ summary: 'Đăng nhập qua OAuth provider (Google, Facebook, Anonymous)' })
   @ApiBody({ type: LoginOAuthDto })
   @Throttle({ oauth: RATE_LIMITS.oauth })
   loginOAuth(@Body() dto: LoginOAuthDto, @Req() req: Request) {
     return this.authService.loginOAuth(dto, req.ip);
+  }
+
+  @Get('oauth/google')
+  @ApiOperation({ summary: 'Chuyển hướng sang Google OAuth (server-side flow)' })
+  @UseGuards(NestAuthGuard('google'))
+  googleAuth() {
+    // Passport sẽ redirect tới Google
+  }
+
+  @Get('oauth/google/callback')
+  @ApiOperation({ summary: 'Callback từ Google OAuth' })
+  @UseGuards(NestAuthGuard('google'))
+  async googleAuthCallback(@Req() req: any) {
+    const profile = req.user as GoogleProfile;
+    return this.authService.loginOAuth(
+      {
+        provider: profile.provider,
+        provider_id: profile.providerId,
+        email: profile.email,
+        nickname: profile.nickname,
+        twoFactorCode: undefined,
+      },
+      req.ip,
+    );
   }
 
   @Post('login/verify-2fa')
@@ -91,7 +117,7 @@ export class AuthController {
   @UseGuards(AuthGuard('account-auth'))
   link(@Body() body: LinkProviderDto, @Req() req: any) {
     const userId = req.user.id;
-    return this.authService.linkProvider(userId, body.provider, body.ref_id, body.hash);
+    return this.authService.linkProvider(userId, body.provider, body.ref_id, body.password, body.hash);
   }
 
   @Post('email/request')

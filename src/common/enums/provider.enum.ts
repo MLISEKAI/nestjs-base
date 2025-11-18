@@ -10,4 +10,3 @@ export enum ProviderEnum {
   APPLE = 'apple',
   PASSWORD = 'password',
 }
-

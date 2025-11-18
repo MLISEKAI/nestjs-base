@@ -7,7 +7,10 @@ export class BaseResponseDto<T> {
   @ApiProperty({ example: false, description: 'Error flag' })
   error: boolean;
 
-  @ApiProperty({ example: 1, description: 'Response code (1 = success, others = error)' })
+  @ApiProperty({
+    example: 1,
+    description: 'Response code (1 = success, others = error)',
+  })
   code: number;
 
   @ApiProperty({ example: 'Success', description: 'Response message' })
@@ -16,7 +19,10 @@ export class BaseResponseDto<T> {
   @ApiProperty({ description: 'Response data' })
   data: T | null;
 
-  @ApiProperty({ example: 'trace-123456', description: 'Trace ID for debugging' })
+  @ApiProperty({
+    example: 'trace-123456',
+    description: 'Trace ID for debugging',
+  })
   traceId: string;
 }
 
@@ -50,4 +56,3 @@ export class PaginatedResponseDto<T> {
   @ApiProperty({ type: PaginationMetaDto, description: 'Pagination metadata' })
   meta: PaginationMetaDto;
 }
-

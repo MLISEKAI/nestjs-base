@@ -11,6 +11,7 @@ import {
   MaxLength,
   MinLength,
   IsDateString,
+  ValidateIf,
 } from 'class-validator';
 import { UserBasicRole, ProviderEnum } from '@prisma/client';
 
@@ -139,9 +140,19 @@ export class LinkProviderDto {
   @IsNotEmpty()
   ref_id: string;
 
-  @ApiPropertyOptional({ description: 'Password hash (only for password provider)', example: '$2b$10$...' })
-  @IsOptional()
+  @ApiPropertyOptional({ description: 'Password (server sẽ tự hash)', example: 'P@ssw0rd1' })
+  @ValidateIf((dto: LinkProviderDto) => dto.provider === 'password' && !dto.hash)
   @IsString()
+  @IsNotEmpty()
+  password?: string;
+
+  @ApiPropertyOptional({
+    description: 'Bcrypt hash (tùy chọn khi provider = password, dùng thay cho password)',
+    example: '$2b$10$...',
+  })
+  @ValidateIf((dto: LinkProviderDto) => dto.provider === 'password' && !dto.password)
+  @IsString()
+  @IsNotEmpty()
   hash?: string;
 }
 

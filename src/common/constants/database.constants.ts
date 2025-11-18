@@ -7,4 +7,3 @@ export const DATABASE_CONSTANTS = {
   SOFT_DELETE_FIELD: 'is_deleted',
   DELETED_AT_FIELD: 'deleted_at',
 } as const;
-

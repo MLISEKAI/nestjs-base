@@ -60,7 +60,7 @@ export class UserProfileService {
     let orderBy: Record<string, 'asc' | 'desc'> = { created_at: 'asc' }
     if (params?.sort) {
       const [field, dir] = String(params.sort).split(':')
-      if (field) orderBy = { [field]: (dir?.toLowerCase() === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc' }
+      if (field) orderBy = { [field]: (dir?.toLowerCase() === 'desc' ? 'desc' : 'asc') }
     }
 
     const take = params?.limit && params.limit > 0 ? params.limit : 20
