@@ -55,7 +55,6 @@ export class GiftSummaryResponseDto {
 
   @ApiProperty({ type: [GiftSummaryItemDto] })
   gifts: GiftSummaryItemDto[];
-
 }
 
 export class TopSupporterDto {
@@ -71,4 +70,3 @@ export class TopSupporterDto {
   @ApiProperty({ example: 500 })
   amount: number;
 }
-

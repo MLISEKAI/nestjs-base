@@ -1,13 +1,23 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-} from '@nestjs/swagger';
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiOkResponse, ApiCreatedResponse, ApiBody } from '@nestjs/swagger';
 import { GiftsService } from '../service/gifts.service';
-import { CreateGiftDto, GiftSummaryResponseDto, TopSupporterDto, UpdateGiftDto } from '../dto/gift.dto';
+import {
+  CreateGiftDto,
+  GiftSummaryResponseDto,
+  TopSupporterDto,
+  UpdateGiftDto,
+} from '../dto/gift.dto';
 
 @ApiTags('Gifts')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -31,7 +41,7 @@ export class GiftsController {
 
   @Get('categories')
   @ApiOperation({ summary: 'Danh mục quà tặng' })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'Danh sách danh mục quà tặng',
     schema: {
       type: 'array',
@@ -51,7 +61,7 @@ export class GiftsController {
 
   @Get('items')
   @ApiOperation({ summary: 'Danh sách item quà tặng' })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'Danh sách item quà tặng',
     schema: {
       type: 'array',
@@ -73,7 +83,7 @@ export class GiftsController {
 
   @Get('milestones')
   @ApiOperation({ summary: 'Mốc quà tặng của user' })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'Danh sách mốc quà tặng',
     schema: {
       type: 'array',
@@ -123,7 +133,10 @@ export class GiftsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Xóa quà tặng' })
-  @ApiOkResponse({ description: 'Quà tặng đã bị xóa', schema: { type: 'object', properties: { message: { example: 'Gift deleted' } } } })
+  @ApiOkResponse({
+    description: 'Quà tặng đã bị xóa',
+    schema: { type: 'object', properties: { message: { example: 'Gift deleted' } } },
+  })
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }

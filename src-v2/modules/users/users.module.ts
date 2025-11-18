@@ -9,4 +9,3 @@ import { MockDataService } from '../../common/mock-data.service';
   exports: [UsersMockService],
 })
 export class UsersModule {}
-

@@ -1,4 +1,13 @@
-import { Controller, Post, Patch, Delete, Param, Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 import { CreatePostDto, UpdatePostDto } from '../dto/posts.dto';
 import { PostService } from '../service/post.service';

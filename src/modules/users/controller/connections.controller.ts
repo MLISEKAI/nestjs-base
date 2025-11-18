@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiOkResponse } from '@nestjs/swagger';
 import { UserConnectionsService } from '../service/user-connections.service';
 import { ConnectionsResponseDto } from '../dto/user-response';
@@ -11,16 +11,16 @@ export class ConnectionsController {
   @Get(':id/stats')
   @ApiOperation({ summary: 'Lấy thông tin tổng quan (followers, following, friends)' })
   @ApiParam({ name: 'id', description: 'ID của user' })
-  @ApiOkResponse({ 
-    description: 'Stats', 
-    schema: { 
-      type: 'object', 
-      properties: { 
-        followers: { example: 100 }, 
-        following: { example: 50 }, 
-        friends: { example: 25 } 
-      } 
-    } 
+  @ApiOkResponse({
+    description: 'Stats',
+    schema: {
+      type: 'object',
+      properties: {
+        followers: { example: 100 },
+        following: { example: 50 },
+        friends: { example: 25 },
+      },
+    },
   })
   async getStats(@Param('id') id: string) {
     return this.connectionsService.getStats(id);
@@ -28,8 +28,9 @@ export class ConnectionsController {
 
   @Post(':id/following/:target_id')
   @ApiOperation({ summary: 'Follow user khác' })
-  async follow(@Param('id') userId: string, @Param('target_id') targetId: string) {
-    return this.connectionsService.followUser(userId, targetId);
+  async follow(@Param('id') userId: string, @Param('target_id') targetId: string, @Req() req: any) {
+    // Tối ưu: Truyền req.user nếu có để tránh query lại
+    return this.connectionsService.followUser(userId, targetId, req.user);
   }
 
   @Delete(':id/following/:following_id')
@@ -66,13 +67,18 @@ export class ConnectionsController {
 
   @Get(':id/connections')
   @ApiOperation({ summary: 'Lấy danh sách kết nối theo loại' })
-  @ApiQuery({ name: 'type', required: true, example: 'followers', enum: ['followers','following','friends'] })
+  @ApiQuery({
+    name: 'type',
+    required: true,
+    example: 'followers',
+    enum: ['followers', 'following', 'friends'],
+  })
   @ApiQuery({ name: 'search', required: false })
   @ApiOkResponse({ type: ConnectionsResponseDto })
   async getConnections(
     @Param('id') userId: string,
     @Query('type') type: 'followers' | 'following' | 'friends',
-    @Query('search') search?: string
+    @Query('search') search?: string,
   ) {
     return this.connectionsService.getConnections(userId, type, search);
   }

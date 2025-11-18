@@ -14,8 +14,10 @@ import {
   TwoFactorCodeDto,
   RefreshTokenDto,
   VerifyTwoFactorLoginDto,
+  RequestPasswordResetDto,
+  ResetPasswordDto,
 } from './dto/auth.dto';
-import { ApiTags, ApiBody, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBody, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
@@ -55,7 +57,11 @@ export class AuthController {
   }
 
   @Post('login/otp/request')
-  @ApiOperation({ summary: 'Yêu cầu OTP để đăng nhập qua số điện thoại' })
+  @ApiOperation({
+    summary: 'Yêu cầu OTP để đăng nhập qua số điện thoại',
+    description:
+      'Gửi OTP đến số điện thoại để đăng nhập. Có thể dùng cho user mới (sẽ tự động tạo account) hoặc user đã có. Khác với /auth/phone/request (chỉ verify số điện thoại của user đã tồn tại).',
+  })
   @ApiBody({ type: RequestPhoneCodeDto })
   @Throttle({ otpRequest: RATE_LIMITS.otpRequest })
   requestLoginOtp(@Body() dto: RequestPhoneCodeDto) {
@@ -63,7 +69,11 @@ export class AuthController {
   }
 
   @Post('login/otp')
-  @ApiOperation({ summary: 'Đăng nhập qua OTP số điện thoại' })
+  @ApiOperation({
+    summary: 'Đăng nhập qua OTP số điện thoại',
+    description:
+      'Verify OTP và đăng nhập. Nếu user chưa tồn tại, sẽ tự động tạo account mới. Trả về JWT token để đăng nhập. Khác với /auth/phone/verify (chỉ verify, không đăng nhập).',
+  })
   @ApiBody({ type: LoginOtpDto })
   @Throttle({ otpLogin: RATE_LIMITS.otpLogin })
   loginOtp(@Body() dto: LoginOtpDto, @Req() req: Request) {
@@ -71,7 +81,37 @@ export class AuthController {
   }
 
   @Post('login/oauth')
-  @ApiOperation({ summary: 'Đăng nhập qua OAuth provider (Google, Facebook, Anonymous)' })
+  @ApiOperation({
+    summary: 'Đăng nhập qua OAuth provider (Google, Facebook, Anonymous)',
+    description:
+      '✅ ĐÃ VERIFY: Endpoint này verify access token với Google/Facebook API để đảm bảo dữ liệu thật.\n\n' +
+      '📋 CÁCH SỬ DỤNG (Google/Facebook):\n' +
+      '1. Client lấy access_token từ Google/Facebook OAuth flow (client-side)\n' +
+      '2. Gửi POST request với:\n' +
+      '   - provider: "google" hoặc "facebook"\n' +
+      '   - access_token: token từ OAuth flow\n' +
+      '   - KHÔNG CẦN gửi provider_id, email, nickname (sẽ được tự động lấy từ token)\n' +
+      '3. Server verify token với provider API\n' +
+      '4. Server tự động lấy provider_id, email, nickname từ API\n' +
+      '5. Đăng nhập hoặc tạo user mới\n\n' +
+      '📋 CÁCH SỬ DỤNG (Anonymous):\n' +
+      '1. Gửi POST request với:\n' +
+      '   - provider: "anonymous"\n' +
+      '   - provider_id: ID tự định nghĩa\n' +
+      '   - email, nickname: optional\n\n' +
+      '🔒 BẢO MẬT:\n' +
+      '- Google: Verify với https://www.googleapis.com/oauth2/v2/userinfo\n' +
+      '- Facebook: Verify với https://graph.facebook.com/debug_token\n' +
+      '- Anonymous: Không verify\n\n' +
+      '💡 VÍ DỤ REQUEST:\n' +
+      '```json\n' +
+      '{\n' +
+      '  "provider": "google",\n' +
+      '  "access_token": "ya29.a0AfH6SMBx..."\n' +
+      '}\n' +
+      '```\n' +
+      'Server sẽ tự động lấy provider_id, email, nickname từ Google API.',
+  })
   @ApiBody({ type: LoginOAuthDto })
   @Throttle({ oauth: RATE_LIMITS.oauth })
   loginOAuth(@Body() dto: LoginOAuthDto, @Req() req: Request) {
@@ -79,14 +119,24 @@ export class AuthController {
   }
 
   @Get('oauth/google')
-  @ApiOperation({ summary: 'Chuyển hướng sang Google OAuth (server-side flow)' })
+  @ApiOperation({
+    summary: 'Chuyển hướng sang Google OAuth (server-side flow)',
+    description:
+      '⚠️ KHÔNG THỂ TEST TRÊN SWAGGER - Endpoint này redirect đến Google OAuth. Sử dụng trong browser: mở URL này trong tab mới để bắt đầu OAuth flow. Sau khi authorize, Google sẽ redirect về /auth/oauth/google/callback',
+  })
+  @ApiExcludeEndpoint()
   @UseGuards(NestAuthGuard('google'))
   googleAuth() {
     // Passport sẽ redirect tới Google
   }
 
   @Get('oauth/google/callback')
-  @ApiOperation({ summary: 'Callback từ Google OAuth' })
+  @ApiOperation({
+    summary: 'Callback từ Google OAuth',
+    description:
+      '⚠️ KHÔNG THỂ TEST TRÊN SWAGGER - Đây là callback endpoint được Google gọi sau khi user authorize. Chỉ hoạt động trong OAuth flow thực tế.',
+  })
+  @ApiExcludeEndpoint()
   @UseGuards(NestAuthGuard('google'))
   async googleAuthCallback(@Req() req: any) {
     const profile = req.user as GoogleProfile;
@@ -96,10 +146,34 @@ export class AuthController {
         provider_id: profile.providerId,
         email: profile.email,
         nickname: profile.nickname,
-        twoFactorCode: undefined,
       },
       req.ip,
     );
+  }
+
+  @Get('oauth/facebook')
+  @ApiOperation({
+    summary: 'Chuyển hướng sang Facebook OAuth (server-side flow)',
+    description:
+      '⚠️ KHÔNG THỂ TEST TRÊN SWAGGER - Endpoint này redirect đến Facebook OAuth. Sử dụng trong browser: mở URL này trong tab mới để bắt đầu OAuth flow. Sau khi authorize, Facebook sẽ redirect về /auth/oauth/facebook/callback',
+  })
+  @ApiExcludeEndpoint()
+  @UseGuards(NestAuthGuard('facebook'))
+  facebookAuth() {
+    // Passport sẽ redirect tới Facebook
+  }
+
+  @Get('oauth/facebook/callback')
+  @ApiOperation({
+    summary: 'Callback từ Facebook OAuth',
+    description:
+      '⚠️ KHÔNG THỂ TEST TRÊN SWAGGER - Đây là callback endpoint được Facebook gọi sau khi user authorize. Chỉ hoạt động trong OAuth flow thực tế.',
+  })
+  @ApiExcludeEndpoint()
+  @UseGuards(NestAuthGuard('facebook'))
+  async facebookAuthCallback(@Req() req: any) {
+    // FacebookStrategy đã xử lý login, req.user chứa kết quả
+    return req.user;
   }
 
   @Post('login/verify-2fa')
@@ -111,13 +185,15 @@ export class AuthController {
   }
 
   @Post('link')
-  @ApiOperation({ summary: 'Liên kết provider với tài khoản hiện tại' })
+  @ApiOperation({
+    summary: 'Thêm tài khoản bên thứ 3 (Google, Facebook…) vào tài khoản hiện có của bạn',
+  })
   @ApiBearerAuth('JWT-auth')
   @ApiBody({ type: LinkProviderDto })
   @UseGuards(AuthGuard('account-auth'))
   link(@Body() body: LinkProviderDto, @Req() req: any) {
     const userId = req.user.id;
-    return this.authService.linkProvider(userId, body.provider, body.ref_id, body.password, body.hash);
+    return this.authService.linkProvider(userId, body.provider, body.ref_id, body.hash);
   }
 
   @Post('email/request')
@@ -136,7 +212,11 @@ export class AuthController {
   }
 
   @Post('phone/request')
-  @ApiOperation({ summary: 'Yêu cầu mã xác thực số điện thoại' })
+  @ApiOperation({
+    summary: 'Yêu cầu mã xác thực số điện thoại',
+    description:
+      'Gửi mã xác thực đến số điện thoại của user đã tồn tại. Chỉ dùng để verify số điện thoại, KHÔNG đăng nhập. Nếu muốn đăng nhập bằng OTP, dùng /auth/login/otp/request. Yêu cầu user phải đã có account.',
+  })
   @ApiBody({ type: RequestPhoneCodeDto })
   @Throttle({ phoneVerification: RATE_LIMITS.verification })
   requestPhoneCode(@Body() dto: RequestPhoneCodeDto) {
@@ -144,7 +224,11 @@ export class AuthController {
   }
 
   @Post('phone/verify')
-  @ApiOperation({ summary: 'Xác thực số điện thoại với mã' })
+  @ApiOperation({
+    summary: 'Xác thực số điện thoại với mã',
+    description:
+      'Verify mã xác thực và đánh dấu số điện thoại đã được verify. KHÔNG đăng nhập, chỉ verify. Nếu muốn đăng nhập bằng OTP, dùng /auth/login/otp. Yêu cầu user phải đã có account.',
+  })
   @ApiBody({ type: VerifyPhoneCodeDto })
   verifyPhone(@Body() dto: VerifyPhoneCodeDto) {
     return this.authService.verifyPhoneCode(dto.phone, dto.code);
@@ -193,5 +277,30 @@ export class AuthController {
     const authHeader = req.headers.authorization as string | undefined;
     const token = authHeader ? authHeader.split(' ')[1] : undefined;
     return this.authService.logout(req.user.id, dto.refresh_token, token);
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: 'Lấy thông tin user hiện tại từ token' })
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(AuthGuard('account-auth'))
+  getMe(@Req() req: any) {
+    // Pass the entire user object from JWT strategy to avoid duplicate query
+    return this.authService.getCurrentUser(req.user);
+  }
+
+  @Post('password/forgot')
+  @ApiOperation({ summary: 'Yêu cầu reset password qua email' })
+  @ApiBody({ type: RequestPasswordResetDto })
+  @Throttle({ verification: RATE_LIMITS.verification })
+  requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  @Post('password/reset')
+  @ApiOperation({ summary: 'Reset password với mã xác thực từ email' })
+  @ApiBody({ type: ResetPasswordDto })
+  @Throttle({ verification: RATE_LIMITS.verification })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.email, dto.code, dto.newPassword);
   }
 }

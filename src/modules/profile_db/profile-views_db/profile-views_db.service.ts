@@ -31,19 +31,19 @@ export class ProfileViewsServiceDb {
   // Lấy danh sách lượt xem hồ sơ
   async getProfileViews(userId: string, full: boolean = false) {
     const views = await this.prisma.resProfileView.findMany({
-    where: { target_user_id: userId },
-    orderBy: { viewed_at: 'desc' },
-    include: full ? { viewer: true } : undefined,
+      where: { target_user_id: userId },
+      orderBy: { viewed_at: 'desc' },
+      include: full ? { viewer: true } : undefined,
     });
 
     if (!full) {
-      return views.map(v => ({
+      return views.map((v) => ({
         viewer_id: v.viewer_id,
         viewed_at: v.viewed_at,
       }));
     }
 
-    return views.map(v => ({
+    return views.map((v) => ({
       viewer_id: v.viewer_id,
       viewed_at: v.viewed_at,
       viewer_name: v.viewer.nickname,

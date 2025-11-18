@@ -17,7 +17,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(configService: ConfigService) {
     const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
-    const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL') || '/auth/oauth/google/callback';
+    const callbackURL =
+      configService.get<string>('GOOGLE_CALLBACK_URL') || '/auth/oauth/google/callback';
 
     super({
       clientID: clientID || 'disabled',
@@ -31,7 +32,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
   authenticate(req: any, options?: any) {
     if (!this.isConfigured) {
-      return this.fail('Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.', 503);
+      return this.fail(
+        'Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.',
+        503,
+      );
     }
     return super.authenticate(req, options);
   }
@@ -48,5 +52,3 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     };
   }
 }
-
-

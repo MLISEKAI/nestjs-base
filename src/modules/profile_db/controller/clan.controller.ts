@@ -20,11 +20,17 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { BaseQueryDto } from '../dto/base-query.dto';
-import { UpdateClanRankDto, CreateClanDto, UserClanDto, ClanDetailDto, ClanBasicDto } from '../dto/clan.dto';
+import {
+  UpdateClanRankDto,
+  CreateClanDto,
+  UserClanDto,
+  ClanDetailDto,
+  ClanBasicDto,
+} from '../dto/clan.dto';
 import { ClanService } from '../service/clan.service';
 
 @ApiTags('Clans')
- @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('profile/:user_id/clans')
 export class ClanController {
   constructor(private readonly clans: ClanService) {}
@@ -55,7 +61,11 @@ export class ClanController {
     example: 10,
     description: 'Giới hạn số kết quả trả về',
   })
-  @ApiOkResponse({ description: 'Danh sách clan mà user tham gia', type: UserClanDto, isArray: true })
+  @ApiOkResponse({
+    description: 'Danh sách clan mà user tham gia',
+    type: UserClanDto,
+    isArray: true,
+  })
   getClans(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
     return this.clans.getClans(userId, query);
   }
@@ -66,9 +76,9 @@ export class ClanController {
   @ApiParam({ name: 'user_id', type: String, description: 'ID của user tạo clan' })
   @ApiBody({ description: 'Thông tin clan', type: CreateClanDto })
   @ApiCreatedResponse({
-  description: 'Clan được tạo',
-  type: ClanDetailDto,
-})
+    description: 'Clan được tạo',
+    type: ClanDetailDto,
+  })
   createClan(@Param('user_id') userId: string, @Body() dto: CreateClanDto) {
     return this.clans.createClan(userId, dto);
   }
@@ -84,10 +94,10 @@ export class ClanController {
   @ApiParam({
     name: 'clan_id',
     type: String,
-    description: 'ID của clan mà user muốn tham gia', 
+    description: 'ID của clan mà user muốn tham gia',
   })
   @ApiCreatedResponse({
-  description: 'Kết quả khi user tham gia clan',
+    description: 'Kết quả khi user tham gia clan',
     type: UserClanDto,
   })
   joinClan(@Param('user_id') userId: string, @Param('clan_id') clanId: string) {
@@ -108,8 +118,8 @@ export class ClanController {
     description: 'ID của clan mà user muốn rời',
   })
   @ApiOkResponse({
-  description: 'Kết quả rời clan',
-  schema: { type: 'object', properties: { message: { example: 'Left clan' } } }
+    description: 'Kết quả rời clan',
+    schema: { type: 'object', properties: { message: { example: 'Left clan' } } },
   })
   leaveClan(@Param('user_id') userId: string, @Param('clan_id') clanId: string) {
     return this.clans.leaveClan(userId, clanId);
@@ -163,7 +173,7 @@ export class ClanController {
     description: 'ID của user muốn lấy thông tin clan',
   })
   @ApiOkResponse({
-  description: 'Thông tin clan mà user đang tham gia',
+    description: 'Thông tin clan mà user đang tham gia',
     type: UserClanDto,
   })
   getClanInfo(@Param('user_id') userId: string) {

@@ -54,7 +54,53 @@ export class VerificationService {
     return this.verifyCode(phone.trim(), VerificationCodeType.phone, code);
   }
 
-  private async createCode(params: VerificationRequest & { ttlMs: number; type: VerificationCodeType }): Promise<VerificationResult> {
+  async verifyEmailCodeWithContext(email: string, code: string, context: string) {
+    const target = this.normalizeEmail(email);
+    const record = await this.prisma.resVerificationCode.findFirst({
+      where: {
+        target,
+        type: VerificationCodeType.email,
+        context,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    if (!record) {
+      throw new BadRequestException('Verification code not found');
+    }
+
+    if (record.verified_at) {
+      throw new BadRequestException('Verification code already used');
+    }
+
+    if (record.expires_at < new Date()) {
+      throw new BadRequestException('Verification code expired');
+    }
+
+    if (record.attempts >= this.maxAttempts) {
+      throw new BadRequestException('Maximum verification attempts reached');
+    }
+
+    const submittedHash = this.hashCode(code);
+    const storedHash = record.code;
+
+    if (!this.safeCompare(storedHash, submittedHash)) {
+      await this.prisma.resVerificationCode.update({
+        where: { id: record.id },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    return this.prisma.resVerificationCode.update({
+      where: { id: record.id },
+      data: { verified_at: new Date() },
+    });
+  }
+
+  private async createCode(
+    params: VerificationRequest & { ttlMs: number; type: VerificationCodeType },
+  ): Promise<VerificationResult> {
     const code = this.generateNumericCode();
     const expiresAt = new Date(Date.now() + params.ttlMs);
 
@@ -139,4 +185,3 @@ export class VerificationService {
     return timingSafeEqual(Buffer.from(a), Buffer.from(b));
   }
 }
-

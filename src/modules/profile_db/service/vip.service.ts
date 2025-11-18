@@ -20,6 +20,24 @@ export class VipService {
   }
 
   async updateVipStatus(userId: string, dto: UpdateVipStatusDto) {
+    // Tối ưu: Nếu có cả is_vip và expiry, update trực tiếp
+    if (dto.is_vip !== undefined && dto.expiry) {
+      const tmpDate = new Date(dto.expiry);
+      if (isNaN(tmpDate.getTime())) throw new BadRequestException('Invalid expiry date');
+      try {
+        return await this.prisma.resVipStatus.update({
+          where: { user_id: userId },
+          data: { is_vip: dto.is_vip, expiry: tmpDate },
+        });
+      } catch (error) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('VIP status not found');
+        }
+        throw error;
+      }
+    }
+
+    // Nếu thiếu một trong hai, query để lấy giá trị hiện tại
     const existing = await this.prisma.resVipStatus.findUnique({ where: { user_id: userId } });
     if (!existing) throw new NotFoundException('VIP status not found');
 

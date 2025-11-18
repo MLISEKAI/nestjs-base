@@ -131,4 +131,3 @@ export class TwoFactorService {
     return createHash('sha256').update(value.trim()).digest('hex');
   }
 }
-

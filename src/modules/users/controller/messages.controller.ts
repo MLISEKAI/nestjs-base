@@ -12,7 +12,7 @@ export class MessagesController {
   @ApiOperation({ summary: 'Gửi tin nhắn đến user khác' })
   @ApiParam({ name: 'id', description: 'ID người gửi' })
   @ApiBody({ type: SendMessageDto })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'Tin nhắn đã gửi',
     schema: {
       type: 'object',

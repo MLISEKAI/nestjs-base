@@ -35,8 +35,6 @@ export default registerAs('jwt', () => {
     secret: process.env.JWT_TOKEN_SECRET || 'default_secret',
     expiresIn: expiresInSeconds,
     issuer: process.env.JWT_ISSUER || 'my-app',
-    refreshTtlMs: Number(
-      process.env.JWT_REFRESH_TTL_MS ?? DEFAULT_REFRESH_TTL_MS,
-    ),
+    refreshTtlMs: Number(process.env.JWT_REFRESH_TTL_MS ?? DEFAULT_REFRESH_TTL_MS),
   };
 });

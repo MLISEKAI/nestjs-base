@@ -5,14 +5,8 @@ import { PostsModule } from './modules/posts/posts.module';
 import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    AuthModule,
-    UsersModule,
-    PostsModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, UsersModule, PostsModule],
   controllers: [],
   providers: [],
 })
 export class AppModule {}
-

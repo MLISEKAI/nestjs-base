@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString, IsNotEmpty } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString, IsNotEmpty } from 'class-validator';
 
 export class LoveConnectionDto {
   @ApiProperty({ example: 'c1' })
@@ -35,4 +35,3 @@ export class UpdateLoveSpaceDto {
   @IsNotEmpty()
   bio?: string;
 }
-

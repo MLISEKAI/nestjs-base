@@ -29,18 +29,25 @@ export class UserProfileService {
   }
 
   async updateProfile(userId: string, dto: UpdateUserProfileDto) {
-    const existing = await this.prisma.resUser.findUnique({ where: { id: userId } });
-    if (!existing) throw new NotFoundException('User not found');
-    return this.prisma.resUser.update({
-      where: { id: userId },
-      data: {
-        nickname: dto.nickname,
-        avatar: dto.avatar,
-        bio: dto.bio,
-        gender: dto.gender,
-        birthday: dto.birthday ? new Date(dto.birthday) : undefined,
-      },
-    });
+    // Tối ưu: Dùng update trực tiếp, Prisma sẽ throw NotFoundException nếu user không tồn tại
+    try {
+      return await this.prisma.resUser.update({
+        where: { id: userId },
+        data: {
+          nickname: dto.nickname,
+          avatar: dto.avatar,
+          bio: dto.bio,
+          gender: dto.gender,
+          birthday: dto.birthday ? new Date(dto.birthday) : undefined,
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        // Prisma error code for record not found
+        throw new NotFoundException('User not found');
+      }
+      throw error;
+    }
   }
 
   async deleteProfile(userId: string) {

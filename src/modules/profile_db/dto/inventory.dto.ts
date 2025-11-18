@@ -16,7 +16,6 @@ export class InventoryItemDto {
   @IsNumber()
   @ApiProperty({ example: 1 })
   quantity?: number;
-
 }
 
 export class CreateInventoryItemDto {
@@ -30,7 +29,6 @@ export class CreateInventoryItemDto {
   @Type(() => Number)
   @IsNumber()
   quantity?: number;
-
 }
 
 export class UpdateInventoryItemDto {

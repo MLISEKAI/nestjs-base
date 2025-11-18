@@ -12,4 +12,3 @@ export class PaginationQuery {
   search?: string;
   sort?: string;
 }
-

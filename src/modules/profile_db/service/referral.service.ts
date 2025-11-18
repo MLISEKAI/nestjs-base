@@ -10,11 +10,15 @@ export class ReferralService {
   }
 
   async addReferral(userId: string, referredId: string) {
-    return this.prisma.resReferral.create({ data: { referrer_id: userId, referred_id: referredId } });
+    return this.prisma.resReferral.create({
+      data: { referrer_id: userId, referred_id: referredId },
+    });
   }
 
   async removeReferral(userId: string, referredId: string) {
-    await this.prisma.resReferral.deleteMany({ where: { referrer_id: userId, referred_id: referredId } });
+    await this.prisma.resReferral.deleteMany({
+      where: { referrer_id: userId, referred_id: referredId },
+    });
     return { message: 'Referral removed' };
   }
 }

@@ -37,7 +37,10 @@ export class ConnectionsResponseDto {
 }
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ example: 'NguyenVanA', description: 'Tên hiển thị / nickname của người dùng' })
+  @ApiPropertyOptional({
+    example: 'NguyenVanA',
+    description: 'Tên hiển thị / nickname của người dùng',
+  })
   @IsOptional()
   @IsString()
   nickname?: string;

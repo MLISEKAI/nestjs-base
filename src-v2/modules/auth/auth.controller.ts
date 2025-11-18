@@ -44,4 +44,3 @@ export class AuthController {
     return this.authService.login(body.ref_id, body.password);
   }
 }
-

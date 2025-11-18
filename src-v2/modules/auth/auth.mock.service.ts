@@ -37,9 +37,7 @@ export class AuthMockService {
 
     // Check email exists
     if (data.email) {
-      const emailExists = associates.find(
-        a => a.email === data.email && !a.is_deleted
-      );
+      const emailExists = associates.find((a) => a.email === data.email && !a.is_deleted);
       if (emailExists) {
         throw new BadRequestException('Email already in use');
       }
@@ -48,7 +46,7 @@ export class AuthMockService {
     // Check phone exists
     if (data.phone_number) {
       const phoneExists = associates.find(
-        a => a.phone_number === data.phone_number && !a.is_deleted
+        (a) => a.phone_number === data.phone_number && !a.is_deleted,
       );
       if (phoneExists) {
         throw new BadRequestException('Phone number already in use');
@@ -105,10 +103,10 @@ export class AuthMockService {
     const associates = this.mockData.loadData<MockAssociate>('associates.json');
 
     const associate = associates.find(
-      a =>
+      (a) =>
         (a.email === refId || a.phone_number === refId) &&
         !a.is_deleted &&
-        a.provider === 'password'
+        a.provider === 'password',
     );
 
     if (!associate) {
@@ -124,7 +122,7 @@ export class AuthMockService {
       throw new UnauthorizedException('Invalid password');
     }
 
-    const user = users.find(u => u.id === associate.user_id && !u.is_deleted);
+    const user = users.find((u) => u.id === associate.user_id && !u.is_deleted);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
@@ -138,4 +136,3 @@ export class AuthMockService {
     };
   }
 }
-

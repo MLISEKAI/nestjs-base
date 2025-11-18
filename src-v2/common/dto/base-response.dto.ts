@@ -16,4 +16,3 @@ export class BaseResponseDto<T> {
   @ApiProperty({ example: 'trace-123456' })
   traceId: string;
 }
-

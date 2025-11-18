@@ -47,7 +47,11 @@ export class RegisterUserDto {
   @IsNotEmpty()
   nickname: string;
 
-  @ApiProperty({ description: 'User avatar URL', example: 'https://avatar.com/a.png', required: false })
+  @ApiProperty({
+    description: 'User avatar URL',
+    example: 'https://avatar.com/a.png',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   avatar?: string;
@@ -83,11 +87,6 @@ export class LoginDto {
   @IsNotEmpty()
   @IsString()
   password: string;
-
-  @ApiPropertyOptional({ description: 'Two-factor authentication code', example: '123456' })
-  @IsOptional()
-  @IsString()
-  twoFactorCode?: string;
 }
 
 export class LoginOtpDto {
@@ -103,34 +102,60 @@ export class LoginOtpDto {
 }
 
 export class LoginOAuthDto {
-  @ApiProperty({ description: 'Provider', example: 'google', enum: ['google', 'facebook', 'anonymous'] })
+  @ApiProperty({
+    description: 'Provider (google, facebook, hoặc anonymous)',
+    example: 'google',
+    enum: ['google', 'facebook', 'anonymous'],
+  })
   @IsString()
   @IsNotEmpty()
   provider: 'google' | 'facebook' | 'anonymous';
 
-  @ApiProperty({ description: 'Provider unique id', example: 'google-uid-123' })
+  @ApiProperty({
+    description:
+      'Access token từ OAuth provider. BẮT BUỘC cho Google/Facebook (client-side flow). Server sẽ verify token và tự động lấy provider_id, email, nickname từ API. Không cần cho anonymous.',
+    example: 'ya29.a0AfH6SMBx...',
+  })
+  @ValidateIf((dto: LoginOAuthDto) => dto.provider !== 'anonymous')
   @IsString()
   @IsNotEmpty()
-  provider_id: string;
+  access_token?: string;
 
-  @ApiPropertyOptional({ description: 'Email from provider', example: 'user@example.com' })
+  @ApiPropertyOptional({
+    description:
+      '⚠️ KHÔNG CẦN GỬI - Provider unique id sẽ được tự động lấy từ access_token sau khi verify với Google/Facebook API. Chỉ cần gửi cho anonymous provider.',
+    example: 'google-uid-123',
+  })
+  @ValidateIf((dto: LoginOAuthDto) => dto.provider === 'anonymous')
+  @IsOptional()
+  @IsString()
+  provider_id?: string;
+
+  @ApiPropertyOptional({
+    description:
+      '⚠️ KHÔNG CẦN GỬI - Email sẽ được tự động lấy từ access_token sau khi verify. Chỉ cần gửi cho anonymous provider.',
+    example: 'user@example.com',
+  })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Preferred nickname', example: 'NguyenVanA' })
+  @ApiPropertyOptional({
+    description:
+      '⚠️ KHÔNG CẦN GỬI - Nickname sẽ được tự động lấy từ access_token sau khi verify. Chỉ cần gửi cho anonymous provider.',
+    example: 'NguyenVanA',
+  })
   @IsOptional()
   @IsString()
   nickname?: string;
-
-  @ApiPropertyOptional({ description: 'Two-factor authentication code', example: '' })
-  @IsOptional()
-  @IsString()
-  twoFactorCode?: string;
 }
 
 export class LinkProviderDto {
-  @ApiProperty({ description: 'Provider', example: 'google', enum: ['google', 'facebook', 'phone', 'password'] })
+  @ApiProperty({
+    description: 'Provider',
+    example: 'google',
+    enum: ['google', 'facebook', 'phone', 'password'],
+  })
   @IsString()
   @IsNotEmpty()
   provider: 'google' | 'facebook' | 'phone' | 'password';
@@ -140,17 +165,11 @@ export class LinkProviderDto {
   @IsNotEmpty()
   ref_id: string;
 
-  @ApiPropertyOptional({ description: 'Password (server sẽ tự hash)', example: 'P@ssw0rd1' })
-  @ValidateIf((dto: LinkProviderDto) => dto.provider === 'password' && !dto.hash)
-  @IsString()
-  @IsNotEmpty()
-  password?: string;
-
   @ApiPropertyOptional({
-    description: 'Bcrypt hash (tùy chọn khi provider = password, dùng thay cho password)',
+    description: 'Bcrypt hash (bắt buộc khi provider = password, bỏ trống các provider khác)',
     example: '$2b$10$...',
   })
-  @ValidateIf((dto: LinkProviderDto) => dto.provider === 'password' && !dto.password)
+  @ValidateIf((dto: LinkProviderDto) => dto.provider === 'password')
   @IsString()
   @IsNotEmpty()
   hash?: string;
@@ -191,7 +210,10 @@ export class TwoFactorCodeDto {
 }
 
 export class VerifyTwoFactorLoginDto {
-  @ApiProperty({ description: 'Temporary 2FA token returned from login', example: 'temp-token-value' })
+  @ApiProperty({
+    description: 'Temporary 2FA token returned from login',
+    example: 'temp-token-value',
+  })
   @IsString()
   @IsNotEmpty()
   temp_token: string;
@@ -207,4 +229,39 @@ export class RefreshTokenDto {
   @IsString()
   @IsNotEmpty()
   refresh_token: string;
+}
+
+export class RequestPasswordResetDto {
+  @ApiProperty({ description: 'Email để reset password', example: 'user@example.com' })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ description: 'Email', example: 'user@example.com' })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({ description: 'Verification code từ email', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+
+  @ApiProperty({
+    description:
+      'Password mới (8-20 characters, at least 1 uppercase letter, 1 lowercase letter, 1 number and 1 special character)',
+    example: 'NewP@ssw0rd1',
+    minLength: 8,
+    maxLength: 20,
+  })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(20)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/, {
+    message:
+      'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number and 1 special character',
+  })
+  newPassword: string;
 }

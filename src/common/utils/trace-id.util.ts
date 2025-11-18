@@ -1,8 +1,7 @@
 /**
  * Generate a trace ID for request tracking
  */
-const alphabet =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
 export function generateTraceId(length = 10): string {
   let id = '';

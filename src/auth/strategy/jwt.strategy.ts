@@ -49,12 +49,14 @@ export class AccountStrategy
       throw new UnauthorizedException('Invalid token payload: missing jti');
     }
 
-    const blacklisted = await this.prisma.resTokenBlacklist.findUnique({ where: { jti: payload.jti } });
+    const blacklisted = await this.prisma.resTokenBlacklist.findUnique({
+      where: { jti: payload.jti },
+    });
     if (blacklisted) {
       throw new UnauthorizedException('Token has been revoked');
     }
 
-    const user = await this.accountService.findUser(payload.sub);
+    const user = await this.accountService.findUser(payload.sub, true);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }

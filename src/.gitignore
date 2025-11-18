@@ -4,5 +4,5 @@ node_modules
 
 /generated/prisma
 
-firebase-service-account.json
 
+src/config/firebase-service-account.json

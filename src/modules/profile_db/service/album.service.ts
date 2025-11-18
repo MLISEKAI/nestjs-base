@@ -14,11 +14,32 @@ export class AlbumService {
   }
 
   async createAlbum(userId: string, dto: CreateAlbumDto) {
-    return this.prisma.resAlbum.create({ data: { user_id: userId, title: dto.title, image_url: dto.imageUrl } });
+    return this.prisma.resAlbum.create({
+      data: { user_id: userId, title: dto.title, image_url: dto.imageUrl },
+    });
   }
 
   async updateAlbum(userId: string, albumId: string, dto: UpdateAlbumDto) {
-    const existing = await this.prisma.resAlbum.findFirst({ where: { id: albumId, user_id: userId } });
+    // Tối ưu: Nếu có cả title và imageUrl, update trực tiếp
+    if (dto.title && dto.imageUrl) {
+      try {
+        return await this.prisma.resAlbum.update({
+          where: { id: albumId, user_id: userId },
+          data: { title: dto.title, image_url: dto.imageUrl },
+        });
+      } catch (error) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('Album not found');
+        }
+        throw error;
+      }
+    }
+
+    // Nếu thiếu một trong hai, query để lấy giá trị hiện tại
+    const existing = await this.prisma.resAlbum.findFirst({
+      where: { id: albumId, user_id: userId },
+      select: { title: true, image_url: true },
+    });
     if (!existing) throw new NotFoundException('Album not found');
     return this.prisma.resAlbum.update({
       where: { id: albumId },
@@ -36,19 +57,40 @@ export class AlbumService {
   }
 
   async addPhotoToAlbum(userId: string, albumId: string, imageUrl: string) {
-    const album = await this.prisma.resAlbum.findFirst({ where: { id: albumId, user_id: userId } });
-    if (!album) throw new NotFoundException('Album not found');
-    const [photo, count] = await this.prisma.$transaction([
-      this.prisma.resAlbumPhoto.create({ data: { album_id: albumId, image_url: imageUrl } }),
-      this.prisma.resAlbumPhoto.count({ where: { album_id: albumId } }),
-    ]);
-    return { photo, albumPhotoCount: count };
+    // Tối ưu: Verify album ownership bằng cách check trong transaction
+    // Nếu album không tồn tại hoặc không thuộc user, transaction sẽ fail
+    try {
+      const [album, photo, count] = await this.prisma.$transaction([
+        this.prisma.resAlbum.findFirstOrThrow({
+          where: { id: albumId, user_id: userId },
+          select: { id: true },
+        }),
+        this.prisma.resAlbumPhoto.create({ data: { album_id: albumId, image_url: imageUrl } }),
+        this.prisma.resAlbumPhoto.count({ where: { album_id: albumId } }),
+      ]);
+      return { photo, albumPhotoCount: count };
+    } catch (error) {
+      if (error.code === 'P2025' || error.code === 'P2003') {
+        throw new NotFoundException('Album not found or access denied');
+      }
+      throw error;
+    }
   }
 
   async deletePhotoFromAlbum(userId: string, albumId: string, photoId: string) {
-    const album = await this.prisma.resAlbum.findFirst({ where: { id: albumId, user_id: userId } });
-    if (!album) throw new NotFoundException('Album not found');
-    await this.prisma.resAlbumPhoto.delete({ where: { id: photoId } });
-    return { message: 'Photo deleted' };
+    // Tối ưu: Verify album ownership trước khi delete photo
+    try {
+      const album = await this.prisma.resAlbum.findFirstOrThrow({
+        where: { id: albumId, user_id: userId },
+        select: { id: true },
+      });
+      await this.prisma.resAlbumPhoto.delete({ where: { id: photoId } });
+      return { message: 'Photo deleted' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Album not found or access denied');
+      }
+      throw error;
+    }
   }
 }

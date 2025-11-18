@@ -28,7 +28,11 @@ export class PostsController {
 
   @Post()
   @ApiOperation({ summary: 'Tạo post mới (Mock)' })
-  @ApiBody({ schema: { properties: { user_id: { example: 'user-1' }, content: { example: 'Hello world!' } } } })
+  @ApiBody({
+    schema: {
+      properties: { user_id: { example: 'user-1' }, content: { example: 'Hello world!' } },
+    },
+  })
   @ApiOkResponse({ description: 'Post đã được tạo' })
   create(@Body() body: { user_id: string; content: string }) {
     return this.postsService.create(body.user_id, body.content);
@@ -52,4 +56,3 @@ export class PostsController {
     return { message: 'Post deleted successfully' };
   }
 }
-

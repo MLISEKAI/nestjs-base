@@ -18,13 +18,20 @@ export class PostService {
   }
 
   async updatePost(userId: string, postId: string, dto: UpdatePostDto) {
-    const existing = await this.prisma.resPost.findFirst({ where: { id: postId, user_id: userId } });
+    const existing = await this.prisma.resPost.findFirst({
+      where: { id: postId, user_id: userId },
+    });
     if (!existing) throw new NotFoundException('Post not found');
-    return this.prisma.resPost.update({ where: { id: postId }, data: { content: dto.content ?? existing.content } });
+    return this.prisma.resPost.update({
+      where: { id: postId },
+      data: { content: dto.content ?? existing.content },
+    });
   }
 
   async deletePost(userId: string, postId: string) {
-    const existing = await this.prisma.resPost.findFirst({ where: { id: postId, user_id: userId } });
+    const existing = await this.prisma.resPost.findFirst({
+      where: { id: postId, user_id: userId },
+    });
     if (!existing) throw new NotFoundException('Post not found');
     await this.prisma.resPost.delete({ where: { id: postId } });
     return { message: 'Post deleted' };

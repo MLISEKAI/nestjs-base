@@ -25,7 +25,7 @@ export class ClanService {
 
   async createClan(userId: string, dto: CreateClanDto) {
     const clan = await this.prisma.resClan.create({
-      data: { name: dto.name},
+      data: { name: dto.name },
     });
     await this.prisma.resUserClan.create({
       data: { user_id: userId, clan_id: clan.id, rank: 'Leader' },
@@ -34,7 +34,9 @@ export class ClanService {
   }
 
   async joinClan(userId: string, clanId: string) {
-    return this.prisma.resUserClan.create({ data: { user_id: userId, clan_id: clanId, rank: 'Member' } });
+    return this.prisma.resUserClan.create({
+      data: { user_id: userId, clan_id: clanId, rank: 'Member' },
+    });
   }
 
   async leaveClan(userId: string, clanId: string) {
@@ -43,9 +45,14 @@ export class ClanService {
   }
 
   async updateClanRole(userId: string, clanId: string, dto: UpdateClanRankDto) {
-    const existing = await this.prisma.resUserClan.findFirst({ where: { user_id: userId, clan_id: clanId } });
+    const existing = await this.prisma.resUserClan.findFirst({
+      where: { user_id: userId, clan_id: clanId },
+    });
     if (!existing) throw new NotFoundException('Membership not found');
-    return this.prisma.resUserClan.update({ where: { id: existing.id }, data: { rank: dto.rank ?? existing.rank } });
+    return this.prisma.resUserClan.update({
+      where: { id: existing.id },
+      data: { rank: dto.rank ?? existing.rank },
+    });
   }
 
   async getClanInfo(userId: string) {

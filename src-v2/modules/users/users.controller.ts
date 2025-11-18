@@ -29,7 +29,9 @@ export class UsersController {
 
   @Post()
   @ApiOperation({ summary: 'Tạo user mới (Mock)' })
-  @ApiBody({ schema: { properties: { nickname: { example: 'NewUser' }, bio: { example: 'Bio' } } } })
+  @ApiBody({
+    schema: { properties: { nickname: { example: 'NewUser' }, bio: { example: 'Bio' } } },
+  })
   @ApiOkResponse({ description: 'User đã được tạo' })
   create(@Body() userData: any) {
     return this.usersService.create(userData);
@@ -53,4 +55,3 @@ export class UsersController {
     return { message: 'User deleted successfully' };
   }
 }
-

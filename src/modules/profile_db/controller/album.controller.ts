@@ -1,5 +1,22 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiExtraModels, ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiExtraModels,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 import { AlbumDto, PhotoDto, CreateAlbumDto, UpdateAlbumDto, AddPhotoDto } from '../dto/album.dto';
 import { AlbumService } from '../service/album.service';
 
@@ -13,7 +30,7 @@ export class AlbumController {
   @Get()
   @ApiOperation({ summary: 'Danh sách album của user' })
   @ApiOkResponse({
-  description: 'Danh sách album của user',
+    description: 'Danh sách album của user',
     type: AlbumDto,
     isArray: true,
   })
@@ -25,7 +42,7 @@ export class AlbumController {
   @ApiOperation({ summary: 'Tạo album mới' })
   @ApiBody({ type: CreateAlbumDto })
   @ApiCreatedResponse({
-  description: 'Album được tạo',
+    description: 'Album được tạo',
     type: AlbumDto,
   })
   createAlbum(@Param('user_id') userId: string, @Body() dto: CreateAlbumDto) {
@@ -46,8 +63,8 @@ export class AlbumController {
   @Get(':album_id/photos')
   @ApiOperation({ summary: 'Danh sách ảnh trong album' })
   @ApiOkResponse({
-  description: 'Danh sách ảnh trong album',
-  type: PhotoDto,
+    description: 'Danh sách ảnh trong album',
+    type: PhotoDto,
     isArray: true,
   })
   getAlbumPhotos(@Param('user_id') userId: string, @Param('album_id') albumId: string) {
@@ -58,13 +75,12 @@ export class AlbumController {
   @ApiOperation({ summary: 'Thêm ảnh vào album' })
   @ApiBody({ type: AddPhotoDto })
   addPhotoToAlbum(
-  @Param('user_id') userId: string,
-  @Param('album_id') albumId: string,
-  @Body() dto: AddPhotoDto,
+    @Param('user_id') userId: string,
+    @Param('album_id') albumId: string,
+    @Body() dto: AddPhotoDto,
   ) {
     return this.albums.addPhotoToAlbum(userId, albumId, dto.imageUrl);
   }
-
 
   @Delete(':album_id/photos/:photo_id')
   @ApiOperation({ summary: 'Xóa ảnh khỏi album' })

@@ -18,12 +18,12 @@ export class PostsMockService {
     let posts = this.mockData.loadData<MockPost>('posts.json');
 
     if (userId) {
-      posts = posts.filter(p => p.user_id === userId);
+      posts = posts.filter((p) => p.user_id === userId);
     }
 
     if (query?.search) {
       const searchLower = query.search.toLowerCase();
-      posts = posts.filter(p => p.content.toLowerCase().includes(searchLower));
+      posts = posts.filter((p) => p.content.toLowerCase().includes(searchLower));
     }
 
     const page = query?.page || 1;
@@ -44,8 +44,8 @@ export class PostsMockService {
 
   findOne(id: string): MockPost {
     const posts = this.mockData.loadData<MockPost>('posts.json');
-    const post = posts.find(p => p.id === id);
-    
+    const post = posts.find((p) => p.id === id);
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
@@ -69,8 +69,8 @@ export class PostsMockService {
 
   update(id: string, content: string): MockPost {
     const posts = this.mockData.loadData<MockPost>('posts.json');
-    const index = posts.findIndex(p => p.id === id);
-    
+    const index = posts.findIndex((p) => p.id === id);
+
     if (index === -1) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
@@ -82,8 +82,7 @@ export class PostsMockService {
 
   delete(id: string): void {
     const posts = this.mockData.loadData<MockPost>('posts.json');
-    const filtered = posts.filter(p => p.id !== id);
+    const filtered = posts.filter((p) => p.id !== id);
     this.mockData.saveData('posts.json', filtered);
   }
 }
-

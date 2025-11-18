@@ -13,7 +13,6 @@ export class PostDto {
   @ApiProperty({ example: 'Hello world!' })
   content?: string;
 
-
   @IsOptional()
   @IsNumber()
   @ApiProperty({ example: 100 })

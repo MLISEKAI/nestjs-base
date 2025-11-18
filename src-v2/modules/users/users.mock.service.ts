@@ -25,18 +25,18 @@ export class UsersMockService {
 
   findAll(query: PaginationQuery): PaginatedResponse<MockUser> {
     let users = this.mockData.loadData<MockUser>('users.json');
-    
+
     // Filter deleted
-    users = users.filter(u => !u.is_deleted);
+    users = users.filter((u) => !u.is_deleted);
 
     // Search
     if (query.search) {
       const searchLower = query.search.toLowerCase();
       users = users.filter(
-        u =>
+        (u) =>
           u.nickname.toLowerCase().includes(searchLower) ||
           u.id.toLowerCase().includes(searchLower) ||
-          (u.bio && u.bio.toLowerCase().includes(searchLower))
+          (u.bio && u.bio.toLowerCase().includes(searchLower)),
       );
     }
 
@@ -73,8 +73,8 @@ export class UsersMockService {
 
   findOne(id: string): MockUser {
     const users = this.mockData.loadData<MockUser>('users.json');
-    const user = users.find(u => u.id === id && !u.is_deleted);
-    
+    const user = users.find((u) => u.id === id && !u.is_deleted);
+
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -107,8 +107,8 @@ export class UsersMockService {
 
   update(id: string, userData: Partial<MockUser>): MockUser {
     const users = this.mockData.loadData<MockUser>('users.json');
-    const index = users.findIndex(u => u.id === id && !u.is_deleted);
-    
+    const index = users.findIndex((u) => u.id === id && !u.is_deleted);
+
     if (index === -1) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -125,8 +125,8 @@ export class UsersMockService {
 
   delete(id: string): void {
     const users = this.mockData.loadData<MockUser>('users.json');
-    const index = users.findIndex(u => u.id === id);
-    
+    const index = users.findIndex((u) => u.id === id);
+
     if (index === -1) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -136,4 +136,3 @@ export class UsersMockService {
     this.mockData.saveData('users.json', users);
   }
 }
-

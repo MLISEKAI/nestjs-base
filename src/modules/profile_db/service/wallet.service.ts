@@ -28,19 +28,35 @@ export class WalletService {
   }
 
   async updateWallet(userId: string, dto: UpdateWalletDto) {
+    // Tối ưu: Nếu có cả balance và currency, update trực tiếp
+    // Nếu thiếu một trong hai, cần query để lấy giá trị hiện tại
+    if (dto.balance !== undefined && dto.currency) {
+      try {
+        return await this.prisma.resWallet.update({
+          where: { user_id: userId },
+          data: {
+            balance: new Prisma.Decimal(dto.balance),
+            currency: dto.currency,
+          },
+        });
+      } catch (error) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('Wallet not found');
+        }
+        throw error;
+      }
+    }
+
+    // Nếu thiếu một trong hai, query để lấy giá trị hiện tại
     const existing = await this.prisma.resWallet.findUnique({ where: { user_id: userId } });
     if (!existing) throw new NotFoundException('Wallet not found');
-    const updated = await this.prisma.resWallet.update({
+    return this.prisma.resWallet.update({
       where: { user_id: userId },
       data: {
-        balance:
-          dto.balance !== undefined
-            ? new Prisma.Decimal(dto.balance)
-            : existing.balance,
+        balance: dto.balance !== undefined ? new Prisma.Decimal(dto.balance) : existing.balance,
         currency: dto.currency ?? existing.currency,
       },
     });
-    return updated;
   }
 
   async deleteWallet(userId: string) {

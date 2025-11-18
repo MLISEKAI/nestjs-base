@@ -29,13 +29,15 @@ export class SanitizeInputPipe implements PipeTransform {
     }
 
     if (typeof value === 'object') {
-      return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [key, val]) => {
-        acc[key] = this.cleanValue(val);
-        return acc;
-      }, {});
+      return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>(
+        (acc, [key, val]) => {
+          acc[key] = this.cleanValue(val);
+          return acc;
+        },
+        {},
+      );
     }
 
     return value;
   }
 }
-

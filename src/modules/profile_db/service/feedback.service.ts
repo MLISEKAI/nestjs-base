@@ -23,7 +23,10 @@ export class FeedbackService {
   async updateFeedback(feedbackId: string, dto: FeedbackDto) {
     const existing = await this.prisma.resFeedback.findUnique({ where: { id: feedbackId } });
     if (!existing) throw new NotFoundException('Feedback not found');
-    return this.prisma.resFeedback.update({ where: { id: feedbackId }, data: { content: dto.message } });
+    return this.prisma.resFeedback.update({
+      where: { id: feedbackId },
+      data: { content: dto.message },
+    });
   }
 
   async deleteFeedback(feedbackId: string) {

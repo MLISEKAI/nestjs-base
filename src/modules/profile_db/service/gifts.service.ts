@@ -76,5 +76,4 @@ export class GiftsService {
   async getGiftMilestones(userId: string) {
     return this.prisma.resGiftMilestone.findMany({ where: { user_id: userId } });
   }
-
 }

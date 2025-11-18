@@ -1,7 +1,22 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { BaseQueryDto } from '../dto/base-query.dto';
-import { InventoryItemDto, CreateInventoryItemDto, UpdateInventoryItemDto } from '../dto/inventory.dto';
+import {
+  InventoryItemDto,
+  CreateInventoryItemDto,
+  UpdateInventoryItemDto,
+} from '../dto/inventory.dto';
 import { InventoryService } from '../service/inventory.service';
 
 @ApiTags('Inventory')

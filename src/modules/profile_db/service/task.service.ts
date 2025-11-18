@@ -12,19 +12,51 @@ export class TaskService {
   }
 
   async createTask(userId: string, dto: CreateTaskDto) {
-    return this.prisma.resTask.create({ data: { user_id: userId, title: dto.title, is_done: dto.is_done ?? false } });
+    return this.prisma.resTask.create({
+      data: { user_id: userId, title: dto.title, is_done: dto.is_done ?? false },
+    });
   }
 
   async updateTask(userId: string, taskId: string, dto: UpdateTaskDto) {
-    const existing = await this.prisma.resTask.findFirst({ where: { id: taskId, user_id: userId } });
-    if (!existing) throw new NotFoundException('Task not found');
-    return this.prisma.resTask.update({ where: { id: taskId }, data: { is_done: dto.is_done ?? existing.is_done } });
+    // Tối ưu: Dùng update trực tiếp với where condition, không cần query trước
+    try {
+      // Nếu không có is_done trong dto, cần lấy giá trị hiện tại
+      if (dto.is_done === undefined) {
+        const existing = await this.prisma.resTask.findFirst({
+          where: { id: taskId, user_id: userId },
+          select: { is_done: true },
+        });
+        if (!existing) throw new NotFoundException('Task not found');
+        return this.prisma.resTask.update({
+          where: { id: taskId },
+          data: { is_done: existing.is_done },
+        });
+      }
+
+      return await this.prisma.resTask.update({
+        where: { id: taskId, user_id: userId },
+        data: { is_done: dto.is_done },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Task not found');
+      }
+      throw error;
+    }
   }
 
   async deleteTask(userId: string, taskId: string) {
-    const existing = await this.prisma.resTask.findFirst({ where: { id: taskId, user_id: userId } });
-    if (!existing) throw new NotFoundException('Task not found');
-    await this.prisma.resTask.delete({ where: { id: taskId } });
-    return { message: 'Task deleted' };
+    // Tối ưu: Dùng delete trực tiếp với where condition
+    try {
+      await this.prisma.resTask.delete({
+        where: { id: taskId, user_id: userId },
+      });
+      return { message: 'Task deleted' };
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Task not found');
+      }
+      throw error;
+    }
   }
 }

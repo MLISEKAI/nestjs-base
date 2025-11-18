@@ -6,10 +6,10 @@ import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
  * Base Query DTO for pagination, search, and sorting
  */
 export class BaseQueryDto {
-  @ApiPropertyOptional({ 
-    example: 1, 
+  @ApiPropertyOptional({
+    example: 1,
     description: 'Page number (starts from 1)',
-    default: 1 
+    default: 1,
   })
   @IsOptional()
   @Type(() => Number)
@@ -17,10 +17,10 @@ export class BaseQueryDto {
   @Min(1)
   page: number = 1;
 
-  @ApiPropertyOptional({ 
-    example: 20, 
+  @ApiPropertyOptional({
+    example: 20,
     description: 'Number of items per page',
-    default: 20 
+    default: 20,
   })
   @IsOptional()
   @Type(() => Number)
@@ -28,20 +28,19 @@ export class BaseQueryDto {
   @Min(1)
   limit: number = 20;
 
-  @ApiPropertyOptional({ 
-    example: '', 
-    description: 'Search keyword' 
+  @ApiPropertyOptional({
+    example: '',
+    description: 'Search keyword',
   })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ 
-    example: 'created_at:desc', 
-    description: 'Sort field and order (field:asc or field:desc)' 
+  @ApiPropertyOptional({
+    example: 'created_at:desc',
+    description: 'Sort field and order (field:asc or field:desc)',
   })
   @IsOptional()
   @IsString()
   sort?: string;
 }
-

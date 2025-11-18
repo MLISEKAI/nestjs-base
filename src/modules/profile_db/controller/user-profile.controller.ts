@@ -1,4 +1,14 @@
-import { Controller, Get, Patch, Delete, Param, Body, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { UserProfileService } from '../service/user-profile.service';
 import { ProfileServiceDb } from '../profile_db.service';
@@ -9,7 +19,10 @@ import { StatsQueryDto } from '../dto/stats-query.dto';
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('profile')
 export class UserProfileController {
-  constructor(private readonly userProfile: UserProfileService, private readonly service: ProfileServiceDb) {}
+  constructor(
+    private readonly userProfile: UserProfileService,
+    private readonly service: ProfileServiceDb,
+  ) {}
 
   @Get(':user_id')
   @ApiOperation({ summary: 'Lấy thông tin cơ bản của user' })
@@ -117,7 +130,10 @@ export class UserProfileController {
       type: 'object',
       properties: {
         roomId: { example: 'room-123' },
-        status: { example: 'active', description: 'Trạng thái phòng (active, offline, in-game, etc.)' },
+        status: {
+          example: 'active',
+          description: 'Trạng thái phòng (active, offline, in-game, etc.)',
+        },
         participants: { example: 5 },
         role: { example: 'host', description: 'Vai trò của user trong phòng' },
         joinedAt: { example: '2025-11-12T08:00:00Z', description: 'Thời gian user vào phòng' },

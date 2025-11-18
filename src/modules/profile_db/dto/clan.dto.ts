@@ -58,12 +58,12 @@ export class UpdateClanRankDto {
 }
 
 export class CreateClanDto {
-@ApiProperty({ example: 'Warriors' })
-@IsString()
-name: string;
+  @ApiProperty({ example: 'Warriors' })
+  @IsString()
+  name: string;
 
-@ApiPropertyOptional({ example: 'Clan mạnh nhất thế giới' })
-@IsOptional()
-@IsString()
-description?: string;
+  @ApiPropertyOptional({ example: 'Clan mạnh nhất thế giới' })
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

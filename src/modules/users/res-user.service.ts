@@ -19,8 +19,8 @@ export class ResUserService {
     return this.profile.findOne(id);
   }
 
-  async findUser(id: string) {
-    return this.profile.findUser(id);
+  async findUser(id: string, includeAssociates = false) {
+    return this.profile.findUser(id, includeAssociates);
   }
 
   async updateProfile(id: string, dto: UpdateUserDto) {
@@ -63,7 +63,11 @@ export class ResUserService {
     return this.connections.getFriends(userId);
   }
 
-  async getConnections(userId: string, type: 'followers' | 'following' | 'friends', search?: string) {
+  async getConnections(
+    userId: string,
+    type: 'followers' | 'following' | 'friends',
+    search?: string,
+  ) {
     return this.connections.getConnections(userId, type, search);
   }
 
@@ -91,4 +95,3 @@ export class ResUserService {
     return this.albums.deletePhotoFromAlbum(userId, albumId, photoId);
   }
 }
-
