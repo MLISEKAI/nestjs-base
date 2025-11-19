@@ -9,6 +9,7 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,6 +32,11 @@ import {
   UpdateGiftDto,
 } from '../dto/gift.dto';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
+import { UserRateLimitGuard } from '../../../../common/rate-limit/guards/user-rate-limit.guard';
+import {
+  UserRateLimit,
+  RateLimitPresets,
+} from '../../../../common/rate-limit/decorators/user-rate-limit.decorator';
 
 @ApiTags('Gifts')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -304,6 +310,8 @@ export class GiftsController {
   }
 
   @Post()
+  @UseGuards(UserRateLimitGuard)
+  @UserRateLimit({ limit: 10, ttl: 60000 }) // 10 requests per minute
   @ApiOperation({ summary: 'Tạo mới quà tặng' })
   @ApiBody({ type: CreateGiftDto })
   @ApiCreatedResponse({ description: 'Quà tặng được tạo thành công' })

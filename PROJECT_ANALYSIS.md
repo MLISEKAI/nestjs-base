@@ -319,7 +319,7 @@ Hầu hết list endpoints hỗ trợ:
 - ⚠️ API versioning (v1, v2)
 - ⚠️ GraphQL endpoint (optional)
 - ⚠️ Webhooks
-- ⚠️ API rate limiting per user
+- ✅ API rate limiting per user
 
 ### 11. **Missing Features từ Schema**
 

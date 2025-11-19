@@ -11,6 +11,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { CacheModule } from './common/cache/cache.module';
 import { MonitoringModule } from './common/monitoring/monitoring.module';
+import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import databaseConfig from './config/database.config';
@@ -37,6 +38,7 @@ import jwtConfig from './config/jwt.config';
     RealtimeModule,
     CacheModule,
     MonitoringModule,
+    RateLimitModule,
   ],
   controllers: [AppController],
   providers: [
