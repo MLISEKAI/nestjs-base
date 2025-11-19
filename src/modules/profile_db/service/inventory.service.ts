@@ -18,7 +18,8 @@ export class InventoryService {
         where: { user_id: userId },
         take,
         skip,
-        orderBy: { created_at: 'desc' },
+        // Note: ResInventory không có created_at field, dùng id để order
+        orderBy: { id: 'desc' },
       }),
       this.prisma.resInventory.count({ where: { user_id: userId } }),
     ]);

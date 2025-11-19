@@ -23,8 +23,9 @@ export class EmailService {
       port: this.configService.get<number>('SMTP_PORT') ?? parseInt(process.env.SMTP_PORT || '587'),
       secure:
         this.configService.get<boolean>('SMTP_SECURE') ??
-        process.env.SMTP_SECURE === 'true' ??
-        false,
+        (typeof process.env.SMTP_SECURE !== 'undefined'
+          ? process.env.SMTP_SECURE === 'true'
+          : false),
       auth: {
         user: this.configService.get<string>('SMTP_USER') ?? process.env.SMTP_USER,
         pass: this.configService.get<string>('SMTP_PASS') ?? process.env.SMTP_PASS,

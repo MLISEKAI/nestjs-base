@@ -18,7 +18,8 @@ export class StoreService {
         where: { user_id: userId },
         take,
         skip,
-        orderBy: { created_at: 'desc' },
+        // Note: ResStoreItem không có created_at field, dùng id để order
+        orderBy: { id: 'desc' },
       }),
       this.prisma.resStoreItem.count({ where: { user_id: userId } }),
     ]);

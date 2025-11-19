@@ -17,8 +17,8 @@ import { SupportController } from './controller/support.controller';
 import { TaskController } from './controller/task.controller';
 import { UserProfileController } from './controller/user-profile.controller';
 import { VipController } from './controller/vip.controller';
-import { WalletController } from './controller/wallet.controller';
 import { ReferralController } from './controller/referral.controller';
+import { WalletController } from './wallet/controller/wallet.controller';
 
 import { AlbumService } from './service/album.service';
 import { ClanService } from './service/clan.service';
@@ -31,8 +31,15 @@ import { SupportService } from './service/support.service';
 import { TaskService } from './service/task.service';
 import { UserProfileService } from './service/user-profile.service';
 import { VipService } from './service/vip.service';
-import { WalletService } from './service/wallet.service';
 import { GiftsService } from './service/gifts.service';
+import { WalletService } from './wallet/service/wallet.service';
+import { WalletSummaryService } from './wallet/service/wallet-summary.service';
+import { RechargeService } from './wallet/service/recharge.service';
+import { SubscriptionService } from './wallet/service/subscription.service';
+import { TransactionService } from './wallet/service/transaction.service';
+import { ConvertService } from './wallet/service/convert.service';
+import { DepositService } from './wallet/service/deposit.service';
+import { IapService } from './wallet/service/iap.service';
 import { ReferralService } from './service/referral.service';
 
 @Module({
@@ -59,6 +66,13 @@ import { ReferralService } from './service/referral.service';
     UserProfileService,
     ProfileViewsServiceDb,
     WalletService,
+    WalletSummaryService,
+    RechargeService,
+    SubscriptionService,
+    TransactionService,
+    ConvertService,
+    DepositService,
+    IapService,
     VipService,
     StoreService,
     TaskService,

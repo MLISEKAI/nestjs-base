@@ -1,11 +1,11 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { FirebaseService } from './firebase.service';
+import { CloudinaryService } from './cloudinary.service';
 
 @Injectable()
 export class UploadService {
   private readonly logger = new Logger(UploadService.name);
 
-  constructor(private readonly firebaseService: FirebaseService) {}
+  constructor(private readonly cloudinaryService: CloudinaryService) {}
 
   async uploadImage(file: Express.Multer.File, folder: string = 'uploads'): Promise<string> {
     if (!file) {
@@ -25,15 +25,15 @@ export class UploadService {
     }
 
     try {
-      if (this.firebaseService.isConfigured()) {
-        return await this.firebaseService.uploadFile(file, folder);
+      if (this.cloudinaryService.isServiceConfigured()) {
+        return await this.cloudinaryService.uploadFile(file, folder);
       } else {
-        this.logger.warn('Firebase not configured, returning mock URL');
+        this.logger.warn('Cloudinary not configured, returning mock URL');
         return `https://example.com/${folder}/${Date.now()}-${file.originalname}`;
       }
     } catch (error) {
       this.logger.error('Upload failed', error);
-      throw new BadRequestException('Failed to upload file');
+      throw new BadRequestException(`Failed to upload file: ${error.message || 'Unknown error'}`);
     }
   }
 

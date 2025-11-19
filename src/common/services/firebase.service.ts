@@ -8,11 +8,12 @@ import { resolve } from 'node:path';
 export class FirebaseService implements OnModuleInit {
   private readonly logger = new Logger(FirebaseService.name);
   private bucket: any = null;
+  private projectId: string | null = null;
 
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
-    const defaultPath = './config/firebase-service-account.json';
+    const defaultPath = './src/config/firebase-service-account.json';
     const configuredPath =
       this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH') ?? defaultPath;
     const base64Credential = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_BASE64');
@@ -31,6 +32,7 @@ export class FirebaseService implements OnModuleInit {
             serviceAccount.projectId ??
             (serviceAccount as typeof serviceAccount & { project_id?: string }).project_id;
           resolvedProjectId = accountProjectId ?? resolvedProjectId;
+          this.projectId = resolvedProjectId;
           this.logger.log(`Loaded Firebase service account from ${configuredPath}`);
         } catch (error) {
           this.logger.error(
@@ -52,6 +54,7 @@ export class FirebaseService implements OnModuleInit {
           serviceAccount.projectId ??
           (serviceAccount as typeof serviceAccount & { project_id?: string }).project_id;
         resolvedProjectId = accountProjectId ?? resolvedProjectId;
+        this.projectId = resolvedProjectId;
         this.logger.log('Loaded Firebase service account from FIREBASE_SERVICE_ACCOUNT_BASE64');
       } catch (error) {
         this.logger.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_BASE64', error as Error);
@@ -102,15 +105,32 @@ export class FirebaseService implements OnModuleInit {
     });
 
     return new Promise((resolve, reject) => {
-      stream.on('error', (error) => {
+      stream.on('error', (error: any) => {
         this.logger.error('File upload error', error);
-        reject(error);
+
+        // Cải thiện error message cho bucket không tồn tại
+        if (error?.response?.status === 404 || error?.code === 404) {
+          const bucketName = this.bucket?.name || 'unknown';
+          const projectId = this.projectId || bucketName.split('.')[0] || 'your-project-id';
+          const errorMessage = `Firebase Storage bucket "${bucketName}" does not exist. Please enable Storage in Firebase Console: https://console.firebase.google.com/project/${projectId}/storage`;
+          this.logger.error(errorMessage);
+          reject(new Error(errorMessage));
+        } else {
+          reject(error);
+        }
       });
 
       stream.on('finish', async () => {
-        await fileUpload.makePublic();
-        const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
-        resolve(publicUrl);
+        try {
+          await fileUpload.makePublic();
+          const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
+          resolve(publicUrl);
+        } catch (error) {
+          this.logger.error('Failed to make file public', error);
+          // Vẫn trả về URL dù không make public được
+          const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
+          resolve(publicUrl);
+        }
       });
 
       stream.end(file.buffer);

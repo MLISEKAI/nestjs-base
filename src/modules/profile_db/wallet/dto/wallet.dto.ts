@@ -11,11 +11,12 @@ export class WalletDto {
 }
 
 export class CreateWalletDto {
-  @ApiProperty({ example: 'gem' })
+  @ApiProperty({ example: 'gem', description: 'Currency type (gem, gold, coin, etc.)' })
   @IsString()
-  currency: string;
+  @IsOptional()
+  currency?: string;
 
-  @ApiProperty({ example: 0, required: false })
+  @ApiProperty({ example: 0, required: false, description: 'Initial balance' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
