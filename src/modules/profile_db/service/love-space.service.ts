@@ -18,12 +18,29 @@ export class LoveSpaceService {
   }
 
   async updateLoveSpace(userId: string, dto: UpdateLoveSpaceDto) {
-    const existing = await this.prisma.resLoveSpace.findUnique({ where: { user_id: userId } });
-    if (!existing) throw new NotFoundException('Love Space not found');
-    return this.prisma.resLoveSpace.update({
-      where: { user_id: userId },
-      data: { bio: dto.bio ?? existing.bio },
-    });
+    try {
+      if (dto.bio === undefined) {
+        // Nếu không có bio, cần lấy giá trị hiện tại
+        const existing = await this.prisma.resLoveSpace.findUnique({
+          where: { user_id: userId },
+          select: { bio: true },
+        });
+        if (!existing) throw new NotFoundException('Love Space not found');
+        return this.prisma.resLoveSpace.update({
+          where: { user_id: userId },
+          data: { bio: existing.bio },
+        });
+      }
+      return await this.prisma.resLoveSpace.update({
+        where: { user_id: userId },
+        data: { bio: dto.bio },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Love Space not found');
+      }
+      throw error;
+    }
   }
 
   async deleteLoveSpace(userId: string) {

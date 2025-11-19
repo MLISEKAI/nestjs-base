@@ -2,13 +2,28 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BaseQueryDto } from '../dto/base-query.dto';
 import { CreateInventoryItemDto, UpdateInventoryItemDto } from '../dto/inventory.dto';
+import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class InventoryService {
   constructor(private prisma: PrismaService) {}
 
   async getInventory(userId: string, query?: BaseQueryDto) {
-    return this.prisma.resInventory.findMany({ where: { user_id: userId } });
+    const take = query?.limit && query.limit > 0 ? query.limit : 20;
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const skip = (page - 1) * take;
+
+    const [items, total] = await Promise.all([
+      this.prisma.resInventory.findMany({
+        where: { user_id: userId },
+        take,
+        skip,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.resInventory.count({ where: { user_id: userId } }),
+    ]);
+
+    return buildPaginatedResponse(items, total, page, take);
   }
 
   async addInventoryItem(userId: string, dto: CreateInventoryItemDto) {

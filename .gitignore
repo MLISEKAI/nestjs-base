@@ -398,3 +398,14 @@ Temporary Items
 dist
 .webpack
 .serverless/**/*.zip
+
+# Secrets and credentials - NEVER COMMIT THESE
+**/firebase-service-account.json
+**/*service-account*.json
+**/*credentials*.json
+**/*secret*.json
+**/*.key
+**/*.pem
+src/config/firebase-service-account.json
+config/firebase-service-account.json
+nestjs-*-firebase-adminsdk-*.json

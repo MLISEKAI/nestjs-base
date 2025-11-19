@@ -33,28 +33,44 @@ export class UserController {
     description: 'Sắp xếp (field:asc hoặc field:desc, ví dụ: created_at:desc)',
   })
   @ApiOkResponse({
-    description: 'Danh sách users với pagination',
+    description: 'Danh sách users với pagination (chuẩn format)',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Users fetched' },
-        users: { type: 'array', items: { $ref: '#/components/schemas/UserResponseDto' } },
-        page: { type: 'number', example: 1 },
-        limit: { type: 'number', example: 20 },
-        total: { type: 'number', example: 100 },
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/UserResponseDto' },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                item_count: { type: 'number', example: 10 },
+                total_items: { type: 'number', example: 100 },
+                items_per_page: { type: 'number', example: 20 },
+                total_pages: { type: 'number', example: 5 },
+                current_page: { type: 'number', example: 1 },
+              },
+            },
+          },
+        },
+        traceId: { type: 'string', example: 'VIHOLaKaWe' },
       },
     },
   })
   async searchUsers(@Req() req, @Query() query: SearchUsersQueryDto) {
     const currentUserId = req?.user?.id ?? null;
     const result = await this.profileService.searchUsers(query);
-    const usersWithStatus = await this.connectionsService.attachStatus(currentUserId, result.users);
+    const usersWithStatus = await this.connectionsService.attachStatus(currentUserId, result.items);
+    // ResponseInterceptor sẽ tự động wrap với format chuẩn
     return {
-      message: result.message,
-      users: usersWithStatus,
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
+      items: usersWithStatus,
+      meta: result.meta,
     };
   }
 

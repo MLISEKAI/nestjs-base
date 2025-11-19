@@ -10,7 +10,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Rsp<T>> {
     return next.handle().pipe(
       map((data: any) => ({
         error: false,
-        code: 1,
+        code: 0,
         message: 'Success',
         data,
         traceId,

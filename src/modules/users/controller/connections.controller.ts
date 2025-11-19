@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Param, Query, Req } from '@nestjs/common
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiOkResponse } from '@nestjs/swagger';
 import { UserConnectionsService } from '../service/user-connections.service';
 import { ConnectionsResponseDto } from '../dto/user-response';
+import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
 @ApiTags('Connections')
 @Controller('users')
@@ -41,9 +42,34 @@ export class ConnectionsController {
 
   @Get(':id/followers')
   @ApiOperation({ summary: 'Danh sách followers' })
-  @ApiOkResponse({ type: ConnectionsResponseDto })
-  async getFollowers(@Param('id') id: string) {
-    return this.connectionsService.getFollowers(id);
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách followers với pagination (chuẩn format)',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: { type: 'array' },
+            meta: { type: 'object' },
+          },
+        },
+        traceId: { type: 'string' },
+      },
+    },
+  })
+  async getFollowers(@Param('id') id: string, @Query() query: BaseQueryDto) {
+    return this.connectionsService.getFollowers(id, query.page || 1, query.limit || 20);
   }
 
   @Delete(':id/followers/:follower_id')
@@ -54,9 +80,34 @@ export class ConnectionsController {
 
   @Get(':id/friends')
   @ApiOperation({ summary: 'Danh sách friends' })
-  @ApiOkResponse({ type: ConnectionsResponseDto })
-  async getFriends(@Param('id') id: string) {
-    return this.connectionsService.getFriends(id);
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách friends với pagination (chuẩn format)',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: { type: 'array' },
+            meta: { type: 'object' },
+          },
+        },
+        traceId: { type: 'string' },
+      },
+    },
+  })
+  async getFriends(@Param('id') id: string, @Query() query: BaseQueryDto) {
+    return this.connectionsService.getFriends(id, query.page || 1, query.limit || 20);
   }
 
   @Delete(':id/friends/:friend_id')
@@ -74,12 +125,43 @@ export class ConnectionsController {
     enum: ['followers', 'following', 'friends'],
   })
   @ApiQuery({ name: 'search', required: false })
-  @ApiOkResponse({ type: ConnectionsResponseDto })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách connections với pagination (chuẩn format)',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: { type: 'array' },
+            meta: { type: 'object' },
+          },
+        },
+        traceId: { type: 'string' },
+      },
+    },
+  })
   async getConnections(
     @Param('id') userId: string,
     @Query('type') type: 'followers' | 'following' | 'friends',
-    @Query('search') search?: string,
+    @Query() query: BaseQueryDto & { search?: string },
   ) {
-    return this.connectionsService.getConnections(userId, type, search);
+    return this.connectionsService.getConnections(
+      userId,
+      type,
+      query.search,
+      query.page || 1,
+      query.limit || 20,
+    );
   }
 }

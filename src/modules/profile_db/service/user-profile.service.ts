@@ -56,14 +56,16 @@ export class UserProfileService {
   }
 
   async getStats(userId: string, query: StatsQueryDto) {
-    const posts = 0;
-    const followers = await this.prisma.resFollow.count({ where: { following_id: userId } });
-    const following = await this.prisma.resFollow.count({ where: { follower_id: userId } });
+    const [posts, followers, following] = await Promise.all([
+      this.prisma.resPost.count({ where: { user_id: userId } }),
+      this.prisma.resFollow.count({ where: { following_id: userId } }),
+      this.prisma.resFollow.count({ where: { follower_id: userId } }),
+    ]);
     return {
       posts,
       followers,
       following,
-      totalViews: Math.floor(Math.random() * 1000),
+      totalViews: Math.floor(Math.random() * 1000), // TODO: Tính từ profile views nếu có
     };
   }
 

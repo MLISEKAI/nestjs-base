@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserProfileService } from './user-profile.service';
 import { UserConnectionDto } from '../dto/connection-user.dto';
+import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class UserConnectionsService {
@@ -11,12 +12,12 @@ export class UserConnectionsService {
   ) {}
 
   async getStats(userId: string) {
-    const [followers, following, friends] = await Promise.all([
+    const [followers, following, friendsResult] = await Promise.all([
       this.prisma.resFollow.count({ where: { following_id: userId } }),
       this.prisma.resFollow.count({ where: { follower_id: userId } }),
-      (await this.getFriends(userId)).users.length,
+      this.getFriends(userId, 1, 1), // Chỉ cần lấy total, không cần data
     ]);
-    return { followers, following, friends };
+    return { followers, following, friends: friendsResult.meta.total_items };
   }
 
   async followUser(
@@ -136,52 +137,94 @@ export class UserConnectionsService {
     return this.attachFollowStatus(currentUserId, users);
   }
 
-  async getFollowing(userId: string) {
-    const following = await this.prisma.resFollow.findMany({
-      where: { follower_id: userId },
-      include: { following: true },
-    });
+  async getFollowing(userId: string, page = 1, limit = 20) {
+    const take = limit > 0 ? limit : 20;
+    const currentPage = page > 0 ? page : 1;
+    const skip = (currentPage - 1) * take;
+
+    const [following, total] = await Promise.all([
+      this.prisma.resFollow.findMany({
+        where: { follower_id: userId },
+        include: { following: true },
+        take,
+        skip,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.resFollow.count({ where: { follower_id: userId } }),
+    ]);
+
     const users = following.map((f) => f.following);
     const data = await this.attachFollowStatus(userId, users);
-    return { message: 'Following fetched', users: data };
+    return buildPaginatedResponse(data, total, currentPage, take);
   }
 
-  async getFollowers(userId: string) {
-    const followers = await this.prisma.resFollow.findMany({
-      where: { following_id: userId },
-      include: { follower: true },
-    });
+  async getFollowers(userId: string, page = 1, limit = 20) {
+    const take = limit > 0 ? limit : 20;
+    const currentPage = page > 0 ? page : 1;
+    const skip = (currentPage - 1) * take;
+
+    const [followers, total] = await Promise.all([
+      this.prisma.resFollow.findMany({
+        where: { following_id: userId },
+        include: { follower: true },
+        take,
+        skip,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.resFollow.count({ where: { following_id: userId } }),
+    ]);
+
     const users = followers.map((f) => f.follower);
     const data = await this.attachFollowStatus(userId, users);
-    return { message: 'Followers fetched', users: data };
+    return buildPaginatedResponse(data, total, currentPage, take);
   }
 
-  async getFriends(userId: string) {
-    const friends = await this.prisma.resFriend.findMany({
-      where: { OR: [{ user_a_id: userId }, { user_b_id: userId }] },
-      include: { userA: true, userB: true },
-    });
+  async getFriends(userId: string, page = 1, limit = 20) {
+    const take = limit > 0 ? limit : 20;
+    const currentPage = page > 0 ? page : 1;
+    const skip = (currentPage - 1) * take;
+
+    const where = { OR: [{ user_a_id: userId }, { user_b_id: userId }] };
+
+    const [friends, total] = await Promise.all([
+      this.prisma.resFriend.findMany({
+        where,
+        include: { userA: true, userB: true },
+        take,
+        skip,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.resFriend.count({ where }),
+    ]);
+
     const users = friends.map((f) => (f.user_a_id === userId ? f.userB : f.userA));
     const data = await this.attachFollowStatus(userId, users);
-    return { message: 'Friends fetched', users: data };
+    return buildPaginatedResponse(data, total, currentPage, take);
   }
 
   async getConnections(
     userId: string,
     type: 'followers' | 'following' | 'friends',
     search?: string,
+    page = 1,
+    limit = 20,
   ) {
-    let result: { message: string; users: UserConnectionDto[] } = { message: '', users: [] };
+    let result: { items: UserConnectionDto[]; meta: any };
 
-    if (type === 'followers') result = await this.getFollowers(userId);
-    else if (type === 'following') result = await this.getFollowing(userId);
-    else if (type === 'friends') result = await this.getFriends(userId);
+    if (type === 'followers') result = await this.getFollowers(userId, page, limit);
+    else if (type === 'following') result = await this.getFollowing(userId, page, limit);
+    else if (type === 'friends') result = await this.getFriends(userId, page, limit);
+    else {
+      return buildPaginatedResponse([], 0, page, limit);
+    }
 
     if (search) {
       const q = search.toLowerCase();
-      result.users = result.users.filter(
+      const filteredItems = result.items.filter(
         (u) => u.nickname.toLowerCase().includes(q) || u.id.toLowerCase().includes(q),
       );
+      // Recalculate meta for filtered results
+      return buildPaginatedResponse(filteredItems, filteredItems.length, page, limit);
     }
 
     return result;

@@ -10,7 +10,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { BaseQueryDto } from '../dto/base-query.dto';
 import {
   InventoryItemDto,
@@ -27,18 +27,40 @@ export class InventoryController {
 
   @Get()
   @ApiOperation({ summary: 'Danh sách vật phẩm của user' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
   @ApiOkResponse({
-    description: 'Danh sách vật phẩm theo schema Prisma',
+    description: 'Danh sách vật phẩm với pagination (chuẩn format)',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { example: 'inv-1' },
-          user_id: { example: 'user-1' },
-          item_id: { example: 'res-item-1' },
-          quantity: { example: 1 },
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { example: 'inv-1' },
+                  user_id: { example: 'user-1' },
+                  item_id: { example: 'res-item-1' },
+                  quantity: { example: 1 },
+                },
+              },
+            },
+            meta: { type: 'object' },
+          },
         },
+        traceId: { type: 'string' },
       },
     },
   })

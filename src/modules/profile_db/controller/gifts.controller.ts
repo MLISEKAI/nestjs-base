@@ -10,7 +10,15 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiCreatedResponse, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
 import { GiftsService } from '../service/gifts.service';
 import {
   CreateGiftDto,
@@ -18,6 +26,7 @@ import {
   TopSupporterDto,
   UpdateGiftDto,
 } from '../dto/gift.dto';
+import { BaseQueryDto } from '../dto/base-query.dto';
 
 @ApiTags('Gifts')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -26,10 +35,36 @@ export class GiftsController {
   constructor(private readonly service: GiftsService) {}
 
   @Get('summary')
-  @ApiOperation({ summary: 'Tổng quan quà tặng của user' })
-  @ApiOkResponse({ type: GiftSummaryResponseDto, description: 'Tổng quan quà tặng' })
-  getGiftsSummary(@Param('user_id') userId: string) {
-    return this.service.getGiftsSummary(userId);
+  @ApiOperation({ summary: 'Tổng quan quà tặng của user (với pagination)' })
+  @ApiParam({ name: 'user_id', description: 'ID của user nhận quà' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Tổng quan quà tặng với pagination (chuẩn format)',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: { type: 'array' },
+            meta: { type: 'object' },
+          },
+        },
+        traceId: { type: 'string' },
+      },
+    },
+  })
+  getGiftsSummary(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+    return this.service.getGiftsSummary(userId, query);
   }
 
   @Get('top')
@@ -110,10 +145,43 @@ export class GiftsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách toàn bộ quà tặng' })
-  @ApiOkResponse({ description: 'Danh sách quà tặng', type: [CreateGiftDto] })
-  findAll() {
-    return this.service.findAll();
+  @ApiOperation({
+    summary: 'Lấy danh sách quà tặng của user (với pagination)',
+    description:
+      'Lấy danh sách quà tặng mà user nhận được. Nếu không có user_id trong path, trả về tất cả quà tặng (admin only).',
+  })
+  @ApiParam({ name: 'user_id', description: 'ID của user nhận quà' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách quà tặng với pagination (chuẩn format)',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/CreateGiftDto' },
+            },
+            meta: { type: 'object' },
+          },
+        },
+        traceId: { type: 'string' },
+      },
+    },
+  })
+  findAll(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+    return this.service.findAll(userId, query);
   }
 
   @Get(':id')

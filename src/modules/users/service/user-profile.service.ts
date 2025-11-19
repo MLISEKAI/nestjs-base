@@ -1,16 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateUserDto } from '../dto/user-response';
+import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class UserProfileService {
   constructor(private prisma: PrismaService) {}
 
   async findUser(id: string, includeAssociates = false) {
+    // Tối ưu: Không include albums vì:
+    // 1. Đã có endpoint riêng GET /profile/:user_id/albums với pagination
+    // 2. Include albums + photos có thể load rất nhiều data (N albums × M photos)
+    // 3. Public profile chỉ cần thông tin cơ bản của user
+    // Nếu cần albums, client nên gọi endpoint riêng với pagination
     return this.prisma.resUser.findUnique({
       where: { id },
       include: {
-        albums: { include: { photos: true } },
         ...(includeAssociates && {
           associates: {
             select: {
@@ -86,7 +91,8 @@ export class UserProfileService {
       this.prisma.resUser.count({ where }),
     ]);
 
-    return { message: 'Users fetched', users, page, limit: take, total };
+    // Return in standard pagination format
+    return buildPaginatedResponse(users, total, page, take);
   }
 
   async uploadAvatar(userId: string, fileUrl: string) {

@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min } from 'class-validator';
 
 export class CreateGiftDto {
   @ApiProperty({ example: 'user-2', description: 'Người gửi quà' })
@@ -17,6 +17,7 @@ export class CreateGiftDto {
   @ApiProperty({ example: 1, description: 'Số lượng' })
   @IsOptional()
   @IsInt()
+  @Min(1)
   quantity?: number;
 
   @ApiProperty({ example: 'For you', description: 'Lời nhắn kèm quà' })
