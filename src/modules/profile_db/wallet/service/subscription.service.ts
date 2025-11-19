@@ -12,22 +12,23 @@ export class SubscriptionService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Get monthly cards
+   * Get monthly cards from database
    */
   async getMonthlyCards(): Promise<MonthlyCardDto[]> {
-    // TODO: Có thể lưu trong DB table ResMonthlyCard
-    // Hiện tại hardcode
-    return [
-      { cardId: 1, price: 99000, diamondsDaily: 50, name: 'Basic Monthly Card', duration: 30 },
-      {
-        cardId: 2,
-        price: 199000,
-        diamondsDaily: 120,
-        name: 'Premium Monthly Card',
-        duration: 30,
-      },
-      { cardId: 3, price: 299000, diamondsDaily: 200, name: 'VIP Monthly Card', duration: 30 },
-    ];
+    const cards = await this.prisma.resMonthlyCard.findMany({
+      where: { is_active: true },
+      orderBy: { card_id: 'asc' },
+    });
+
+    // Nếu chưa có data trong DB, trả về empty array
+    // Admin có thể seed data sau
+    return cards.map((card) => ({
+      cardId: card.card_id,
+      price: Number(card.price),
+      diamondsDaily: card.diamonds_daily,
+      name: card.name,
+      duration: card.duration,
+    }));
   }
 
   /**
@@ -37,18 +38,20 @@ export class SubscriptionService {
     userId: string,
     dto: PurchaseSubscriptionDto,
   ): Promise<PurchaseSubscriptionResponseDto> {
-    const cards = await this.getMonthlyCards();
-    const cardData = cards.find((c) => c.cardId === dto.cardId);
+    // Query card từ DB
+    const cardData = await this.prisma.resMonthlyCard.findUnique({
+      where: { card_id: dto.cardId },
+    });
 
-    if (!cardData) {
-      throw new NotFoundException('Monthly card not found');
+    if (!cardData || !cardData.is_active) {
+      throw new NotFoundException('Monthly card not found or inactive');
     }
 
-    // Update VIP status (hoặc tạo subscription model riêng)
+    // Update VIP status
     const subscriptionId = `SUB${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const startDate = new Date();
     const nextRenewal = new Date();
-    nextRenewal.setDate(nextRenewal.getDate() + (cardData.duration || 30));
+    nextRenewal.setDate(nextRenewal.getDate() + cardData.duration);
 
     // Upsert VIP status
     await this.prisma.resVipStatus.upsert({

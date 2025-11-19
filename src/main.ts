@@ -2,8 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ResponseInterceptor } from './common/response.interceptor';
-import { ResponseExceptionFilter } from './common/response-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { ResponseExceptionFilter } from './common/filters/response-exception.filter';
 import helmet from 'helmet';
 import { SanitizeInputPipe } from './common/pipes/sanitize-input.pipe';
 

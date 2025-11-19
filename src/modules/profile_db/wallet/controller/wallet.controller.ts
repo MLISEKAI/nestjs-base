@@ -18,7 +18,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
 } from '@nestjs/swagger';
-import { BaseQueryDto } from '../../dto/base-query.dto';
+import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { WalletService } from '../service/wallet.service';
 import { WalletSummaryService } from '../service/wallet-summary.service';
 import { RechargeService } from '../service/recharge.service';

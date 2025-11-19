@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { QuestScanDto } from './dto/questscan.dto';
 
 @Injectable()
 export class ProfileServiceDb {
   constructor(private prisma: PrismaService) {}
 
-  async postQuestScan(userId: string, dto: QuestScanDto) {
+  async postQuestScan(userId: string, dto: { qrCode: string }) {
     return { message: `Quest scanned successfully: ${dto.qrCode}` };
   }
 

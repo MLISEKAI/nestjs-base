@@ -1,37 +1,29 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
+// ==================== User Profile ====================
 import { ProfileServiceDb } from './profile_db.service';
 import { ProfileViewsControllerDb } from './profile-views_db/profile-views_db.controller';
 import { ProfileViewsServiceDb } from './profile-views_db/profile-views_db.service';
+import { UserProfileController } from './user-profile/controller/user-profile.controller';
+import { UserProfileService } from './user-profile/service/user-profile.service';
 
-import { AlbumController } from './controller/album.controller';
-import { ClanController } from './controller/clan.controller';
-import { FeedbackController } from './controller/feedback.controller';
-import { GiftsController } from './controller/gifts.controller';
-import { InventoryController } from './controller/inventory.controller';
-import { LoveSpaceController } from './controller/love-space.controller';
-import { PostController } from './controller/post.controller';
-import { StoreController } from './controller/store.controller';
-import { SupportController } from './controller/support.controller';
-import { TaskController } from './controller/task.controller';
-import { UserProfileController } from './controller/user-profile.controller';
-import { VipController } from './controller/vip.controller';
-import { ReferralController } from './controller/referral.controller';
+// ==================== Album ====================
+import { AlbumController } from './album/controller/album.controller';
+import { AlbumService } from './album/service/album.service';
+
+// ==================== Clan ====================
+import { ClanController } from './clan/controller/clan.controller';
+import { ClanService } from './clan/service/clan.service';
+
+// ==================== Gifts ====================
+import { GiftsController } from './gifts/controller/gifts.controller';
+import { GiftCrudService } from './gifts/service/gift-crud.service';
+import { GiftSummaryService } from './gifts/service/gift-summary.service';
+import { GiftCatalogService } from './gifts/service/gift-catalog.service';
+
+// ==================== Wallet ====================
 import { WalletController } from './wallet/controller/wallet.controller';
-
-import { AlbumService } from './service/album.service';
-import { ClanService } from './service/clan.service';
-import { FeedbackService } from './service/feedback.service';
-import { InventoryService } from './service/inventory.service';
-import { LoveSpaceService } from './service/love-space.service';
-import { PostService } from './service/post.service';
-import { StoreService } from './service/store.service';
-import { SupportService } from './service/support.service';
-import { TaskService } from './service/task.service';
-import { UserProfileService } from './service/user-profile.service';
-import { VipService } from './service/vip.service';
-import { GiftsService } from './service/gifts.service';
 import { WalletService } from './wallet/service/wallet.service';
 import { WalletSummaryService } from './wallet/service/wallet-summary.service';
 import { RechargeService } from './wallet/service/recharge.service';
@@ -40,31 +32,90 @@ import { TransactionService } from './wallet/service/transaction.service';
 import { ConvertService } from './wallet/service/convert.service';
 import { DepositService } from './wallet/service/deposit.service';
 import { IapService } from './wallet/service/iap.service';
-import { ReferralService } from './service/referral.service';
+
+// ==================== Inventory ====================
+import { InventoryController } from './inventory/controller/inventory.controller';
+import { InventoryService } from './inventory/service/inventory.service';
+
+// ==================== Store ====================
+import { StoreController } from './store/controller/store.controller';
+import { StoreService } from './store/service/store.service';
+
+// ==================== Task ====================
+import { TaskController } from './task/controller/task.controller';
+import { TaskService } from './task/service/task.service';
+
+// ==================== Feedback ====================
+import { FeedbackController } from './feedback/controller/feedback.controller';
+import { FeedbackService } from './feedback/service/feedback.service';
+
+// ==================== Post ====================
+import { PostController } from './post/controller/post.controller';
+import { PostService } from './post/service/post.service';
+
+// ==================== LoveSpace ====================
+import { LoveSpaceController } from './love-space/controller/love-space.controller';
+import { LoveSpaceService } from './love-space/service/love-space.service';
+
+// ==================== Vip ====================
+import { VipController } from './vip/controller/vip.controller';
+import { VipService } from './vip/service/vip.service';
+
+// ==================== Support ====================
+import { SupportController } from './support/controller/support.controller';
+import { SupportService } from './support/service/support.service';
+
+// ==================== Referral ====================
+import { ReferralController } from './referral/controller/referral.controller';
+import { ReferralService } from './referral/service/referral.service';
 
 @Module({
   imports: [PrismaModule],
   controllers: [
     ProfileViewsControllerDb,
+    // User Profile
     UserProfileController,
-    WalletController,
-    VipController,
-    StoreController,
-    TaskController,
-    LoveSpaceController,
-    InventoryController,
-    GiftsController,
-    ClanController,
-    FeedbackController,
-    SupportController,
-    ReferralController,
+    // Album
     AlbumController,
+    // Clan
+    ClanController,
+    // Gifts
+    GiftsController,
+    // Wallet
+    WalletController,
+    // Inventory
+    InventoryController,
+    // Store
+    StoreController,
+    // Task
+    TaskController,
+    // Feedback
+    FeedbackController,
+    // Post
     PostController,
+    // LoveSpace
+    LoveSpaceController,
+    // Vip
+    VipController,
+    // Support
+    SupportController,
+    // Referral
+    ReferralController,
   ],
   providers: [
     ProfileServiceDb,
-    UserProfileService,
     ProfileViewsServiceDb,
+    // User Profile
+    UserProfileService,
+    // Album
+    AlbumService,
+    // Clan
+    ClanService,
+    // Gifts
+    GiftCrudService,
+    GiftSummaryService,
+    GiftCatalogService,
+    // Wallet
     WalletService,
     WalletSummaryService,
     RechargeService,
@@ -73,18 +124,24 @@ import { ReferralService } from './service/referral.service';
     ConvertService,
     DepositService,
     IapService,
-    VipService,
-    StoreService,
-    TaskService,
-    LoveSpaceService,
+    // Inventory
     InventoryService,
-    ClanService,
+    // Store
+    StoreService,
+    // Task
+    TaskService,
+    // Feedback
     FeedbackService,
-    SupportService,
-    ReferralService,
+    // Post
     PostService,
-    AlbumService,
-    GiftsService,
+    // LoveSpace
+    LoveSpaceService,
+    // Vip
+    VipService,
+    // Support
+    SupportService,
+    // Referral
+    ReferralService,
   ],
 })
 export class ProfileModuleDb {}

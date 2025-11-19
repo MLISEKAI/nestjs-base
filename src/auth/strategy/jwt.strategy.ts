@@ -3,9 +3,9 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ModuleRef } from '@nestjs/core';
 import { UserBasicRole } from '@prisma/client';
-import { ResUserService } from '../../modules/users/res-user.service';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ResUserService } from 'src/modules/users/service/res-user.service';
+import { ConfigService } from '@nestjs/config';
 
 interface MyJwtPayload {
   sub: string;

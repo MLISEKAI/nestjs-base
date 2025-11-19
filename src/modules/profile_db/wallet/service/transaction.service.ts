@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BaseQueryDto } from '../../dto/base-query.dto';
+import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { TransactionHistoryItemDto } from '../dto/diamond-wallet.dto';
 import { buildPaginatedResponse } from '../../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../../common/interfaces/pagination.interface';

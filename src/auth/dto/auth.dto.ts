@@ -231,6 +231,17 @@ export class RefreshTokenDto {
   refresh_token: string;
 }
 
+export class LogoutDto {
+  @ApiPropertyOptional({
+    description:
+      'Refresh token (optional). Nếu có, sẽ revoke refresh token này. Nếu không, chỉ blacklist access token hiện tại.',
+    example: 'refresh-token-value',
+  })
+  @IsOptional()
+  @IsString()
+  refresh_token?: string;
+}
+
 export class RequestPasswordResetDto {
   @ApiProperty({ description: 'Email để reset password', example: 'user@example.com' })
   @IsEmail()

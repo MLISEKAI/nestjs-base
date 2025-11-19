@@ -13,6 +13,7 @@ import {
   VerifyPhoneCodeDto,
   TwoFactorCodeDto,
   RefreshTokenDto,
+  LogoutDto,
   VerifyTwoFactorLoginDto,
   RequestPasswordResetDto,
   ResetPasswordDto,
@@ -269,14 +270,18 @@ export class AuthController {
   }
 
   @Post('logout')
-  @ApiOperation({ summary: 'Đăng xuất và hủy token' })
-  @ApiBody({ type: RefreshTokenDto })
+  @ApiOperation({
+    summary: 'Đăng xuất và hủy token',
+    description:
+      'Blacklist access token hiện tại. Nếu có refresh_token trong body, sẽ revoke refresh token đó để ngăn tạo access token mới.',
+  })
+  @ApiBody({ type: LogoutDto, required: false })
   @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('account-auth'))
-  logout(@Body() dto: RefreshTokenDto, @Req() req: any) {
+  logout(@Body() dto: LogoutDto, @Req() req: any) {
     const authHeader = req.headers.authorization as string | undefined;
     const token = authHeader ? authHeader.split(' ')[1] : undefined;
-    return this.authService.logout(req.user.id, dto.refresh_token, token);
+    return this.authService.logout(req.user.id, dto?.refresh_token, token);
   }
 
   @Get('me')

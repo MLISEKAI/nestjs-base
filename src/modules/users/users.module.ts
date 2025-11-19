@@ -5,7 +5,7 @@ import { UserConnectionsService } from './service/user-connections.service';
 import { UserMessagingService } from './service/user-messaging.service';
 import { UserAlbumsService } from './service/user-albums.service';
 import { MessagesController } from './controller/messages.controller';
-import { ResUserService } from './res-user.service';
+import { ResUserService } from './service/res-user.service';
 import { ConnectionsController } from './controller/connections.controller';
 import { UserController } from './controller/users.controller';
 

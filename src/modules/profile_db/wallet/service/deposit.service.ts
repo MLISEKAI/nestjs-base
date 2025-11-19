@@ -16,18 +16,44 @@ export class DepositService {
    * Create deposit address (generate wallet address for VEX deposit)
    */
   async createDeposit(userId: string): Promise<CreateDepositResponseDto> {
-    // TODO: Tích hợp với blockchain service để generate address
-    // Hiện tại mock
-    const depositAddress = `0x${Math.random().toString(16).substr(2, 40)}`;
-    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${depositAddress}`;
+    // Kiểm tra xem đã có deposit address chưa
+    const existing = await this.prisma.resDepositAddress.findUnique({
+      where: { user_id: userId },
+    });
 
-    // TODO: Lưu deposit address vào DB (có thể tạo model ResDepositAddress)
+    if (existing) {
+      // Nếu đã có, trả về address hiện tại
+      return {
+        depositAddress: existing.deposit_address,
+        qrCode: existing.qr_code || this.generateQrCode(existing.deposit_address),
+        network: existing.network,
+      };
+    }
+
+    // TODO: Tích hợp với blockchain service để generate address thật
+    // Hiện tại generate mock address
+    const depositAddress = `0x${Math.random().toString(16).substr(2, 40)}`;
+    const qrCode = this.generateQrCode(depositAddress);
+
+    // Lưu deposit address vào DB
+    await this.prisma.resDepositAddress.create({
+      data: {
+        user_id: userId,
+        deposit_address: depositAddress,
+        qr_code: qrCode,
+        network: 'Ethereum',
+      },
+    });
 
     return {
       depositAddress,
       qrCode,
       network: 'Ethereum',
     };
+  }
+
+  private generateQrCode(address: string): string {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${address}`;
   }
 
   /**
@@ -77,14 +103,13 @@ export class DepositService {
    * Get deposit info
    */
   async getDepositInfo(userId: string): Promise<DepositInfoResponseDto> {
-    // TODO: Lấy từ DB nếu đã tạo deposit address
-    // Hiện tại tạo mới nếu chưa có
+    // Lấy từ DB nếu đã có, nếu chưa có thì tạo mới
     const deposit = await this.createDeposit(userId);
 
     return {
       depositAddress: deposit.depositAddress,
       qrCode: deposit.qrCode,
-      network: deposit.network || 'Ethereum',
+      network: deposit.network,
     };
   }
 }

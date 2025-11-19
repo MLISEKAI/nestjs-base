@@ -13,18 +13,22 @@ export class RechargeService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Get recharge packages (có thể lưu trong DB hoặc hardcode)
+   * Get recharge packages from database
    */
   async getRechargePackages(): Promise<RechargePackageDto[]> {
-    // TODO: Có thể lưu trong DB table ResRechargePackage
-    // Hiện tại hardcode
-    return [
-      { packageId: 1, diamonds: 100, price: 10000, bonus: 'Bonus 10 diamonds' },
-      { packageId: 2, diamonds: 500, price: 45000, bonus: 'Bonus 50 diamonds' },
-      { packageId: 3, diamonds: 1000, price: 85000, bonus: 'Bonus 100 diamonds' },
-      { packageId: 4, diamonds: 2000, price: 160000, bonus: 'Bonus 200 diamonds' },
-      { packageId: 5, diamonds: 5000, price: 380000, bonus: 'Bonus 500 diamonds' },
-    ];
+    const packages = await this.prisma.resRechargePackage.findMany({
+      where: { is_active: true },
+      orderBy: { package_id: 'asc' },
+    });
+
+    // Nếu chưa có data trong DB, trả về empty array
+    // Admin có thể seed data sau
+    return packages.map((pkg) => ({
+      packageId: pkg.package_id,
+      diamonds: pkg.diamonds,
+      price: Number(pkg.price),
+      bonus: pkg.bonus || undefined,
+    }));
   }
 
   /**
@@ -34,11 +38,13 @@ export class RechargeService {
     userId: string,
     dto: CheckoutRechargeDto,
   ): Promise<CheckoutRechargeResponseDto> {
-    const packages = await this.getRechargePackages();
-    const packageData = packages.find((p) => p.packageId === dto.packageId);
+    // Query package từ DB
+    const packageData = await this.prisma.resRechargePackage.findUnique({
+      where: { package_id: dto.packageId },
+    });
 
-    if (!packageData) {
-      throw new NotFoundException('Recharge package not found');
+    if (!packageData || !packageData.is_active) {
+      throw new NotFoundException('Recharge package not found or inactive');
     }
 
     // Tạo transaction
@@ -74,9 +80,9 @@ export class RechargeService {
 
     return {
       transactionId,
-      amount: packageData.price,
+      amount: Number(packageData.price),
       status: 'pending',
-      paymentUrl: `https://payment.gateway/checkout/${transactionId}`, // Mock URL
+      paymentUrl: `https://payment.gateway/checkout/${transactionId}`, // TODO: Tích hợp payment gateway thật
     };
   }
 }

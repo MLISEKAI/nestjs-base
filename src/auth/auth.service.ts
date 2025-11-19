@@ -569,9 +569,21 @@ export class AuthService {
     return this.buildTokenResponse(access.token, rotatedRefresh, access.expiresAt);
   }
 
-  async logout(userId: string, refreshToken: string, accessToken?: string) {
-    await this.tokenService.revokeRefreshToken(refreshToken, userId);
+  async logout(userId: string, refreshToken?: string, accessToken?: string) {
+    // Blacklist access token hiện tại (luôn luôn làm)
     await this.tokenService.blacklistAccessToken(accessToken, userId, 'logout');
+
+    // Nếu có refresh token, revoke nó để ngăn tạo access token mới
+    if (refreshToken) {
+      try {
+        await this.tokenService.revokeRefreshToken(refreshToken, userId);
+      } catch (error) {
+        // Nếu refresh token không hợp lệ hoặc đã revoked, không cần throw error
+        // Vì mục đích chính là blacklist access token, đã hoàn thành
+        this.logger.warn(`Failed to revoke refresh token during logout: ${error.message}`);
+      }
+    }
+
     return { success: true };
   }
 
