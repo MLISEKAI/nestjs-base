@@ -5,12 +5,12 @@ import { NotificationType, NotificationStatus } from '@prisma/client';
 export class CreateNotificationDto {
   @ApiProperty({ example: 'user-id-123', description: 'ID người nhận notification' })
   @IsUUID()
-  userId: string;
+  user_id: string;
 
   @ApiPropertyOptional({ example: 'sender-id-456', description: 'ID người gửi (null nếu system)' })
   @IsOptional()
   @IsUUID()
-  senderId?: string;
+  sender_id?: string;
 
   @ApiProperty({ enum: NotificationType, example: NotificationType.MESSAGE })
   @IsEnum(NotificationType)
@@ -49,10 +49,10 @@ export class NotificationResponseDto {
   id: string;
 
   @ApiProperty()
-  userId: string;
+  user_id: string;
 
   @ApiPropertyOptional()
-  senderId?: string;
+  sender_id?: string;
 
   @ApiProperty({ enum: NotificationType })
   type: NotificationType;
@@ -73,8 +73,8 @@ export class NotificationResponseDto {
   link?: string;
 
   @ApiProperty()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  updated_at: Date;
 }

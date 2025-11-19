@@ -8,6 +8,8 @@ import {
   SearchUsersQueryDto,
 } from '../dto/user-response';
 import { UserConnectionsService } from '../service/user-connections.service';
+import { UserLevelService } from '../service/user-level.service';
+import { UserBalanceDto } from '../dto/user-level.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -15,6 +17,7 @@ export class UserController {
   constructor(
     private readonly profileService: UserProfileService,
     private readonly connectionsService: UserConnectionsService,
+    private readonly levelService: UserLevelService,
   ) {}
 
   @Get()
@@ -105,5 +108,13 @@ export class UserController {
   @ApiBody({ type: UploadAvatarDto })
   async uploadAvatar(@Param('id') id: string, @Body() dto: UploadAvatarDto) {
     return this.profileService.uploadAvatar(id, dto.fileUrl);
+  }
+
+  @Get(':id/balance')
+  @ApiOperation({ summary: 'Lấy thông tin cấp độ và XP của user' })
+  @ApiParam({ name: 'id', description: 'ID của user', example: 'user-id-123' })
+  @ApiOkResponse({ type: UserBalanceDto })
+  async getBalance(@Param('id') id: string) {
+    return this.levelService.getUserBalance(id);
   }
 }

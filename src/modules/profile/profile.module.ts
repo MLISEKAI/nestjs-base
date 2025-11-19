@@ -22,6 +22,7 @@ import { GiftsController } from './gifts/controller/gifts.controller';
 import { GiftCrudService } from './gifts/service/gift-crud.service';
 import { GiftSummaryService } from './gifts/service/gift-summary.service';
 import { GiftCatalogService } from './gifts/service/gift-catalog.service';
+import { UserGiftWallService } from '../users/service/user-gift-wall.service';
 
 // ==================== Wallet ====================
 import { WalletController } from './wallet/controller/wallet.controller';
@@ -122,6 +123,7 @@ import { BlockUserService } from './block-user/service/block-user.service';
     GiftCrudService,
     GiftSummaryService,
     GiftCatalogService,
+    UserGiftWallService,
     // Wallet
     WalletService,
     WalletSummaryService,

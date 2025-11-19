@@ -22,6 +22,8 @@ import {
 import { GiftCrudService } from '../service/gift-crud.service';
 import { GiftSummaryService } from '../service/gift-summary.service';
 import { GiftCatalogService } from '../service/gift-catalog.service';
+import { UserGiftWallService } from '../../../users/service/user-gift-wall.service';
+import { InventoryService } from '../../inventory/service/inventory.service';
 import {
   CreateGiftDto,
   GiftSummaryResponseDto,
@@ -38,6 +40,8 @@ export class GiftsController {
     private readonly crudService: GiftCrudService,
     private readonly summaryService: GiftSummaryService,
     private readonly catalogService: GiftCatalogService,
+    private readonly giftWallService: UserGiftWallService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   @Get('summary')
@@ -102,6 +106,12 @@ export class GiftsController {
 
   @Get('items')
   @ApiOperation({ summary: 'Danh sách item quà tặng' })
+  @ApiQuery({ name: 'category', required: false, description: 'ID của category' })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Loại quà: hot, event, lucky, friendship, vip, normal',
+  })
   @ApiOkResponse({
     description: 'Danh sách item quà tặng',
     schema: {
@@ -114,12 +124,13 @@ export class GiftsController {
           price: { example: 100 },
           category_id: { example: 'cat-1' },
           image_url: { example: 'https://img.com/rose.png' },
+          type: { example: 'normal' },
         },
       },
     },
   })
-  getItems(@Query('category_id') categoryId?: string) {
-    return this.catalogService.getGiftItems(categoryId);
+  getItems(@Query('category') categoryId?: string, @Query('type') type?: string) {
+    return this.catalogService.getGiftItems(categoryId, type);
   }
 
   @Get('milestones')
@@ -142,12 +153,164 @@ export class GiftsController {
     return this.summaryService.getGiftMilestones(userId);
   }
 
+  @Get('gift-wall')
+  @ApiOperation({ summary: 'Lấy thông tin tổng quan Gift Wall' })
+  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiOkResponse({
+    description: 'Thông tin Gift Wall',
+    schema: {
+      type: 'object',
+      properties: {
+        user_id: { type: 'string', example: '123' },
+        username: { type: 'string', example: 'Darlene Bears' },
+        avatar_url: { type: 'string', example: '/avatars/darlene.jpg' },
+        total_gifts: { type: 'number', example: 112 },
+        xp_to_next_level: { type: 'number', example: 200 },
+        level: { type: 'number', example: 34 },
+        description: { type: 'string', example: 'Help me light up the Gift Wall.' },
+      },
+    },
+  })
+  getGiftWall(@Param('user_id') userId: string) {
+    return this.giftWallService.getGiftWall(userId);
+  }
+
+  @Get('gift-wall/:milestone_id/givers')
+  @ApiOperation({ summary: 'Lấy danh sách milestones với progress' })
+  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiParam({
+    name: 'milestone_id',
+    description: 'ID của milestone (optional, nếu không có thì trả về tất cả)',
+    required: false,
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Danh sách milestones với progress',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          milestone_id: { type: 'string', example: 'gift-item-1' },
+          name: { type: 'string', example: 'Quà tặng 1' },
+          icon_url: { type: 'string', example: '/images/gift_milestone_1.png' },
+          required_count: { type: 'number', example: 10 },
+          current_count: { type: 'number', example: 5 },
+          is_unlocked: { type: 'boolean', example: false },
+          progress: { type: 'number', example: 0.5 },
+        },
+      },
+    },
+  })
+  getGiftWallMilestones(
+    @Param('user_id') userId: string,
+    @Param('milestone_id') milestoneId?: string,
+  ) {
+    return this.giftWallService.getGiftWallMilestones(userId);
+  }
+
+  @Get('recent-gifts')
+  @ApiOperation({ summary: 'Lấy danh sách quà nhận gần đây' })
+  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách quà nhận gần đây',
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              transaction_id: { type: 'string', example: 'tx12345' },
+              sender: {
+                type: 'object',
+                properties: {
+                  user_id: { type: 'string', example: '101' },
+                  username: { type: 'string', example: 'Malenna Calzoni' },
+                  avatar_url: { type: 'string', example: '/avatars/malenna.jpg' },
+                },
+              },
+              gift_info: {
+                type: 'object',
+                properties: {
+                  gift_name: { type: 'string', example: 'Quà x1' },
+                  icon_url: { type: 'string', example: '/images/gift_icon_a.png' },
+                  quantity: { type: 'number', example: 1 },
+                },
+              },
+              timestamp: { type: 'string', example: '2025-11-07T18:00:00Z' },
+            },
+          },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            item_count: { type: 'number' },
+            total_items: { type: 'number' },
+            items_per_page: { type: 'number' },
+            total_pages: { type: 'number' },
+            current_page: { type: 'number' },
+          },
+        },
+      },
+    },
+  })
+  getRecentGifts(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const limit = query?.limit && query.limit > 0 ? query.limit : 20;
+    return this.giftWallService.getRecentGifts(userId, page, limit);
+  }
+
+  @Get('inventory')
+  @ApiOperation({ summary: 'Lấy danh sách vật phẩm trong inventory (gift bag)' })
+  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách vật phẩm trong inventory',
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              item_id: { example: '101' },
+              name: { example: 'Rose' },
+              quantity: { example: 5 },
+            },
+          },
+        },
+        meta: { type: 'object' },
+      },
+    },
+  })
+  getInventory(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+    return this.inventoryService.getInventory(userId, query);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Tạo mới quà tặng' })
   @ApiBody({ type: CreateGiftDto })
   @ApiCreatedResponse({ description: 'Quà tặng được tạo thành công' })
-  create(@Body() dto: CreateGiftDto) {
-    return this.crudService.create(dto);
+  create(@Param('user_id') userId: string, @Body() dto: CreateGiftDto) {
+    // Set sender_id từ path param nếu chưa có
+    const giftDto = { ...dto, sender_id: dto.sender_id || userId };
+    return this.crudService.create(giftDto);
   }
 
   @Get()

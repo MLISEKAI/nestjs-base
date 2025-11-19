@@ -7,10 +7,13 @@ export class InventoryItemDto {
   id: string;
 
   @ApiProperty({ example: 'user-1' })
-  userId: string;
+  user_id: string;
 
   @ApiProperty({ example: 'res-item-1' })
-  itemId: string;
+  item_id: string;
+
+  @ApiProperty({ example: 'Rose', description: 'Tên của item' })
+  name?: string;
 
   @IsOptional()
   @IsNumber()

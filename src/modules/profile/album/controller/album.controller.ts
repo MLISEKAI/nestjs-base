@@ -79,7 +79,7 @@ export class AlbumController {
     @Param('album_id') albumId: string,
     @Body() dto: AddPhotoDto,
   ) {
-    return this.albums.addPhotoToAlbum(userId, albumId, dto.imageUrl);
+    return this.albums.addPhotoToAlbum(userId, albumId, dto.image_url);
   }
 
   @Delete(':album_id/photos/:photo_id')

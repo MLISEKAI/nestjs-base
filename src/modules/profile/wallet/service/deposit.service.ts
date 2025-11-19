@@ -24,8 +24,8 @@ export class DepositService {
     if (existing) {
       // Nếu đã có, trả về address hiện tại
       return {
-        depositAddress: existing.deposit_address,
-        qrCode: existing.qr_code || this.generateQrCode(existing.deposit_address),
+        deposit_address: existing.deposit_address,
+        qr_code: existing.qr_code || this.generateQrCode(existing.deposit_address),
         network: existing.network,
       };
     }
@@ -46,8 +46,8 @@ export class DepositService {
     });
 
     return {
-      depositAddress,
-      qrCode,
+      deposit_address: depositAddress,
+      qr_code: qrCode,
       network: 'Ethereum',
     };
   }
@@ -107,8 +107,8 @@ export class DepositService {
     const deposit = await this.createDeposit(userId);
 
     return {
-      depositAddress: deposit.depositAddress,
-      qrCode: deposit.qrCode,
+      deposit_address: deposit.deposit_address,
+      qr_code: deposit.qr_code,
       network: deposit.network,
     };
   }

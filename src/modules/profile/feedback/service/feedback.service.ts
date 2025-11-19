@@ -9,11 +9,11 @@ export class FeedbackService {
   constructor(private prisma: PrismaService) {}
 
   async postFeedback(dto: FeedbackDto) {
-    const { userId, message } = dto;
+    const { user_id, message } = dto;
     return this.prisma.resFeedback.create({
       data: {
         content: message,
-        user_id: userId || undefined,
+        user_id: user_id || undefined,
       },
     });
   }

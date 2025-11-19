@@ -191,7 +191,7 @@ export class BlockUserService {
 
     return blocks.map((block) => ({
       id: block.id,
-      blockedAt: block.created_at,
+      blocked_at: block.created_at,
       user: block.blocked,
     }));
   }
@@ -224,7 +224,7 @@ export class BlockUserService {
 
     return blocks.map((block) => ({
       id: block.id,
-      blockedAt: block.created_at,
+      blocked_at: block.created_at,
       user: block.blocker,
     }));
   }

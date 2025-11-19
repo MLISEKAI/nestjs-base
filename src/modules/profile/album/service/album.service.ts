@@ -29,17 +29,17 @@ export class AlbumService {
 
   async createAlbum(userId: string, dto: CreateAlbumDto) {
     return this.prisma.resAlbum.create({
-      data: { user_id: userId, title: dto.title, image_url: dto.imageUrl },
+      data: { user_id: userId, title: dto.title, image_url: dto.image_url },
     });
   }
 
   async updateAlbum(userId: string, albumId: string, dto: UpdateAlbumDto) {
-    // Tối ưu: Nếu có cả title và imageUrl, update trực tiếp
-    if (dto.title && dto.imageUrl) {
+    // Tối ưu: Nếu có cả title và image_url, update trực tiếp
+    if (dto.title && dto.image_url) {
       try {
         return await this.prisma.resAlbum.update({
           where: { id: albumId, user_id: userId },
-          data: { title: dto.title, image_url: dto.imageUrl },
+          data: { title: dto.title, image_url: dto.image_url },
         });
       } catch (error) {
         if (error.code === 'P2025') {
@@ -57,7 +57,7 @@ export class AlbumService {
     if (!existing) throw new NotFoundException('Album not found');
     return this.prisma.resAlbum.update({
       where: { id: albumId },
-      data: { title: dto.title ?? existing.title, image_url: dto.imageUrl ?? existing.image_url },
+      data: { title: dto.title ?? existing.title, image_url: dto.image_url ?? existing.image_url },
     });
   }
 

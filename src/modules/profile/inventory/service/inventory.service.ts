@@ -20,11 +20,28 @@ export class InventoryService {
         skip,
         // Note: ResInventory không có created_at field, dùng id để order
         orderBy: { id: 'desc' },
+        include: {
+          item: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       }),
       this.prisma.resInventory.count({ where: { user_id: userId } }),
     ]);
 
-    return buildPaginatedResponse(items, total, page, take);
+    // Map để format response với name từ ResItem
+    const formattedItems = items.map((inv) => ({
+      id: inv.id,
+      user_id: inv.user_id,
+      item_id: inv.item_id,
+      name: inv.item?.name || null,
+      quantity: inv.quantity,
+    }));
+
+    return buildPaginatedResponse(formattedItems, total, page, take);
   }
 
   async addInventoryItem(userId: string, dto: CreateInventoryItemDto) {

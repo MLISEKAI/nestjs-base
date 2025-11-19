@@ -2,12 +2,20 @@
 
 ## 📋 **Tổng quan**
 
-Tất cả endpoints Gifts đã được chuẩn hóa với:
+Tất cả endpoints Gifts đã được chuẩn hóa và thống nhất tại:
+
+**Base Path**: `/profile/:user_id/gifts`
+
+**Tính năng:**
 
 - ✅ Pagination format chuẩn
 - ✅ Validation đầy đủ
 - ✅ Error handling tốt
 - ✅ Swagger documentation đầy đủ
+- ✅ Gift Wall với milestones và progress
+- ✅ Recent gifts tracking
+- ✅ Inventory/Gift bag management
+- ✅ Filter items theo category và type
 
 ---
 
@@ -55,11 +63,13 @@ GET /profile/:user_id/gifts/categories
 #### 1.2. Tạo Gift Items (nếu chưa có)
 
 ```
-GET /profile/:user_id/gifts/items?category_id={category_id}
+GET /profile/:user_id/gifts/items?category={category_id}&type={type}
 ```
 
 - **Path**: `user_id` = bất kỳ
-- **Query**: `category_id` (optional) - lọc theo category
+- **Query**:
+  - `category` (optional) - lọc theo category ID
+  - `type` (optional) - lọc theo type: `hot`, `event`, `lucky`, `friendship`, `vip`, `normal`
 - **Response**: Danh sách gift items
 - **Lưu ý**: Lưu `id` của gift item để tạo gift
 
@@ -85,7 +95,6 @@ POST /profile/:user_id/gifts
 
 ```json
 {
-  "sender_id": "user-sender-id",
   "receiver_id": "user-receiver-id",
   "gift_item_id": "gift-item-id",
   "quantity": 1,
@@ -93,10 +102,16 @@ POST /profile/:user_id/gifts
 }
 ```
 
+**Lưu ý:**
+
+- `sender_id` sẽ tự động được set từ `user_id` trong path param
+- Nếu muốn gửi từ user khác, có thể thêm `sender_id` vào body (override)
+
 **Validation:**
 
 - ✅ `quantity` >= 1 (nếu gửi 0 hoặc âm sẽ báo lỗi)
-- ✅ Tất cả fields bắt buộc (trừ `quantity` và `message`)
+- ✅ `receiver_id` và `gift_item_id` bắt buộc
+- ✅ `message` là optional
 
 **Expected Response:**
 
@@ -381,12 +396,13 @@ GET /profile/:user_id/gifts/categories
 #### 3.3. **Gift Items**
 
 ```
-GET /profile/:user_id/gifts/items?category_id={category_id}
+GET /profile/:user_id/gifts/items?category={category_id}&type={type}
 ```
 
 **Query Parameters:**
 
-- `category_id` (optional): Lọc theo category
+- `category` (optional): Lọc theo category ID
+- `type` (optional): Lọc theo type: `hot`, `event`, `lucky`, `friendship`, `vip`, `normal`
 
 **Expected Response:**
 
@@ -411,8 +427,10 @@ GET /profile/:user_id/gifts/items?category_id={category_id}
 
 **Test Cases:**
 
-- ✅ Test không có `category_id` → trả về tất cả items
-- ✅ Test với `category_id` hợp lệ → chỉ trả về items của category đó
+- ✅ Test không có query params → trả về tất cả items
+- ✅ Test với `category` hợp lệ → chỉ trả về items của category đó
+- ✅ Test với `type` hợp lệ → chỉ trả về items của type đó
+- ✅ Test với cả `category` và `type` → filter kết hợp
 
 ---
 
@@ -444,6 +462,180 @@ GET /profile/:user_id/gifts/milestones
   "traceId": "..."
 }
 ```
+
+---
+
+#### 3.5. **Gift Wall Overview** (MỚI)
+
+```
+GET /profile/:user_id/gifts/gift-wall
+```
+
+**Expected Response:**
+
+```json
+{
+  "error": false,
+  "code": 0,
+  "message": "Success",
+  "data": {
+    "user_id": "123",
+    "username": "Darlene Bears",
+    "avatar_url": "/avatars/darlene.jpg",
+    "total_gifts": 112,
+    "xp_to_next_level": 200,
+    "level": 34,
+    "description": "Help me light up the Gift Wall."
+  },
+  "traceId": "..."
+}
+```
+
+**Test Cases:**
+
+- ✅ Lấy thông tin tổng quan Gift Wall của user
+- ✅ Tính level và XP dựa trên tổng số quà nhận được
+
+---
+
+#### 3.6. **Gift Wall Milestones với Progress** (MỚI)
+
+```
+GET /profile/:user_id/gifts/gift-wall/:milestone_id/givers
+```
+
+**Path Parameters:**
+
+- `user_id`: ID của user
+- `milestone_id` (optional): ID của milestone cụ thể (nếu không có thì trả về tất cả)
+
+**Expected Response:**
+
+```json
+{
+  "error": false,
+  "code": 0,
+  "message": "Success",
+  "data": [
+    {
+      "milestone_id": "gift-item-1",
+      "name": "Quà tặng 1",
+      "icon_url": "/images/gift_milestone_1.png",
+      "required_count": 10,
+      "current_count": 5,
+      "is_unlocked": false,
+      "progress": 0.5
+    }
+  ],
+  "traceId": "..."
+}
+```
+
+**Test Cases:**
+
+- ✅ Lấy tất cả milestones với progress
+- ✅ Test với milestone_id cụ thể (nếu có)
+
+---
+
+#### 3.7. **Recent Gifts** (MỚI)
+
+```
+GET /profile/:user_id/gifts/recent-gifts?page=1&limit=20
+```
+
+**Query Parameters:**
+
+- `page` (optional): Số trang (mặc định: 1)
+- `limit` (optional): Số lượng mỗi trang (mặc định: 20)
+
+**Expected Response:**
+
+```json
+{
+  "error": false,
+  "code": 0,
+  "message": "Success",
+  "data": {
+    "items": [
+      {
+        "transaction_id": "tx12345",
+        "sender": {
+          "user_id": "101",
+          "username": "Malenna Calzoni",
+          "avatar_url": "/avatars/malenna.jpg"
+        },
+        "gift_info": {
+          "gift_name": "Quà x1",
+          "icon_url": "/images/gift_icon_a.png",
+          "quantity": 1
+        },
+        "timestamp": "2025-11-07T18:00:00Z"
+      }
+    ],
+    "meta": {
+      "item_count": 1,
+      "total_items": 1,
+      "items_per_page": 20,
+      "total_pages": 1,
+      "current_page": 1
+    }
+  },
+  "traceId": "..."
+}
+```
+
+**Test Cases:**
+
+- ✅ Lấy danh sách quà nhận gần đây với pagination
+- ✅ Test với page và limit khác nhau
+
+---
+
+#### 3.8. **Inventory/Gift Bag** (MỚI)
+
+```
+GET /profile/:user_id/gifts/inventory?page=1&limit=20
+```
+
+**Query Parameters:**
+
+- `page` (optional): Số trang (mặc định: 1)
+- `limit` (optional): Số lượng mỗi trang (mặc định: 20)
+
+**Expected Response:**
+
+```json
+{
+  "error": false,
+  "code": 0,
+  "message": "Success",
+  "data": {
+    "items": [
+      {
+        "id": "inv-1",
+        "user_id": "user-1",
+        "item_id": "101",
+        "name": "Rose",
+        "quantity": 5
+      }
+    ],
+    "meta": {
+      "item_count": 1,
+      "total_items": 1,
+      "items_per_page": 20,
+      "total_pages": 1,
+      "current_page": 1
+    }
+  },
+  "traceId": "..."
+}
+```
+
+**Test Cases:**
+
+- ✅ Lấy danh sách vật phẩm trong inventory với pagination
+- ✅ Kiểm tra `name` được lấy từ ResItem
 
 ---
 
@@ -484,7 +676,9 @@ GET /profile/:user_id/gifts/milestones
 
 ## 📝 **Checklist Test**
 
-- [ ] Tạo gift mới thành công
+### CRUD Operations
+
+- [ ] Tạo gift mới thành công (sender_id tự động từ path)
 - [ ] Tạo gift với `quantity` < 1 → Validation error
 - [ ] Lấy danh sách gifts với pagination
 - [ ] Lấy gift summary với pagination
@@ -494,10 +688,23 @@ GET /profile/:user_id/gifts/milestones
 - [ ] Update gift không tồn tại → 404
 - [ ] Xóa gift thành công
 - [ ] Xóa gift không tồn tại → 404
+
+### Catalog & Summary
+
 - [ ] Lấy categories
-- [ ] Lấy items (có và không có category_id)
+- [ ] Lấy items (không có filter)
+- [ ] Lấy items với filter `category`
+- [ ] Lấy items với filter `type`
+- [ ] Lấy items với filter `category` và `type`
 - [ ] Lấy top supporters
 - [ ] Lấy milestones
+
+### Gift Wall & Recent
+
+- [ ] Lấy Gift Wall overview
+- [ ] Lấy Gift Wall milestones với progress
+- [ ] Lấy recent gifts với pagination
+- [ ] Lấy inventory/gift bag với pagination
 
 ---
 
@@ -510,5 +717,12 @@ Tất cả endpoints đã được:
 - ✅ Thêm validation đầy đủ
 - ✅ Cập nhật Swagger documentation
 - ✅ Error handling tốt
+- ✅ Thống nhất routing pattern (`/profile/:user_id/gifts`)
+- ✅ Thêm Gift Wall với milestones và progress
+- ✅ Thêm Recent Gifts tracking
+- ✅ Thêm Inventory/Gift Bag management
+- ✅ Cải thiện filter items (category + type)
 
-**Sẵn sàng để test!** 🚀
+**Tất cả Gift APIs giờ đã thống nhất tại một nơi!** 🚀
+
+**Base Path**: `/profile/:user_id/gifts`

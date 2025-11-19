@@ -9,9 +9,19 @@ export class GiftCatalogService {
     return this.prisma.resGiftCategory.findMany();
   }
 
-  async getGiftItems(categoryId?: string) {
+  async getGiftItems(categoryId?: string, type?: string) {
+    const where: any = {};
+
+    if (categoryId) {
+      where.category_id = categoryId;
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
     return this.prisma.resGiftItem.findMany({
-      where: categoryId ? { category_id: categoryId } : undefined,
+      where: Object.keys(where).length > 0 ? where : undefined,
     });
   }
 }

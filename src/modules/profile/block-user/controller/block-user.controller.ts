@@ -87,7 +87,7 @@ export class BlockUserController {
         type: 'object',
         properties: {
           id: { type: 'string', example: 'block-123' },
-          blockedAt: { type: 'string', example: '2025-11-19T00:00:00.000Z' },
+          blocked_at: { type: 'string', example: '2025-11-19T00:00:00.000Z' },
           user: {
             type: 'object',
             properties: {
@@ -118,7 +118,7 @@ export class BlockUserController {
         type: 'object',
         properties: {
           id: { type: 'string', example: 'block-123' },
-          blockedAt: { type: 'string', example: '2025-11-19T00:00:00.000Z' },
+          blocked_at: { type: 'string', example: '2025-11-19T00:00:00.000Z' },
           user: {
             type: 'object',
             properties: {

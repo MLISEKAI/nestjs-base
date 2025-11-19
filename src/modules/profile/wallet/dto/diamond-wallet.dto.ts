@@ -157,10 +157,10 @@ export class ConvertVexToDiamondResponseDto {
 // Create Deposit
 export class CreateDepositResponseDto {
   @ApiProperty({ example: '0xabc123...', description: 'Địa chỉ nạp VEX' })
-  depositAddress: string;
+  deposit_address: string;
 
   @ApiProperty({ example: 'https://example.com/qr.png', description: 'QR code nạp VEX' })
-  qrCode: string;
+  qr_code: string;
 
   @ApiPropertyOptional({ example: 'Ethereum', description: 'Mạng: Ethereum, BSC, etc.' })
   network?: string;
@@ -198,10 +198,10 @@ export class WithdrawVexResponseDto {
 // Deposit Info
 export class DepositInfoResponseDto {
   @ApiProperty({ example: '0xabc123...', description: 'Địa chỉ nạp VEX' })
-  depositAddress: string;
+  deposit_address: string;
 
   @ApiProperty({ example: 'https://example.com/qr.png', description: 'QR code nạp VEX' })
-  qrCode: string;
+  qr_code: string;
 
   @ApiProperty({ example: 'Ethereum', description: 'Mạng: Ethereum, BSC, etc.' })
   network: string;

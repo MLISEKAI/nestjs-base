@@ -6,10 +6,10 @@ export class PhotoDto {
   id: string;
 
   @ApiProperty({ example: 'album-1' })
-  albumId: string;
+  album_id: string;
 
   @ApiProperty({ example: 'https://img.com/1.png' })
-  imageUrl: string;
+  image_url: string;
 }
 
 export class AlbumDto {
@@ -20,7 +20,7 @@ export class AlbumDto {
   title: string;
 
   @ApiProperty({ example: 'https://img.com/cover1.png' })
-  imageUrl: string;
+  image_url: string;
 
   @ApiProperty({ type: [PhotoDto] })
   photos: PhotoDto[];
@@ -35,7 +35,7 @@ export class CreateAlbumDto {
   @ApiProperty({ example: 'https://img.com/cover1.png' })
   @IsString()
   @IsNotEmpty()
-  imageUrl: string;
+  image_url: string;
 }
 
 export class UpdateAlbumDto {
@@ -47,11 +47,11 @@ export class UpdateAlbumDto {
   @ApiProperty({ example: 'https://img.com/newcover.png', required: false })
   @IsOptional()
   @IsString()
-  imageUrl?: string;
+  image_url?: string;
 }
 
 export class AddPhotoDto {
   @ApiProperty({ example: 'https://image.com/3.png' })
   @IsString()
-  imageUrl: string;
+  image_url: string;
 }

@@ -22,8 +22,8 @@ export class NotificationService {
   async createNotification(dto: CreateNotificationDto) {
     const notification = await this.prisma.resNotification.create({
       data: {
-        user_id: dto.userId,
-        sender_id: dto.senderId,
+        user_id: dto.user_id,
+        sender_id: dto.sender_id,
         type: dto.type,
         title: dto.title,
         content: dto.content,
@@ -42,18 +42,18 @@ export class NotificationService {
       },
     });
 
-    this.logger.log(`Notification created: ${notification.id} for user ${dto.userId}`);
+    this.logger.log(`Notification created: ${notification.id} for user ${dto.user_id}`);
 
     // Emit real-time notification qua WebSocket
     try {
-      this.websocketGateway.emitNotification(dto.userId, {
+      this.websocketGateway.emitNotification(dto.user_id, {
         id: notification.id,
         type: notification.type,
         title: notification.title,
         content: notification.content,
         status: notification.status,
         sender: notification.sender,
-        createdAt: notification.created_at,
+        created_at: notification.created_at,
       });
     } catch (error) {
       // Log error nhưng không fail notification creation
@@ -164,8 +164,8 @@ export class NotificationService {
    */
   async createMessageNotification(receiverId: string, senderId: string, messageId: string) {
     return this.createNotification({
-      userId: receiverId,
-      senderId: senderId,
+      user_id: receiverId,
+      sender_id: senderId,
       type: NotificationType.MESSAGE,
       title: 'New Message',
       content: 'You have a new message',
@@ -179,8 +179,8 @@ export class NotificationService {
    */
   async createFollowNotification(userId: string, followerId: string) {
     return this.createNotification({
-      userId: userId,
-      senderId: followerId,
+      user_id: userId,
+      sender_id: followerId,
       type: NotificationType.FOLLOW,
       title: 'New Follower',
       content: 'Someone started following you',
@@ -193,8 +193,8 @@ export class NotificationService {
    */
   async createGiftNotification(receiverId: string, senderId: string, giftId: string) {
     return this.createNotification({
-      userId: receiverId,
-      senderId: senderId,
+      user_id: receiverId,
+      sender_id: senderId,
       type: NotificationType.GIFT,
       title: 'New Gift',
       content: 'You received a gift',

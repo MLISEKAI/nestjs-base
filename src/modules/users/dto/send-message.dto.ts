@@ -5,7 +5,7 @@ export class SendMessageDto {
   @ApiProperty({ example: 'user-456', description: 'ID người nhận' })
   @IsNotEmpty()
   @IsString()
-  recipientId: string;
+  recipient_id: string;
 
   @ApiProperty({
     example: 'Xin chào, bạn khỏe không?',

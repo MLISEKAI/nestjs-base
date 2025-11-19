@@ -10,7 +10,7 @@ export class FeedbackDto {
   @ApiProperty({ example: 'user-1', description: 'ID user gửi phản hồi', required: false })
   @IsString()
   @IsOptional()
-  userId?: string;
+  user_id?: string;
 }
 
 export class FeedbackResponseDto {
