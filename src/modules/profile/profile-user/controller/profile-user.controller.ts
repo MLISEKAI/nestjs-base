@@ -10,8 +10,8 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiOkResponse } from '@nestjs/swagger';
-import { UserProfileService } from '../service/user-profile.service';
-import { ProfileServiceDb } from '../../profile_db.service';
+import { UserProfileService } from '../service/profile-user.service';
+import { ProfileServiceDb } from '../../profile.service';
 import { UpdateUserProfileDto } from '../dto/profile.dto';
 import { StatsQueryDto } from '../dto/stats-query.dto';
 

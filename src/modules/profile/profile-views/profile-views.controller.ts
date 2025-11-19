@@ -8,7 +8,7 @@ import {
   ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ProfileViewsServiceDb } from '../profile-views_db/profile-views_db.service';
+import { ProfileViewsServiceDb } from './profile-views.service';
 
 @ApiTags('Profile Views')
 @Controller('/profile')

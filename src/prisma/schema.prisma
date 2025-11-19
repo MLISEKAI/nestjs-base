@@ -84,6 +84,8 @@ model ResUser {
   refreshTokens        ResRefreshToken[]
   blacklistedTokens    ResTokenBlacklist[]
   twoFactor            ResTwoFactor?
+  notificationsSent    ResNotification[]    @relation("NotificationSender")
+  notificationsRecv    ResNotification[]    @relation("NotificationReceiver")
 
   @@index([union_id, deleted_at])
   @@index([union_id])
@@ -645,6 +647,45 @@ model ResRefreshToken {
 
   @@index([user_id])
   @@map("res_refresh_token")
+}
+
+// NOTIFICATION
+enum NotificationType {
+  MESSAGE
+  FOLLOW
+  LIKE
+  COMMENT
+  GIFT
+  POST
+  SYSTEM
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+model ResNotification {
+  id         String             @id @default(uuid())
+  created_at DateTime           @default(now())
+  updated_at DateTime           @updatedAt
+
+  user_id    String             // Người nhận notification
+  sender_id  String?            // Người gửi (null nếu là system notification)
+  type       NotificationType
+  status     NotificationStatus @default(UNREAD)
+  title      String
+  content    String
+  data       String?            // JSON data for additional info
+  link       String?            // Link to related content
+
+  user   ResUser @relation("NotificationReceiver", fields: [user_id], references: [id], onDelete: Cascade)
+  sender ResUser? @relation("NotificationSender", fields: [sender_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id, status])
+  @@index([user_id, created_at])
+  @@index([status])
+  @@map("res_notification")
 }
 
 model ResTwoFactor {

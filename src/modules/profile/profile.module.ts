@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 // ==================== User Profile ====================
-import { ProfileServiceDb } from './profile_db.service';
-import { ProfileViewsControllerDb } from './profile-views_db/profile-views_db.controller';
-import { ProfileViewsServiceDb } from './profile-views_db/profile-views_db.service';
-import { UserProfileController } from './user-profile/controller/user-profile.controller';
-import { UserProfileService } from './user-profile/service/user-profile.service';
+import { ProfileServiceDb } from './profile.service';
+import { UserProfileService } from './profile-user/service/profile-user.service';
+import { UserProfileController } from './profile-user/controller/profile-user.controller';
+import { ProfileViewsControllerDb } from './profile-views/profile-views.controller';
+import { ProfileViewsServiceDb } from './profile-views/profile-views.service';
 
 // ==================== Album ====================
 import { AlbumController } from './album/controller/album.controller';
@@ -70,7 +71,7 @@ import { ReferralController } from './referral/controller/referral.controller';
 import { ReferralService } from './referral/service/referral.service';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, forwardRef(() => RealtimeModule)],
   controllers: [
     ProfileViewsControllerDb,
     // User Profile
@@ -83,24 +84,24 @@ import { ReferralService } from './referral/service/referral.service';
     GiftsController,
     // Wallet
     WalletController,
+    // Vip
+    VipController,
     // Inventory
     InventoryController,
     // Store
     StoreController,
     // Task
     TaskController,
-    // Feedback
-    FeedbackController,
-    // Post
-    PostController,
-    // LoveSpace
-    LoveSpaceController,
-    // Vip
-    VipController,
-    // Support
-    SupportController,
     // Referral
     ReferralController,
+    // LoveSpace
+    LoveSpaceController,
+    // Feedback
+    FeedbackController,
+    // Support
+    SupportController,
+    // Post
+    PostController,
   ],
   providers: [
     ProfileServiceDb,
@@ -132,16 +133,16 @@ import { ReferralService } from './referral/service/referral.service';
     TaskService,
     // Feedback
     FeedbackService,
-    // Post
-    PostService,
-    // LoveSpace
-    LoveSpaceService,
     // Vip
     VipService,
-    // Support
-    SupportService,
     // Referral
     ReferralService,
+    // LoveSpace
+    LoveSpaceService,
+    // Support
+    SupportService,
+    // Post
+    PostService,
   ],
 })
 export class ProfileModuleDb {}

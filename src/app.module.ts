@@ -3,10 +3,12 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './modules/users/users.module';
-import { ProfileModuleDb } from './modules/profile_db/profile_db.module';
+import { ProfileModuleDb } from './modules/profile/profile.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CommonModule } from './common/common.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import databaseConfig from './config/database.config';
@@ -29,6 +31,8 @@ import jwtConfig from './config/jwt.config';
     CommonModule,
     UsersModule,
     ProfileModuleDb,
+    NotificationsModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [

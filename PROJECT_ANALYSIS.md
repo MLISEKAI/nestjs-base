@@ -268,15 +268,15 @@ Hầu hết list endpoints hỗ trợ:
 
 ### 3. **Real-time Features**
 
-- ⚠️ WebSocket/SSE cho real-time messages
-- ⚠️ Real-time notifications
-- ⚠️ Live updates (posts, likes, comments)
+- ✅ WebSocket/SSE cho real-time messages (đã implement WebSocket Gateway với Socket.IO)
+- ✅ Real-time notifications (đã implement Notification system với WebSocket integration)
+- ✅ Live updates (posts - đã implement live updates cho post create/update/delete)
 
 ### 4. **Notifications**
 
-- ⚠️ Notification system (in-app, push, email)
-- ⚠️ Notification preferences
-- ⚠️ Notification history
+- ✅ Notification system (in-app với WebSocket real-time, đã có REST API)
+- ⚠️ Notification preferences (chưa implement)
+- ✅ Notification history (đã có với pagination)
 
 ### 5. **Search & Discovery**
 
