@@ -17,7 +17,7 @@ export class UserMessagingService {
   async sendMessage(senderId: string, dto: SendMessageDto) {
     // Tạo message trong database
     const message = await this.prisma.resMessage.create({
-      data: { sender_id: senderId, receiver_id: dto.recipientId, content: dto.content },
+      data: { sender_id: senderId, receiver_id: dto.recipient_id, content: dto.content },
       include: {
         sender: {
           select: {
@@ -32,7 +32,7 @@ export class UserMessagingService {
     // Tạo notification
     try {
       await this.notificationService.createMessageNotification(
-        dto.recipientId,
+        dto.recipient_id,
         senderId,
         message.id,
       );
@@ -43,7 +43,7 @@ export class UserMessagingService {
 
     // Emit real-time message qua WebSocket
     try {
-      this.websocketGateway.emitMessage(dto.recipientId, {
+      this.websocketGateway.emitMessage(dto.recipient_id, {
         id: message.id,
         senderId: message.sender_id,
         receiverId: message.receiver_id,

@@ -70,6 +70,10 @@ import { SupportService } from './support/service/support.service';
 import { ReferralController } from './referral/controller/referral.controller';
 import { ReferralService } from './referral/service/referral.service';
 
+// ==================== Block User ====================
+import { BlockUserController } from './block-user/controller/block-user.controller';
+import { BlockUserService } from './block-user/service/block-user.service';
+
 @Module({
   imports: [PrismaModule, forwardRef(() => RealtimeModule)],
   controllers: [
@@ -102,6 +106,8 @@ import { ReferralService } from './referral/service/referral.service';
     SupportController,
     // Post
     PostController,
+    // Block User
+    BlockUserController,
   ],
   providers: [
     ProfileServiceDb,
@@ -143,6 +149,8 @@ import { ReferralService } from './referral/service/referral.service';
     SupportService,
     // Post
     PostService,
+    // Block User
+    BlockUserService,
   ],
 })
 export class ProfileModuleDb {}

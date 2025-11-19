@@ -47,6 +47,8 @@ model ResUser {
   albums       ResAlbum[]
   followers    ResFollow[]    @relation("Followers")
   following    ResFollow[]    @relation("Following")
+  blockedBy    ResBlock[]     @relation("BlockedBy")
+  blocking     ResBlock[]      @relation("Blocking")
   friendsA     ResFriend[]    @relation("FriendsA")
   friendsB     ResFriend[]    @relation("FriendsB")
   messagesSent ResMessage[]   @relation("MessagesSent")
@@ -161,6 +163,23 @@ model ResFollow {
   @@index([follower_id])
   @@index([following_id])
   @@map("res_follow")
+}
+
+// BLOCK USER
+model ResBlock {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+
+  blocker_id  String // User who blocks
+  blocked_id  String // User who is blocked
+
+  blocker ResUser @relation("Blocking", fields: [blocker_id], references: [id], onDelete: Cascade)
+  blocked ResUser @relation("BlockedBy", fields: [blocked_id], references: [id], onDelete: Cascade)
+
+  @@unique([blocker_id, blocked_id])
+  @@index([blocker_id])
+  @@index([blocked_id])
+  @@map("res_block")
 }
 
 // FRIEND

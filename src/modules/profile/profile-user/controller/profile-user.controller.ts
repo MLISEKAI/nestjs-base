@@ -9,7 +9,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { UserProfileService } from '../service/profile-user.service';
 import { ProfileServiceDb } from '../../profile.service';
 import { UpdateUserProfileDto } from '../dto/profile.dto';
@@ -27,6 +27,12 @@ export class UserProfileController {
   @Get(':user_id')
   @ApiOperation({ summary: 'Lấy thông tin cơ bản của user' })
   @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiQuery({
+    name: 'current_user_id',
+    description: 'ID của user đang xem (optional, để check block status)',
+    required: false,
+    type: String,
+  })
   @ApiOkResponse({
     description: 'Hồ sơ user theo schema Prisma',
     schema: {
@@ -87,8 +93,8 @@ export class UserProfileController {
       },
     },
   })
-  getProfile(@Param('user_id') userId: string) {
-    return this.userProfile.getProfile(userId);
+  getProfile(@Param('user_id') userId: string, @Query('current_user_id') currentUserId?: string) {
+    return this.userProfile.getProfile(userId, currentUserId);
   }
 
   @Patch(':user_id')

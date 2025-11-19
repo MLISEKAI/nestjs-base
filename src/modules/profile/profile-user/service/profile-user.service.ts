@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StatsQueryDto } from '../dto/stats-query.dto';
 import { UpdateUserProfileDto } from '../dto/profile.dto';
+import { BlockUserService } from '../../block-user/service/block-user.service';
 
 @Injectable()
 export class UserProfileService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => BlockUserService))
+    private blockUserService: BlockUserService,
+  ) {}
 
-  async getProfile(userId: string) {
+  async getProfile(userId: string, currentUserId?: string) {
     const user = await this.prisma.resUser.findUnique({
       where: { id: userId },
       include: {
@@ -18,12 +23,25 @@ export class UserProfileService {
     });
     if (!user) throw new NotFoundException('User not found');
 
+    // Check if account is locked
+    const isAccountLocked = user.is_blocked || false;
+
+    // Check block status if currentUserId is provided
+    let isBlockedByMe = false;
+    let hasBlockedMe = false;
+
+    if (currentUserId && currentUserId !== userId) {
+      const blockStatus = await this.blockUserService.getBlockStatus(currentUserId, userId);
+      isBlockedByMe = blockStatus.isBlockedByMe;
+      hasBlockedMe = blockStatus.hasBlockedMe;
+    }
+
     return {
       ...user,
       statusBadge: 'Bronze',
-      isAccountLocked: false,
-      isBlockedByMe: false,
-      hasBlockedMe: false,
+      isAccountLocked,
+      isBlockedByMe,
+      hasBlockedMe,
       relationshipStatus: 'single',
     };
   }
