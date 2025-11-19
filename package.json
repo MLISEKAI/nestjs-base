@@ -19,9 +19,7 @@
     "prisma:dev": " env-cmd -f .env npx prisma migrate dev --create-only --schema=./src/prisma/schema.prisma",
     "prisma:deploy": "npx prisma migrate deploy --schema=./src/prisma/schema.prisma",
     "prisma:generate": "npx prisma generate --schema=./src/prisma/schema.prisma",
-    "prisma:reset": "npx prisma migrate reset --schema=./src/prisma/schema.prisma",
-    "start:v2": "ts-node -r tsconfig-paths/register src-v2/main.ts",
-    "start:v2:dev": "npx nodemon --watch src-v2 --ext ts --exec ts-node -r tsconfig-paths/register src-v2/main.ts"
+    "prisma:reset": "npx prisma migrate reset --schema=./src/prisma/schema.prisma"
   },
   "engines": {
     "npm": ">=10.0.0",

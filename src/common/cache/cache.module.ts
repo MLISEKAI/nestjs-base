@@ -1,38 +1,32 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { IORedisModule } from '@nestjs-modules/ioredis';
+import { RedisModule } from '@nestjs-modules/ioredis';
 import { CacheService } from './cache.service';
 
 @Global()
 @Module({
   imports: [
-    IORedisModule.forRootAsync({
+    RedisModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL');
-        if (redisUrl) {
-          return {
-            type: 'single',
-            url: redisUrl,
-            options: {
-              retryStrategy: (times: number) => {
-                const delay = Math.min(times * 50, 2000);
-                return delay;
-              },
-              maxRetriesPerRequest: 3,
-            },
-          };
-        }
-        // Fallback to localhost if REDIS_URL not provided
+        const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
         return {
           type: 'single',
-          url: 'redis://localhost:6379',
+          url: redisUrl,
           options: {
-            retryStrategy: (times: number) => {
-              const delay = Math.min(times * 50, 2000);
-              return delay;
+            retryStrategy: () => {
+              // Return null to stop all retry attempts
+              return null;
             },
-            maxRetriesPerRequest: 3,
+            maxRetriesPerRequest: 0, // Don't retry individual requests
+            enableOfflineQueue: false, // Disable offline queue to prevent connection spam
+            lazyConnect: true, // Don't connect immediately
+            connectTimeout: 3000, // 3 second timeout
+            showFriendlyErrorStack: false,
+            enableReadyCheck: false,
+            enableAutoPipelining: false,
+            // Disable automatic reconnection
+            reconnectOnError: () => false,
           },
         };
       },
@@ -43,4 +37,3 @@ import { CacheService } from './cache.service';
   exports: [CacheService],
 })
 export class CacheModule {}
-

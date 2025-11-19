@@ -6,19 +6,58 @@ import Redis from 'ioredis';
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
   private readonly defaultTtl = 3600; // 1 hour
+  private isRedisConnected = false;
+  private hasLoggedConnectionError = false;
 
-  constructor(@InjectRedis() private readonly redis: Redis) {}
+  constructor(@InjectRedis() private readonly redis: Redis) {
+    // Setup Redis event handlers
+    this.redis.on('connect', () => {
+      this.isRedisConnected = true;
+      this.hasLoggedConnectionError = false; // Reset flag on successful connection
+      this.logger.log('Redis connected successfully');
+    });
+
+    this.redis.on('error', (error) => {
+      this.isRedisConnected = false;
+      // Only log connection error once to avoid spam
+      if (!this.hasLoggedConnectionError) {
+        const errorMsg = error.message || String(error);
+        if (errorMsg.includes('ECONNREFUSED') || errorMsg.includes('Connection')) {
+          this.logger.warn(
+            'Redis is not available. Cache will be disabled. To enable caching, start Redis server.',
+          );
+        } else {
+          this.logger.warn('Redis connection error:', errorMsg);
+        }
+        this.hasLoggedConnectionError = true;
+      }
+    });
+
+    this.redis.on('close', () => {
+      this.isRedisConnected = false;
+      // Don't log close events to avoid spam
+    });
+
+    // Don't try to connect immediately - let it connect on first use
+    // This prevents connection spam on startup if Redis is not available
+  }
 
   /**
    * Get value from cache
    */
   async get<T>(key: string): Promise<T | null> {
+    if (!this.isRedisConnected) {
+      return null; // Fail silently if Redis is not connected
+    }
     try {
       const value = await this.redis.get(key);
       if (!value) return null;
       return JSON.parse(value) as T;
     } catch (error) {
-      this.logger.error(`Cache get error for key ${key}:`, error);
+      // Don't log connection errors repeatedly
+      if (!error.message?.includes('ECONNREFUSED') && !error.message?.includes('Connection')) {
+        this.logger.debug(`Cache get error for key ${key}:`, error.message);
+      }
       return null;
     }
   }
@@ -27,11 +66,17 @@ export class CacheService {
    * Set value to cache
    */
   async set(key: string, value: any, ttl: number = this.defaultTtl): Promise<void> {
+    if (!this.isRedisConnected) {
+      return; // Fail silently if Redis is not connected
+    }
     try {
       const serialized = JSON.stringify(value);
       await this.redis.setex(key, ttl, serialized);
     } catch (error) {
-      this.logger.error(`Cache set error for key ${key}:`, error);
+      // Don't log connection errors repeatedly
+      if (!error.message?.includes('ECONNREFUSED') && !error.message?.includes('Connection')) {
+        this.logger.debug(`Cache set error for key ${key}:`, error.message);
+      }
     }
   }
 
@@ -81,13 +126,22 @@ export class CacheService {
     fetchFn: () => Promise<T>,
     ttl: number = this.defaultTtl,
   ): Promise<T> {
-    const cached = await this.get<T>(key);
-    if (cached !== null) {
-      return cached;
+    // Try to get from cache, but if Redis is not connected, skip cache
+    if (this.isRedisConnected) {
+      const cached = await this.get<T>(key);
+      if (cached !== null) {
+        return cached;
+      }
     }
 
+    // Fetch from source
     const value = await fetchFn();
-    await this.set(key, value, ttl);
+
+    // Try to cache, but don't fail if Redis is not connected
+    if (this.isRedisConnected) {
+      await this.set(key, value, ttl);
+    }
+
     return value;
   }
 

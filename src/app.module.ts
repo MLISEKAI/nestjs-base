@@ -10,6 +10,7 @@ import { CommonModule } from './common/common.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { CacheModule } from './common/cache/cache.module';
+import { MonitoringModule } from './common/monitoring/monitoring.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import databaseConfig from './config/database.config';
@@ -35,6 +36,7 @@ import jwtConfig from './config/jwt.config';
     NotificationsModule,
     RealtimeModule,
     CacheModule,
+    MonitoringModule,
   ],
   controllers: [AppController],
   providers: [
