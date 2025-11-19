@@ -211,6 +211,8 @@ model ResMessage {
 
   @@index([sender_id])
   @@index([receiver_id])
+  @@index([receiver_id, created_at])
+  @@index([created_at])
   @@map("res_message")
 }
 
@@ -230,6 +232,8 @@ model ResGift {
 
   @@index([sender_id])
   @@index([receiver_id])
+  @@index([receiver_id, created_at])
+  @@index([created_at])
   @@map("res_gift")
 }
 
@@ -253,6 +257,9 @@ model ResGiftItem {
 
   category ResGiftCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
 
+  @@index([category_id])
+  @@index([type])
+  @@index([category_id, type])
   @@map("res_gift_item")
 }
 
@@ -267,6 +274,8 @@ model ResGiftMilestone {
   created_at  DateTime @default(now())
   user        ResUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@index([user_id])
+  @@index([user_id, is_unlocked])
   @@map("res_gift_milestone")
 }
 
