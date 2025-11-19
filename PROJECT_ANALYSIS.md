@@ -3,6 +3,7 @@
 ## 📋 Tổng quan dự án
 
 Đây là một **Backend API Social Network/Community Platform** được xây dựng bằng:
+
 - **Framework**: NestJS (Node.js)
 - **ORM**: Prisma
 - **Database**: PostgreSQL
@@ -13,6 +14,7 @@
 ## 🎯 Chức năng chính của dự án
 
 ### 1. **Authentication & Authorization** (`/auth`)
+
 - ✅ Đăng ký user (email/phone + password)
 - ✅ Đăng nhập (email/phone + password)
 - ✅ Đăng nhập OTP (phone verification)
@@ -22,6 +24,7 @@
 - ✅ Role-based access (admin, user, guest)
 
 ### 2. **User Management** (`/users`)
+
 - ✅ Tìm kiếm users (pagination, search, sort)
 - ✅ Xem profile user
 - ✅ Cập nhật profile (nickname, bio, avatar, gender, birthday)
@@ -31,6 +34,7 @@
 - ✅ Quản lý albums và photos
 
 ### 3. **Profile Features** (`/profile`)
+
 - ✅ Xem profile chi tiết với albums, wallet, VIP status
 - ✅ Profile views tracking (ai đã xem profile)
 - ✅ Stats (posts, followers, following, friends)
@@ -40,6 +44,7 @@
 - ✅ Relationship status
 
 ### 4. **Social Features**
+
 - ✅ **Follow/Unfollow**: Theo dõi users
 - ✅ **Friends**: Tự động trở thành bạn khi follow lẫn nhau
 - ✅ **Messages**: Gửi tin nhắn giữa users
@@ -47,6 +52,7 @@
 - ✅ **Albums**: Tạo albums và upload photos
 
 ### 5. **Gift System** (`/profile/:user_id/gifts`)
+
 - ✅ Gửi quà tặng giữa users
 - ✅ Danh mục quà tặng (categories)
 - ✅ Gift items với giá
@@ -55,41 +61,50 @@
 - ✅ Gift summary
 
 ### 6. **Wallet System** (`/profile/:user_id/wallet`)
+
 - ✅ Quản lý ví (gem, vex currency)
 - ✅ Wallet transactions (deposit, withdraw, gift, convert)
 - ✅ Transaction history
 - ✅ Balance tracking
 
 ### 7. **VIP System** (`/profile/:user_id/vip`)
+
 - ✅ VIP status management
 - ✅ VIP expiry tracking
 
 ### 8. **Store & Inventory** (`/profile/:user_id/store`, `/inventory`)
+
 - ✅ Store items (items có thể mua)
 - ✅ User inventory (items user đã sở hữu)
 - ✅ Item management
 
 ### 9. **Tasks** (`/profile/:user_id/tasks`)
+
 - ✅ Tạo và quản lý tasks
 - ✅ Task completion tracking
 
 ### 10. **Clan System** (`/profile/:user_id/clans`)
+
 - ✅ Tạo và tham gia clans
 - ✅ Clan members với rank
 
 ### 11. **Love Space** (`/profile/:user_id/love-space`)
+
 - ✅ Personal love space với bio
 
 ### 12. **Referral System** (`/profile/:user_id/referrals`)
+
 - ✅ Referral tracking (người giới thiệu)
 - ✅ Reward system
 
 ### 13. **Support & Feedback**
+
 - ✅ Feedback system
 - ✅ Support info
 - ✅ Help articles
 
 ### 14. **Other Features**
+
 - ✅ Profile views analytics
 - ✅ Location tracking
 - ✅ Contributions tracking
@@ -101,6 +116,7 @@
 Dự án có **30+ models** trong database:
 
 ### Core Models:
+
 - `ResUser` - Users
 - `ResAssociate` - Authentication providers
 - `ResFollow` - Follow relationships
@@ -108,11 +124,13 @@ Dự án có **30+ models** trong database:
 - `ResMessage` - Messages
 
 ### Content Models:
+
 - `ResPost` - Posts
 - `ResAlbum` - Albums
 - `ResAlbumPhoto` - Album photos
 
 ### Economic Models:
+
 - `ResWallet` - Wallets
 - `ResWalletTransaction` - Transactions
 - `ResGift` - Gifts
@@ -123,6 +141,7 @@ Dự án có **30+ models** trong database:
 - `ResItem` - Items
 
 ### Social Models:
+
 - `ResClan` - Clans
 - `ResUserClan` - User-clan relationships
 - `ResProfileView` - Profile views
@@ -131,6 +150,7 @@ Dự án có **30+ models** trong database:
 - `ResRelationship` - Relationships
 
 ### Feature Models:
+
 - `ResVipStatus` - VIP status
 - `ResTask` - Tasks
 - `ResLoveSpace` - Love space
@@ -144,6 +164,7 @@ Dự án có **30+ models** trong database:
 ## 🔄 Cách hoạt động
 
 ### 1. **Authentication Flow**
+
 ```
 User → Register/Login → JWT Token → Protected Routes
 ```
@@ -153,7 +174,9 @@ User → Register/Login → JWT Token → Protected Routes
 - Protected routes sử dụng `@UseGuards(AuthGuard('account-auth'))`
 
 ### 2. **API Response Format**
+
 Tất cả responses được wrap bởi `ResponseInterceptor`:
+
 ```json
 {
   "error": false,
@@ -165,13 +188,16 @@ Tất cả responses được wrap bởi `ResponseInterceptor`:
 ```
 
 ### 3. **Pagination**
+
 Hầu hết list endpoints hỗ trợ:
+
 - `page`: Số trang (default: 1)
 - `limit`: Số items mỗi trang (default: 20)
 - `search`: Từ khóa tìm kiếm
 - `sort`: Sắp xếp (field:asc hoặc field:desc)
 
 ### 4. **Error Handling**
+
 - Global exception filter (`ResponseExceptionFilter`)
 - Validation pipe tự động validate DTOs
 - Custom error responses
@@ -179,6 +205,7 @@ Hầu hết list endpoints hỗ trợ:
 ## ✅ Những gì đã hoàn thành
 
 ### Infrastructure:
+
 - ✅ NestJS setup với Prisma
 - ✅ JWT authentication
 - ✅ Swagger documentation
@@ -188,6 +215,7 @@ Hầu hết list endpoints hỗ trợ:
 - ✅ Response standardization
 
 ### Features:
+
 - ✅ Authentication (register, login, OAuth, OTP)
 - ✅ User management (CRUD)
 - ✅ Profile management
@@ -204,6 +232,7 @@ Hầu hết list endpoints hỗ trợ:
 - ✅ Support & Feedback
 
 ### Code Organization:
+
 - ✅ Cấu trúc thư mục chuẩn
 - ✅ Common DTOs, interfaces, enums, utils, constants
 - ✅ Module-based architecture
@@ -211,6 +240,7 @@ Hầu hết list endpoints hỗ trợ:
 - ✅ DTO validation
 
 ### Documentation:
+
 - ✅ Swagger UI tại `/api`
 - ✅ API examples trong Swagger
 - ✅ DTO documentation
@@ -218,6 +248,7 @@ Hầu hết list endpoints hỗ trợ:
 ## ⚠️ Những gì cần bổ sung
 
 ### 1. **Security Enhancements**
+
 - ✅ Rate limiting (chống spam/abuse)
 - ✅ Input sanitization (XSS protection)
 - ✅ SQL injection protection (Prisma đã có nhưng cần review)
@@ -229,46 +260,54 @@ Hầu hết list endpoints hỗ trợ:
 - ✅ Token blacklist (logout)
 
 ### 2. **File Upload**
-- ⚠️ File upload service (hiện tại chỉ nhận URL)
-- ⚠️ Image processing/resizing
-- ⚠️ File storage (S3, Cloudinary, etc.)
-- ⚠️ File validation (type, size)
+
+- ✅ File upload service (đã nhận file thực qua Multer, không chỉ URL)
+- ✅ Image processing/resizing (đã implement transformation options: resize, crop, quality, format, aspect ratio, radius, effects)
+- ✅ File storage (đã dùng Cloudinary)
+- ✅ File validation (type: JPEG/PNG/GIF/WebP, size: max 5MB)
 
 ### 3. **Real-time Features**
+
 - ⚠️ WebSocket/SSE cho real-time messages
 - ⚠️ Real-time notifications
 - ⚠️ Live updates (posts, likes, comments)
 
 ### 4. **Notifications**
+
 - ⚠️ Notification system (in-app, push, email)
 - ⚠️ Notification preferences
 - ⚠️ Notification history
 
 ### 5. **Search & Discovery**
+
 - ⚠️ Advanced search (full-text search với Elasticsearch/Meilisearch)
 - ⚠️ User recommendations
 - ⚠️ Trending posts/users
 - ⚠️ Search filters
 
 ### 6. **Content Moderation**
+
 - ⚠️ Content moderation (spam, inappropriate content)
 - ⚠️ Report system
 - ⚠️ Block user functionality
 - ⚠️ Admin moderation tools
 
 ### 7. **Analytics & Monitoring**
+
 - ⚠️ API analytics (request tracking)
 - ⚠️ Error logging (Sentry, etc.)
 - ⚠️ Performance monitoring
 - ⚠️ User activity tracking
 
 ### 8. **Testing**
+
 - ⚠️ Unit tests
 - ⚠️ Integration tests
 - ⚠️ E2E tests
 - ⚠️ Test coverage
 
 ### 9. **Performance**
+
 - ⚠️ Caching (Redis)
 - ⚠️ Database indexing optimization
 - ⚠️ Query optimization
@@ -276,12 +315,14 @@ Hầu hết list endpoints hỗ trợ:
 - ⚠️ Lazy loading cho relationships
 
 ### 10. **API Improvements**
+
 - ⚠️ API versioning (v1, v2)
 - ⚠️ GraphQL endpoint (optional)
 - ⚠️ Webhooks
 - ⚠️ API rate limiting per user
 
 ### 11. **Missing Features từ Schema**
+
 - ⚠️ Comments trên posts (chưa có model)
 - ⚠️ Likes/Reactions (chưa có model)
 - ⚠️ Post media attachments
@@ -290,6 +331,7 @@ Hầu hết list endpoints hỗ trợ:
 - ⚠️ Events/Calendar
 
 ### 12. **Business Logic**
+
 - ⚠️ Gift transaction logic (deduct wallet khi gửi quà)
 - ⚠️ VIP purchase flow
 - ⚠️ Store purchase flow
@@ -297,17 +339,20 @@ Hầu hết list endpoints hỗ trợ:
 - ⚠️ Task reward system
 
 ### 13. **Data Validation**
+
 - ⚠️ Business rule validation
 - ⚠️ Data consistency checks
 - ⚠️ Transaction rollback handling
 
 ### 14. **Documentation**
+
 - ⚠️ API documentation (Postman collection)
 - ⚠️ Architecture documentation
 - ⚠️ Deployment guide
 - ⚠️ Environment variables documentation
 
 ### 15. **DevOps**
+
 - ⚠️ Docker setup
 - ⚠️ CI/CD pipeline
 - ⚠️ Environment management (dev, staging, prod)
@@ -347,12 +392,14 @@ Hầu hết list endpoints hỗ trợ:
 ## 📝 Kết luận
 
 Dự án đã có **nền tảng vững chắc** với:
+
 - ✅ Architecture tốt
 - ✅ Code organization rõ ràng
 - ✅ Nhiều features đã implement
 - ✅ Database schema đầy đủ
 
 Cần bổ sung thêm:
+
 - ⚠️ Security features
 - ⚠️ Real-time capabilities
 - ⚠️ File handling
@@ -360,4 +407,3 @@ Cần bổ sung thêm:
 - ⚠️ Performance optimization
 
 Dự án sẵn sàng cho **development tiếp theo** và có thể **deploy** sau khi bổ sung các tính năng bảo mật cơ bản.
-

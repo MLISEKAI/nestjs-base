@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import type { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import { ImageTransformationOptions } from '../interfaces/image-transformation.interface';
 
 @Injectable()
 export class CloudinaryService implements OnModuleInit {
@@ -30,17 +31,45 @@ export class CloudinaryService implements OnModuleInit {
     }
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string = 'uploads'): Promise<string> {
+  async uploadFile(
+    file: Express.Multer.File,
+    folder: string = 'uploads',
+    transformation?: ImageTransformationOptions,
+  ): Promise<string> {
     if (!this.isConfigured) {
       throw new Error('Cloudinary is not configured');
     }
 
     return new Promise((resolve, reject) => {
-      const uploadOptions = {
+      // Build transformation options
+      const transformationArray: any[] = [];
+      if (transformation) {
+        const transform: any = {};
+        if (transformation.width) transform.width = transformation.width;
+        if (transformation.height) transform.height = transformation.height;
+        if (transformation.crop) transform.crop = transformation.crop;
+        if (transformation.gravity) transform.gravity = transformation.gravity;
+        if (transformation.quality) transform.quality = transformation.quality;
+        if (transformation.format) transform.format = transformation.format;
+        if (transformation.aspectRatio) transform.aspect_ratio = transformation.aspectRatio;
+        if (transformation.radius !== undefined) transform.radius = transformation.radius;
+        if (transformation.effect) transform.effect = transformation.effect;
+
+        if (Object.keys(transform).length > 0) {
+          transformationArray.push(transform);
+        }
+      }
+
+      const uploadOptions: any = {
         folder: folder,
         resource_type: 'auto' as const, // Tự động detect image, video, raw
         public_id: `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, '')}`, // Bỏ extension, Cloudinary tự thêm
       };
+
+      // Add transformation if provided
+      if (transformationArray.length > 0) {
+        uploadOptions.transformation = transformationArray;
+      }
 
       cloudinary.uploader
         .upload_stream(

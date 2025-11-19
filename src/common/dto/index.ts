@@ -6,3 +6,4 @@ export * from './base-response.dto';
 export * from './id-param.dto';
 export * from './file-upload.dto';
 export * from './date-range-query.dto';
+export * from './image-transformation.dto';
