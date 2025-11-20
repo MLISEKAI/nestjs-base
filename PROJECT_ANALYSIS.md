@@ -280,10 +280,10 @@ Hầu hết list endpoints hỗ trợ:
 
 ### 5. **Search & Discovery**
 
-- ⚠️ Advanced search (full-text search với Elasticsearch/Meilisearch)
-- ⚠️ User recommendations
-- ⚠️ Trending posts/users
-- ⚠️ Search filters
+- ✅ Advanced search (PostgreSQL full-text search với Prisma, có thể nâng cấp lên Elasticsearch/Meilisearch)
+- ✅ User recommendations (dựa trên mutual connections)
+- ✅ Trending posts/users (dựa trên engagement metrics)
+- ✅ Search filters (type, date range)
 
 ### 6. **Content Moderation**
 

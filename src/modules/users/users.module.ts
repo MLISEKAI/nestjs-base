@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { GuardsModule } from '../../auth/guards/guards.module';
 import { UserProfileService } from './service/user-profile.service';
 import { UserConnectionsService } from './service/user-connections.service';
 import { UserMessagingService } from './service/user-messaging.service';
@@ -23,7 +24,12 @@ import { BlockUserController } from './block-user/controller/block-user.controll
 import { BlockUserService } from './block-user/service/block-user.service';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => NotificationsModule), forwardRef(() => RealtimeModule)],
+  imports: [
+    PrismaModule,
+    GuardsModule,
+    forwardRef(() => NotificationsModule),
+    forwardRef(() => RealtimeModule),
+  ],
   controllers: [
     UserController,
     UsersAdminController,
@@ -47,6 +53,6 @@ import { BlockUserService } from './block-user/service/block-user.service';
     // Block User
     BlockUserService,
   ],
-  exports: [ResUserService, BlockUserService],
+  exports: [ResUserService, BlockUserService, UserConnectionsService],
 })
 export class UsersModule {}

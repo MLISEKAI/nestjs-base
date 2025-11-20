@@ -9,6 +9,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { OptionalAuthGuard } from '../../../auth/guards/optional-auth.guard';
 import { UserProfileService } from '../service/user-profile.service';
 import {
   UserResponseDto,
@@ -33,6 +34,8 @@ export class UserController {
   ) {}
 
   @Get()
+  @UseGuards(OptionalAuthGuard) // Optional auth: Nếu có token thì lấy user, không có thì vẫn cho phép
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Tìm kiếm tất cả người dùng theo nickname hoặc ID' })
   @ApiQuery({ name: 'search', required: false, description: 'Từ khóa tìm kiếm (nickname hoặc ID)' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })

@@ -302,49 +302,144 @@ export class UserConnectionsService {
     const currentPage = Number(page) > 0 ? Number(page) : 1;
     const skip = (currentPage - 1) * take;
 
-    // If search is provided, we need to fetch all results, filter, then paginate
+    // Tối ưu: Filter ở database level thay vì fetch all rồi filter trong memory
     if (search) {
-      const searchLower = search.toLowerCase();
-      let allUsers: any[] = [];
+      const searchFilter = {
+        OR: [
+          { nickname: { contains: search, mode: 'insensitive' as const } },
+          { id: { contains: search, mode: 'insensitive' as const } },
+        ],
+      };
 
       if (type === 'followers') {
-        const followers = await this.prisma.resFollow.findMany({
-          where: { following_id: userId },
-          include: { follower: true },
-          orderBy: { created_at: 'desc' },
-        });
-        allUsers = followers.map((f) => f.follower);
+        const [follows, total] = await Promise.all([
+          this.prisma.resFollow.findMany({
+            where: {
+              following_id: userId,
+              follower: searchFilter,
+            },
+            include: {
+              follower: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                  bio: true,
+                  created_at: true,
+                },
+              },
+            },
+            orderBy: { created_at: 'desc' },
+            take,
+            skip,
+          }),
+          this.prisma.resFollow.count({
+            where: {
+              following_id: userId,
+              follower: searchFilter,
+            },
+          }),
+        ]);
+        const users = follows.map((f) => f.follower);
+        const data = await this.attachFollowStatus(userId, users);
+        return buildPaginatedResponse(data, total, currentPage, take);
       } else if (type === 'following') {
-        const following = await this.prisma.resFollow.findMany({
-          where: { follower_id: userId },
-          include: { following: true },
-          orderBy: { created_at: 'desc' },
-        });
-        allUsers = following.map((f) => f.following);
+        const [follows, total] = await Promise.all([
+          this.prisma.resFollow.findMany({
+            where: {
+              follower_id: userId,
+              following: searchFilter,
+            },
+            include: {
+              following: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                  bio: true,
+                  created_at: true,
+                },
+              },
+            },
+            orderBy: { created_at: 'desc' },
+            take,
+            skip,
+          }),
+          this.prisma.resFollow.count({
+            where: {
+              follower_id: userId,
+              following: searchFilter,
+            },
+          }),
+        ]);
+        const users = follows.map((f) => f.following);
+        const data = await this.attachFollowStatus(userId, users);
+        return buildPaginatedResponse(data, total, currentPage, take);
       } else if (type === 'friends') {
-        const where = { OR: [{ user_a_id: userId }, { user_b_id: userId }] };
-        const friends = await this.prisma.resFriend.findMany({
-          where,
-          include: { userA: true, userB: true },
-          orderBy: { created_at: 'desc' },
-        });
-        allUsers = friends.map((f) => (f.user_a_id === userId ? f.userB : f.userA));
+        // Friends: Cần query cả 2 trường hợp (user_a_id hoặc user_b_id)
+        const [friendsA, friendsB, totalA, totalB] = await Promise.all([
+          this.prisma.resFriend.findMany({
+            where: {
+              user_a_id: userId,
+              userB: searchFilter,
+            },
+            include: {
+              userB: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                  bio: true,
+                  created_at: true,
+                },
+              },
+            },
+            orderBy: { created_at: 'desc' },
+          }),
+          this.prisma.resFriend.findMany({
+            where: {
+              user_b_id: userId,
+              userA: searchFilter,
+            },
+            include: {
+              userA: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                  bio: true,
+                  created_at: true,
+                },
+              },
+            },
+            orderBy: { created_at: 'desc' },
+          }),
+          this.prisma.resFriend.count({
+            where: {
+              user_a_id: userId,
+              userB: searchFilter,
+            },
+          }),
+          this.prisma.resFriend.count({
+            where: {
+              user_b_id: userId,
+              userA: searchFilter,
+            },
+          }),
+        ]);
+
+        const allFriends = [...friendsA.map((f) => f.userB), ...friendsB.map((f) => f.userA)];
+        const total = totalA + totalB;
+
+        // Sort by created_at desc và paginate
+        allFriends.sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+        const paginatedFriends = allFriends.slice(skip, skip + take);
+        const data = await this.attachFollowStatus(userId, paginatedFriends);
+
+        return buildPaginatedResponse(data, total, currentPage, take);
       } else {
         return buildPaginatedResponse([], 0, currentPage, take);
       }
-
-      // Filter users by search term
-      const filteredUsers = allUsers.filter(
-        (u) =>
-          u.nickname?.toLowerCase().includes(searchLower) ||
-          u.id.toLowerCase().includes(searchLower),
-      );
-
-      // Paginate filtered results
-      const paginatedUsers = filteredUsers.slice(skip, skip + take);
-      const data = await this.attachFollowStatus(userId, paginatedUsers);
-
-      return buildPaginatedResponse(data, filteredUsers.length, currentPage, take);
     }
 
     // No search - use existing methods with pagination

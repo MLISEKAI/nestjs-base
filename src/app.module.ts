@@ -21,6 +21,7 @@ import { SupportModule } from './modules/support/support.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ClansModule } from './modules/clans/clans.module';
 import { GiftsModule } from './modules/gifts/gifts.module';
+import { SearchModule } from './modules/search/search.module';
 import { CacheModule } from './common/cache/cache.module';
 import { MonitoringModule } from './common/monitoring/monitoring.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
@@ -60,6 +61,7 @@ import jwtConfig from './config/jwt.config';
     WalletModule,
     ClansModule,
     GiftsModule,
+    SearchModule,
     CacheModule,
     MonitoringModule,
     RateLimitModule,

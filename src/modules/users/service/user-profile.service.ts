@@ -66,15 +66,17 @@ export class UserProfileService {
   }
 
   async searchUsers(params: { search?: string; page?: number; limit?: number; sort?: string }) {
-    const search = params?.search;
-    const where = search
-      ? {
-          OR: [
-            { nickname: { contains: search, mode: 'insensitive' as const } },
-            { id: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    // Xử lý search: trim và kiểm tra empty string
+    const search = params?.search?.trim();
+    const where =
+      search && search.length > 0
+        ? {
+            OR: [
+              { nickname: { contains: search, mode: 'insensitive' as const } },
+              { id: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {};
 
     let orderBy: Record<string, 'asc' | 'desc'> = { created_at: 'asc' };
     if (params?.sort) {
@@ -86,8 +88,22 @@ export class UserProfileService {
     const page = params?.page && params.page > 0 ? params.page : 1;
     const skip = (page - 1) * take;
 
+    // Tối ưu: Chỉ select các fields cần thiết thay vì select tất cả
     const [users, total] = await Promise.all([
-      this.prisma.resUser.findMany({ where, orderBy, take, skip }),
+      this.prisma.resUser.findMany({
+        where,
+        orderBy,
+        take,
+        skip,
+        select: {
+          id: true,
+          nickname: true,
+          avatar: true,
+          bio: true,
+          created_at: true,
+          updated_at: true,
+        },
+      }),
       this.prisma.resUser.count({ where }),
     ]);
 
