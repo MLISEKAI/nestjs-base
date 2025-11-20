@@ -43,8 +43,12 @@ export class SubscriptionService {
       where: { card_id: dto.cardId },
     });
 
-    if (!cardData || !cardData.is_active) {
-      throw new NotFoundException('Monthly card not found or inactive');
+    if (!cardData) {
+      throw new NotFoundException(`Monthly card with cardId ${dto.cardId} not found`);
+    }
+
+    if (!cardData.is_active) {
+      throw new NotFoundException(`Monthly card with cardId ${dto.cardId} is inactive`);
     }
 
     // Update VIP status
@@ -83,8 +87,17 @@ export class SubscriptionService {
       where: { user_id: userId },
     });
 
-    if (!vipStatus || !vipStatus.is_vip) {
+    if (!vipStatus) {
+      throw new NotFoundException('No subscription found');
+    }
+
+    if (!vipStatus.is_vip) {
       throw new NotFoundException('No active subscription found');
+    }
+
+    // Check if subscription is expired
+    if (vipStatus.expiry && vipStatus.expiry <= new Date()) {
+      throw new NotFoundException('Subscription has expired');
     }
 
     const user = await this.prisma.resUser.findUnique({

@@ -20,7 +20,8 @@
     "prisma:deploy": "npx prisma migrate deploy --schema=./src/prisma/schema.prisma",
     "prisma:generate": "npx prisma generate --schema=./src/prisma/schema.prisma",
     "prisma:reset": "npx prisma migrate reset --schema=./src/prisma/schema.prisma",
-    "seed:gifts": "ts-node -r tsconfig-paths/register src/prisma/seed-gifts.ts"
+    "seed:gifts": "ts-node -r tsconfig-paths/register src/prisma/seed-gifts.ts",
+    "seed:wallet": "ts-node -r tsconfig-paths/register src/prisma/seed-wallet.ts"
   },
   "engines": {
     "npm": ">=10.0.0",

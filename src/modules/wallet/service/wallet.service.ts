@@ -9,11 +9,22 @@ export class WalletService {
   constructor(private prisma: PrismaService) {}
 
   async getWallet(userId: string, query: BaseQueryDto) {
-    // Lấy tất cả wallets của user hoặc wallet đầu tiên nếu không có currency filter
+    // Lấy tất cả wallets của user
     const wallets = await this.prisma.resWallet.findMany({
       where: { user_id: userId },
     });
-    if (wallets.length === 0) throw new NotFoundException('Wallet not found');
+
+    // Nếu user chưa có wallet nào, tạo wallet mặc định (gem)
+    if (wallets.length === 0) {
+      return await this.prisma.resWallet.create({
+        data: {
+          user_id: userId,
+          currency: 'gem',
+          balance: new Prisma.Decimal(0),
+        },
+      });
+    }
+
     // Trả về wallet đầu tiên (hoặc có thể trả về tất cả wallets)
     return wallets[0];
   }
@@ -68,22 +79,30 @@ export class WalletService {
       throw new NotFoundException('Currency is required to update wallet');
     }
 
-    try {
-      // Tìm wallet với currency
-      const existing = await this.prisma.resWallet.findUnique({
-        where: {
-          user_id_currency: {
-            user_id: userId,
-            currency: dto.currency,
-          },
+    // Tìm wallet với currency
+    const existing = await this.prisma.resWallet.findUnique({
+      where: {
+        user_id_currency: {
+          user_id: userId,
+          currency: dto.currency,
+        },
+      },
+    });
+
+    // Nếu wallet chưa tồn tại, tạo mới (upsert behavior)
+    if (!existing) {
+      return await this.prisma.resWallet.create({
+        data: {
+          user_id: userId,
+          currency: dto.currency,
+          balance:
+            dto.balance !== undefined ? new Prisma.Decimal(dto.balance) : new Prisma.Decimal(0),
         },
       });
+    }
 
-      if (!existing) {
-        throw new NotFoundException(`Wallet with currency ${dto.currency} not found`);
-      }
-
-      // Update wallet
+    // Update wallet nếu đã tồn tại
+    try {
       return await this.prisma.resWallet.update({
         where: {
           user_id_currency: {
