@@ -30,5 +30,5 @@ export interface IProfileStats {
   posts: number;
   followers_count: number;
   following_count: number;
-  totalViews_count: number;
+  views_count: number;
 }

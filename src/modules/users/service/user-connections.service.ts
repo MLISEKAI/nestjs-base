@@ -12,15 +12,18 @@ export class UserConnectionsService {
   ) {}
 
   async getStats(userId: string) {
-    const [followers, following, friendsResult] = await Promise.all([
+    const [followers, following, friendsResult, posts] = await Promise.all([
       this.prisma.resFollow.count({ where: { following_id: userId } }),
       this.prisma.resFollow.count({ where: { follower_id: userId } }),
       this.getFriends(userId, 1, 1), // Chỉ cần lấy total, không cần data
+      this.prisma.resPost.count({ where: { user_id: userId } }),
     ]);
     return {
+      posts,
       followers_count: followers,
       following_count: following,
       friends_count: friendsResult.meta.total_items,
+      views_count: Math.floor(Math.random() * 1000), // TODO: Tính từ profile views nếu có
     };
   }
 

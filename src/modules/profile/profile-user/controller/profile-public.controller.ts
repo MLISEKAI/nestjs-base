@@ -37,7 +37,7 @@ export class ProfilePublicController {
         posts: { example: 10 },
         followers_count: { example: 100 },
         following_count: { example: 50 },
-        totalViews_count: { example: 500 },
+        views_count: { example: 500 },
       },
     },
   })

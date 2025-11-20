@@ -83,7 +83,7 @@ export class UserProfileService {
       posts,
       followers_count: followers,
       following_count: following,
-      totalViews_count: Math.floor(Math.random() * 1000), // TODO: Tính từ profile views nếu có
+      views_count: Math.floor(Math.random() * 1000), // TODO: Tính từ profile views nếu có
     };
   }
 

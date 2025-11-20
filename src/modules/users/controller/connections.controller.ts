@@ -37,17 +37,24 @@ export class ConnectionsController {
 
   @Get('stats')
   @ApiOperation({
-    summary:
-      'Lấy thông tin tổng quan của user hiện tại (followers_count, following_count, friends_count)',
+    summary: 'Lấy thống kê tổng quan của user hiện tại',
+    description:
+      'Lấy tất cả thống kê của user hiện tại bao gồm: số bài post, số followers, số following, số friends, và tổng số views. Endpoint này gộp thông tin từ profile stats và connections stats.',
   })
   @ApiOkResponse({
-    description: 'Stats',
+    description: 'Thống kê đầy đủ của user',
     schema: {
       type: 'object',
       properties: {
-        followers_count: { example: 100 },
-        following_count: { example: 50 },
-        friends_count: { example: 25 },
+        posts: { type: 'number', example: 10, description: 'Số bài post của user' },
+        followers_count: { type: 'number', example: 100, description: 'Số người follow user' },
+        following_count: {
+          type: 'number',
+          example: 50,
+          description: 'Số người mà user đang follow',
+        },
+        friends_count: { type: 'number', example: 25, description: 'Số friends (mutual follow)' },
+        views_count: { type: 'number', example: 500, description: 'Tổng số lượt xem profile' },
       },
     },
   })

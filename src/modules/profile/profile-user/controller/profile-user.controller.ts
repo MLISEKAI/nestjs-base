@@ -69,26 +69,9 @@ export class UserProfileController {
     return this.userProfile.deleteProfile(userId);
   }
 
-  @Get('me/stats')
-  @UseGuards(AuthGuard('account-auth'))
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Lấy thống kê của user hiện tại' })
-  @ApiOkResponse({
-    description: 'Thống kê user theo schema Prisma',
-    schema: {
-      type: 'object',
-      properties: {
-        posts: { example: 10 },
-        followers_count: { example: 100 },
-        following_count: { example: 50 },
-        totalViews_count: { example: 500 },
-      },
-    },
-  })
-  getStats(@Req() req: any, @Query() query: StatsQueryDto) {
-    const userId = req.user.id;
-    return this.userProfile.getStats(userId, query);
-  }
+  // @Get('me/stats') - Đã gộp vào GET /connections/stats
+  // Endpoint này đã được gộp vào /connections/stats để tránh trùng lặp
+  // Sử dụng GET /connections/stats để lấy đầy đủ thống kê (posts, followers, following, friends, views)
 
   @Get('me/room/status')
   @UseGuards(AuthGuard('account-auth'))

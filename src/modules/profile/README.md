@@ -276,11 +276,12 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 #### **Test Cases:**
 
 1. **GET stats:**
+
    ```
    GET /profile/{user_id}/stats
    ```
 
-   - Response: `{ posts: <số thật>, followers_count: <số thật>, following_count: <số thật>, totalViews_count: <random> }`
+   - Response: `{ posts: <số thật>, followers_count: <số thật>, following_count: <số thật>, views_count: <random> }`
 
 ---
 
