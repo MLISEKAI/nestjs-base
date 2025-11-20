@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { Prisma } from '@prisma/client';
 import {
   RechargePackageDto,
@@ -10,25 +11,38 @@ import {
 
 @Injectable()
 export class RechargeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   /**
    * Get recharge packages from database
+   * Cached for 1 hour (packages ít thay đổi)
    */
   async getRechargePackages(): Promise<RechargePackageDto[]> {
-    const packages = await this.prisma.resRechargePackage.findMany({
-      where: { is_active: true },
-      orderBy: { package_id: 'asc' },
-    });
+    const cacheKey = 'wallet:recharge:packages';
+    const cacheTtl = 3600; // 1 giờ
 
-    // Nếu chưa có data trong DB, trả về empty array
-    // Admin có thể seed data sau
-    return packages.map((pkg) => ({
-      packageId: pkg.package_id,
-      diamonds: pkg.diamonds,
-      price: Number(pkg.price),
-      bonus: pkg.bonus || undefined,
-    }));
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const packages = await this.prisma.resRechargePackage.findMany({
+          where: { is_active: true },
+          orderBy: { package_id: 'asc' },
+        });
+
+        // Nếu chưa có data trong DB, trả về empty array
+        // Admin có thể seed data sau
+        return packages.map((pkg) => ({
+          packageId: pkg.package_id,
+          diamonds: pkg.diamonds,
+          price: Number(pkg.price),
+          bonus: pkg.bonus || undefined,
+        }));
+      },
+      cacheTtl,
+    );
   }
 
   /**

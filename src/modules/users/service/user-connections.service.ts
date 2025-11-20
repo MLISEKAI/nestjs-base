@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { UserProfileService } from './user-profile.service';
 import { UserConnectionDto } from '../dto/connection-user.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
@@ -8,23 +9,33 @@ import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 export class UserConnectionsService {
   constructor(
     private prisma: PrismaService,
+    private cacheService: CacheService,
     private profile: UserProfileService,
   ) {}
 
   async getStats(userId: string) {
-    const [followers, following, friendsResult, posts] = await Promise.all([
-      this.prisma.resFollow.count({ where: { following_id: userId } }),
-      this.prisma.resFollow.count({ where: { follower_id: userId } }),
-      this.getFriends(userId, 1, 1), // Chỉ cần lấy total, không cần data
-      this.prisma.resPost.count({ where: { user_id: userId } }),
-    ]);
-    return {
-      posts,
-      followers_count: followers,
-      following_count: following,
-      friends_count: friendsResult.meta.total_items,
-      views_count: Math.floor(Math.random() * 1000), // TODO: Tính từ profile views nếu có
-    };
+    const cacheKey = `connections:${userId}:stats`;
+    const cacheTtl = 300; // 5 phút (stats thay đổi thường xuyên)
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const [followers, following, friendsResult, posts] = await Promise.all([
+          this.prisma.resFollow.count({ where: { following_id: userId } }),
+          this.prisma.resFollow.count({ where: { follower_id: userId } }),
+          this.getFriends(userId, 1, 1), // Chỉ cần lấy total, không cần data
+          this.prisma.resPost.count({ where: { user_id: userId } }),
+        ]);
+        return {
+          posts,
+          followers_count: followers,
+          following_count: following,
+          friends_count: friendsResult.meta.total_items,
+          views_count: Math.floor(Math.random() * 1000), // TODO: Tính từ profile views nếu có
+        };
+      },
+      cacheTtl,
+    );
   }
 
   async followUser(
@@ -131,6 +142,10 @@ export class UserConnectionsService {
       });
     }
 
+    // Invalidate cache khi unfollow
+    await this.cacheService.del(`connections:${userId}:stats`);
+    await this.cacheService.del(`connections:${targetId}:stats`);
+
     return { message: `User ${userId} unfollowed ${targetId}` };
   }
 
@@ -166,6 +181,10 @@ export class UserConnectionsService {
       });
     }
 
+    // Invalidate cache khi remove follower
+    await this.cacheService.del(`connections:${userId}:stats`);
+    await this.cacheService.del(`connections:${followerId}:stats`);
+
     return { message: `Follower ${followerId} removed from user ${userId}` };
   }
 
@@ -178,6 +197,11 @@ export class UserConnectionsService {
         ],
       },
     });
+
+    // Invalidate cache khi unfriend
+    await this.cacheService.del(`connections:${userId}:stats`);
+    await this.cacheService.del(`connections:${friendId}:stats`);
+
     return { message: `User ${userId} unfriended ${friendId}` };
   }
 

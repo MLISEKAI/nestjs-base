@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { CacheModule } from 'src/common/cache/cache.module';
 import { ProfileModuleDb } from '../profile/profile.module';
 import { GiftsController } from './controller/gifts.controller';
 import { GiftCatalogController } from './controller/gift-catalog.controller';
@@ -11,7 +12,7 @@ import { GiftCatalogService } from './service/gift-catalog.service';
 import { UserGiftWallService } from '../users/service/user-gift-wall.service';
 
 @Module({
-  imports: [PrismaModule, ProfileModuleDb],
+  imports: [PrismaModule, CacheModule, ProfileModuleDb],
   controllers: [
     GiftCatalogController,
     GiftsController,

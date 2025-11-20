@@ -1,36 +1,54 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { CreateAlbumDto, UpdateAlbumDto } from '../dto/album.dto';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { buildPaginatedResponse } from '../../../../common/utils/pagination.util';
 
 @Injectable()
 export class AlbumService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async getAlbums(userId: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const [albums, total] = await Promise.all([
-      this.prisma.resAlbum.findMany({
-        where: { user_id: userId },
-        include: { photos: true },
-        take,
-        skip,
-        orderBy: { created_at: 'desc' },
-      }),
-      this.prisma.resAlbum.count({ where: { user_id: userId } }),
-    ]);
+    const cacheKey = `user:${userId}:albums:page:${page}:limit:${take}`;
+    const cacheTtl = 300; // 5 phút
 
-    return buildPaginatedResponse(albums, total, page, take);
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const [albums, total] = await Promise.all([
+          this.prisma.resAlbum.findMany({
+            where: { user_id: userId },
+            include: { photos: true },
+            take,
+            skip,
+            orderBy: { created_at: 'desc' },
+          }),
+          this.prisma.resAlbum.count({ where: { user_id: userId } }),
+        ]);
+
+        return buildPaginatedResponse(albums, total, page, take);
+      },
+      cacheTtl,
+    );
   }
 
   async createAlbum(userId: string, dto: CreateAlbumDto) {
-    return this.prisma.resAlbum.create({
+    const album = await this.prisma.resAlbum.create({
       data: { user_id: userId, title: dto.title, image_url: dto.image_url },
     });
+
+    // Invalidate cache
+    await this.cacheService.delPattern(`user:${userId}:albums:*`);
+
+    return album;
   }
 
   async updateAlbum(userId: string, albumId: string, dto: UpdateAlbumDto) {
@@ -55,19 +73,34 @@ export class AlbumService {
       select: { title: true, image_url: true },
     });
     if (!existing) throw new NotFoundException('Album not found');
-    return this.prisma.resAlbum.update({
+    const album = await this.prisma.resAlbum.update({
       where: { id: albumId },
       data: { title: dto.title ?? existing.title, image_url: dto.image_url ?? existing.image_url },
     });
+
+    // Invalidate cache
+    await this.cacheService.delPattern(`user:${userId}:albums:*`);
+    await this.cacheService.del(`user:${userId}:album:${albumId}:photos`);
+
+    return album;
   }
 
   async getAlbumPhotos(userId: string, albumId: string) {
-    const album = await this.prisma.resAlbum.findFirst({
-      where: { id: albumId, user_id: userId },
-      include: { photos: true },
-    });
-    if (!album) throw new NotFoundException('Album not found');
-    return album.photos;
+    const cacheKey = `user:${userId}:album:${albumId}:photos`;
+    const cacheTtl = 300; // 5 phút
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const album = await this.prisma.resAlbum.findFirst({
+          where: { id: albumId, user_id: userId },
+          include: { photos: true },
+        });
+        if (!album) throw new NotFoundException('Album not found');
+        return album.photos;
+      },
+      cacheTtl,
+    );
   }
 
   async addPhotoToAlbum(userId: string, albumId: string, imageUrl: string) {
@@ -82,6 +115,10 @@ export class AlbumService {
         this.prisma.resAlbumPhoto.create({ data: { album_id: albumId, image_url: imageUrl } }),
         this.prisma.resAlbumPhoto.count({ where: { album_id: albumId } }),
       ]);
+      // Invalidate cache
+      await this.cacheService.del(`user:${userId}:album:${albumId}:photos`);
+      await this.cacheService.delPattern(`user:${userId}:albums:*`);
+
       return { photo, albumPhotoCount: count };
     } catch (error) {
       if (error.code === 'P2025' || error.code === 'P2003') {
@@ -99,6 +136,11 @@ export class AlbumService {
         select: { id: true },
       });
       await this.prisma.resAlbumPhoto.delete({ where: { id: photoId } });
+
+      // Invalidate cache
+      await this.cacheService.del(`user:${userId}:album:${albumId}:photos`);
+      await this.cacheService.delPattern(`user:${userId}:albums:*`);
+
       return { message: 'Photo deleted' };
     } catch (error) {
       if (error.code === 'P2025') {

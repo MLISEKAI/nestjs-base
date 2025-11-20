@@ -1,60 +1,73 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { CreateCommentDto, UpdateCommentDto } from '../dto/comments.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class CommentService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async getComments(postId: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    // Check if post exists
-    const post = await this.prisma.resPost.findUnique({
-      where: { id: postId },
-    });
+    const cacheKey = `post:${postId}:comments:page:${page}:limit:${take}`;
+    const cacheTtl = 60; // 1 phút
 
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        // Check if post exists
+        const post = await this.prisma.resPost.findUnique({
+          where: { id: postId },
+        });
 
-    const [comments, total] = await Promise.all([
-      this.prisma.resComment.findMany({
-        where: { post_id: postId, parent_id: null }, // Only top-level comments
-        take,
-        skip,
-        orderBy: { created_at: 'desc' },
-        include: {
-          user: {
-            select: {
-              id: true,
-              nickname: true,
-              avatar: true,
+        if (!post) {
+          throw new NotFoundException('Post not found');
+        }
+
+        const [comments, total] = await Promise.all([
+          this.prisma.resComment.findMany({
+            where: { post_id: postId, parent_id: null }, // Only top-level comments
+            take,
+            skip,
+            orderBy: { created_at: 'desc' },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                },
+              },
+              _count: {
+                select: {
+                  replies: true,
+                },
+              },
             },
-          },
-          _count: {
-            select: {
-              replies: true,
-            },
-          },
-        },
-      }),
-      this.prisma.resComment.count({
-        where: { post_id: postId, parent_id: null },
-      }),
-    ]);
+          }),
+          this.prisma.resComment.count({
+            where: { post_id: postId, parent_id: null },
+          }),
+        ]);
 
-    const formattedComments = comments.map((comment) => ({
-      ...comment,
-      replies_count: comment._count.replies,
-      _count: undefined,
-    }));
+        const formattedComments = comments.map((comment) => ({
+          ...comment,
+          replies_count: comment._count.replies,
+          _count: undefined,
+        }));
 
-    return buildPaginatedResponse(formattedComments, total, page, take);
+        return buildPaginatedResponse(formattedComments, total, page, take);
+      },
+      cacheTtl,
+    );
   }
 
   async getCommentReplies(commentId: string, query?: BaseQueryDto) {
@@ -62,28 +75,37 @@ export class CommentService {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const [replies, total] = await Promise.all([
-      this.prisma.resComment.findMany({
-        where: { parent_id: commentId },
-        take,
-        skip,
-        orderBy: { created_at: 'asc' },
-        include: {
-          user: {
-            select: {
-              id: true,
-              nickname: true,
-              avatar: true,
-            },
-          },
-        },
-      }),
-      this.prisma.resComment.count({
-        where: { parent_id: commentId },
-      }),
-    ]);
+    const cacheKey = `comment:${commentId}:replies:page:${page}:limit:${take}`;
+    const cacheTtl = 60; // 1 phút
 
-    return buildPaginatedResponse(replies, total, page, take);
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const [replies, total] = await Promise.all([
+          this.prisma.resComment.findMany({
+            where: { parent_id: commentId },
+            take,
+            skip,
+            orderBy: { created_at: 'asc' },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                },
+              },
+            },
+          }),
+          this.prisma.resComment.count({
+            where: { parent_id: commentId },
+          }),
+        ]);
+
+        return buildPaginatedResponse(replies, total, page, take);
+      },
+      cacheTtl,
+    );
   }
 
   async createComment(userId: string, postId: string, dto: CreateCommentDto) {
@@ -130,6 +152,12 @@ export class CommentService {
       },
     });
 
+    // Invalidate cache
+    await this.cacheService.delPattern(`post:${postId}:comments:*`);
+    if (dto.parent_id) {
+      await this.cacheService.delPattern(`comment:${dto.parent_id}:replies:*`);
+    }
+
     return {
       ...comment,
       replies_count: comment._count.replies,
@@ -163,6 +191,12 @@ export class CommentService {
         },
       });
 
+      // Invalidate cache
+      await this.cacheService.delPattern(`post:${comment.post_id}:comments:*`);
+      if (comment.parent_id) {
+        await this.cacheService.delPattern(`comment:${comment.parent_id}:replies:*`);
+      }
+
       return {
         ...comment,
         replies_count: comment._count.replies,
@@ -178,12 +212,26 @@ export class CommentService {
 
   async deleteComment(userId: string, commentId: string) {
     try {
+      // Get comment info before deleting to invalidate cache
+      const comment = await this.prisma.resComment.findUnique({
+        where: { id: commentId },
+        select: { post_id: true, parent_id: true },
+      });
+
       await this.prisma.resComment.delete({
         where: {
           id: commentId,
           user_id: userId, // Only owner can delete
         },
       });
+
+      // Invalidate cache
+      if (comment) {
+        await this.cacheService.delPattern(`post:${comment.post_id}:comments:*`);
+        if (comment.parent_id) {
+          await this.cacheService.delPattern(`comment:${comment.parent_id}:replies:*`);
+        }
+      }
 
       return { message: 'Comment deleted' };
     } catch (error) {

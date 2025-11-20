@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { CacheModule } from 'src/common/cache/cache.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 
 // Posts
@@ -16,7 +17,7 @@ import { LikeController } from './controller/like.controller';
 import { LikeService } from './service/like.service';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => RealtimeModule)],
+  imports: [PrismaModule, CacheModule, forwardRef(() => RealtimeModule)],
   controllers: [PostController, CommentController, LikeController],
   providers: [PostService, PostMediaService, CommentService, LikeService],
   exports: [PostService, CommentService, LikeService],

@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { CacheModule } from 'src/common/cache/cache.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { UsersModule } from '../users/users.module';
 
@@ -43,7 +44,12 @@ import { ReferralPublicController } from './referral/controller/referral-public.
 import { ReferralService } from './referral/service/referral.service';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => RealtimeModule), forwardRef(() => UsersModule)],
+  imports: [
+    PrismaModule,
+    CacheModule,
+    forwardRef(() => RealtimeModule),
+    forwardRef(() => UsersModule),
+  ],
   controllers: [
     ProfileViewsControllerDb,
     ProfileViewsAdminController,

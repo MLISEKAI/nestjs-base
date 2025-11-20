@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { SearchQueryDto, SearchType } from '../dto/search.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class SearchService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   /**
    * Universal search - Tìm kiếm trong tất cả loại nội dung
+   * Cached for 5 minutes
    */
   async search(query: SearchQueryDto, userId?: string) {
     const { q, type = SearchType.ALL, page = 1, limit = 20, from_date, to_date } = query;
@@ -16,51 +21,61 @@ export class SearchService {
     const currentPage = Number(page) > 0 ? Number(page) : 1;
     const skip = (currentPage - 1) * take;
 
-    const dateFilter = this.buildDateFilter(from_date, to_date);
+    const dateKey = from_date && to_date ? `:${from_date}:${to_date}` : '';
+    const cacheKey = `search:${type}:${q || 'all'}:page:${currentPage}:limit:${take}${dateKey}`;
+    const cacheTtl = 300; // 5 phút
 
-    // Nếu type cụ thể, chỉ search loại đó
-    if (type === SearchType.USERS) {
-      return this.searchUsers(q, dateFilter, skip, take, currentPage, userId);
-    }
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const dateFilter = this.buildDateFilter(from_date, to_date);
 
-    if (type === SearchType.POSTS) {
-      return this.searchPosts(q, dateFilter, skip, take, currentPage, userId);
-    }
+        // Nếu type cụ thể, chỉ search loại đó
+        if (type === SearchType.USERS) {
+          return this.searchUsers(q, dateFilter, skip, take, currentPage, userId);
+        }
 
-    if (type === SearchType.COMMENTS) {
-      return this.searchComments(q, dateFilter, skip, take, currentPage, userId);
-    }
+        if (type === SearchType.POSTS) {
+          return this.searchPosts(q, dateFilter, skip, take, currentPage, userId);
+        }
 
-    // type === ALL hoặc undefined: Search tất cả loại nội dung
-    // Mỗi loại lấy một số lượng kết quả (limit/3 để tổng không vượt quá limit)
-    const itemsPerType = Math.ceil(take / 3);
+        if (type === SearchType.COMMENTS) {
+          return this.searchComments(q, dateFilter, skip, take, currentPage, userId);
+        }
 
-    // Search all types in parallel, with error handling for comments
-    const [users, posts, comments] = await Promise.all([
-      this.searchUsers(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
-        buildPaginatedResponse([], 0, 1, itemsPerType),
-      ),
-      this.searchPosts(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
-        buildPaginatedResponse([], 0, 1, itemsPerType),
-      ),
-      this.searchComments(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
-        buildPaginatedResponse([], 0, 1, itemsPerType),
-      ),
-    ]);
+        // type === ALL hoặc undefined: Search tất cả loại nội dung
+        // Mỗi loại lấy một số lượng kết quả (limit/3 để tổng không vượt quá limit)
+        const itemsPerType = Math.ceil(take / 3);
 
-    return {
-      users: users.items,
-      posts: posts.items,
-      comments: comments.items,
-      meta: {
-        total: users.meta.total_items + posts.meta.total_items + comments.meta.total_items,
-        page: currentPage,
-        limit: take,
-        total_pages: Math.ceil(
-          (users.meta.total_items + posts.meta.total_items + comments.meta.total_items) / take,
-        ),
+        // Search all types in parallel, with error handling for comments
+        const [users, posts, comments] = await Promise.all([
+          this.searchUsers(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
+            buildPaginatedResponse([], 0, 1, itemsPerType),
+          ),
+          this.searchPosts(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
+            buildPaginatedResponse([], 0, 1, itemsPerType),
+          ),
+          this.searchComments(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
+            buildPaginatedResponse([], 0, 1, itemsPerType),
+          ),
+        ]);
+
+        return {
+          users: users.items,
+          posts: posts.items,
+          comments: comments.items,
+          meta: {
+            total: users.meta.total_items + posts.meta.total_items + comments.meta.total_items,
+            page: currentPage,
+            limit: take,
+            total_pages: Math.ceil(
+              (users.meta.total_items + posts.meta.total_items + comments.meta.total_items) / take,
+            ),
+          },
+        };
       },
-    };
+      cacheTtl,
+    );
   }
 
   /**

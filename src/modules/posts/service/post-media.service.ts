@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 
 export class CreatePostMediaDto {
   media_url: string;
@@ -14,24 +15,36 @@ export class UpdatePostMediaDto {
 
 @Injectable()
 export class PostMediaService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async getPostMedia(postId: string) {
-    // Check if post exists
-    const post = await this.prisma.resPost.findUnique({
-      where: { id: postId },
-    });
+    const cacheKey = `post:${postId}:media`;
+    const cacheTtl = 300; // 5 phút
 
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        // Check if post exists
+        const post = await this.prisma.resPost.findUnique({
+          where: { id: postId },
+        });
 
-    const media = await this.prisma.resPostMedia.findMany({
-      where: { post_id: postId },
-      orderBy: { order: 'asc' },
-    });
+        if (!post) {
+          throw new NotFoundException('Post not found');
+        }
 
-    return media;
+        const media = await this.prisma.resPostMedia.findMany({
+          where: { post_id: postId },
+          orderBy: { order: 'asc' },
+        });
+
+        return media;
+      },
+      cacheTtl,
+    );
   }
 
   async addPostMedia(postId: string, dto: CreatePostMediaDto) {
@@ -62,6 +75,9 @@ export class PostMediaService {
       },
     });
 
+    // Invalidate cache
+    await this.cacheService.del(`post:${postId}:media`);
+
     return media;
   }
 
@@ -75,6 +91,9 @@ export class PostMediaService {
         },
       });
 
+      // Invalidate cache
+      await this.cacheService.del(`post:${media.post_id}:media`);
+
       return media;
     } catch (error) {
       if (error.code === 'P2025') {
@@ -86,9 +105,20 @@ export class PostMediaService {
 
   async deletePostMedia(mediaId: string) {
     try {
+      // Get post_id before deleting to invalidate cache
+      const media = await this.prisma.resPostMedia.findUnique({
+        where: { id: mediaId },
+        select: { post_id: true },
+      });
+
       await this.prisma.resPostMedia.delete({
         where: { id: mediaId },
       });
+
+      // Invalidate cache
+      if (media) {
+        await this.cacheService.del(`post:${media.post_id}:media`);
+      }
 
       return { message: 'Media deleted' };
     } catch (error) {

@@ -1,15 +1,19 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { CreateGiftDto, UpdateGiftDto } from '../dto/gift.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
 @Injectable()
 export class GiftCrudService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async create(dto: CreateGiftDto & { sender_id: string }) {
-    return this.prisma.resGift.create({
+    const gift = await this.prisma.resGift.create({
       data: {
         sender_id: dto.sender_id,
         receiver_id: dto.receiver_id,
@@ -18,6 +22,14 @@ export class GiftCrudService {
         message: dto.message,
       },
     });
+
+    // Invalidate cache khi có gift mới
+    await this.cacheService.del(`user:${dto.receiver_id}:balance`);
+    await this.cacheService.del(`user:${dto.receiver_id}:gift-wall`);
+    await this.cacheService.delPattern(`user:${dto.receiver_id}:gift-wall:*`);
+    await this.cacheService.delPattern(`user:${dto.receiver_id}:gifts:*`); // GiftSummaryService cache
+
+    return gift;
   }
 
   async findAll(userId?: string, query?: BaseQueryDto) {
@@ -103,18 +115,31 @@ export class GiftCrudService {
    */
   async remove(id: string, userId?: string) {
     // Check if gift exists and user has permission
+    let gift = null;
     if (userId) {
-      const gift = await this.prisma.resGift.findUnique({ where: { id } });
+      gift = await this.prisma.resGift.findUnique({ where: { id } });
       if (!gift) throw new NotFoundException('Gift not found');
 
       // Authorization: Chỉ sender mới có thể delete gift
       if (gift.sender_id !== userId) {
         throw new ForbiddenException('You can only delete gifts you sent');
       }
+    } else {
+      gift = await this.prisma.resGift.findUnique({ where: { id } });
+      if (!gift) throw new NotFoundException('Gift not found');
     }
 
     try {
       await this.prisma.resGift.delete({ where: { id } });
+
+      // Invalidate cache khi xóa gift
+      if (gift) {
+        await this.cacheService.del(`user:${gift.receiver_id}:balance`);
+        await this.cacheService.del(`user:${gift.receiver_id}:gift-wall`);
+        await this.cacheService.delPattern(`user:${gift.receiver_id}:gift-wall:*`);
+        await this.cacheService.delPattern(`user:${gift.receiver_id}:gifts:*`); // GiftSummaryService cache
+      }
+
       return { message: 'Gift deleted successfully' };
     } catch (error) {
       if (error.code === 'P2025') {

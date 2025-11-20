@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { Prisma } from '@prisma/client';
 import {
   CreateDepositDto,
@@ -12,7 +13,10 @@ import {
 
 @Injectable()
 export class DepositService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   /**
    * Create deposit address (generate wallet address for VEX deposit)
@@ -116,15 +120,25 @@ export class DepositService {
 
   /**
    * Get deposit info
+   * Cached for 30 minutes (deposit address ít thay đổi)
    */
   async getDepositInfo(userId: string): Promise<DepositInfoResponseDto> {
-    // Lấy từ DB nếu đã có, nếu chưa có thì tạo mới
-    const deposit = await this.createDeposit(userId);
+    const cacheKey = `wallet:${userId}:deposit:info`;
+    const cacheTtl = 1800; // 30 phút
 
-    return {
-      deposit_address: deposit.deposit_address,
-      qr_code: deposit.qr_code,
-      network: deposit.network,
-    };
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        // Lấy từ DB nếu đã có, nếu chưa có thì tạo mới
+        const deposit = await this.createDeposit(userId);
+
+        return {
+          deposit_address: deposit.deposit_address,
+          qr_code: deposit.qr_code,
+          network: deposit.network,
+        };
+      },
+      cacheTtl,
+    );
   }
 }

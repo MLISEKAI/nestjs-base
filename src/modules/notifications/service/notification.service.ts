@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { CreateNotificationDto, UpdateNotificationStatusDto } from '../dto/notification.dto';
 import { NotificationType, NotificationStatus } from '@prisma/client';
 import { BaseQueryDto } from 'src/common/dto/base-query.dto';
@@ -12,6 +13,7 @@ export class NotificationService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
     @Inject(forwardRef(() => WebSocketGateway))
     private websocketGateway: WebSocketGateway,
   ) {}
@@ -60,49 +62,72 @@ export class NotificationService {
       this.logger.error('Failed to emit WebSocket notification:', error);
     }
 
+    // Invalidate cache khi tạo notification mới
+    await this.cacheService.delPattern(`notifications:${dto.user_id}:*`);
+
     return notification;
   }
 
   /**
    * Lấy danh sách notifications của user
+   * Cached for 1 minute (notifications thay đổi thường xuyên)
    */
   async getUserNotifications(userId: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const [notifications, total] = await Promise.all([
-      this.prisma.resNotification.findMany({
-        where: { user_id: userId },
-        take,
-        skip,
-        orderBy: { created_at: 'desc' },
-        include: {
-          sender: {
-            select: {
-              id: true,
-              nickname: true,
-              avatar: true,
-            },
-          },
-        },
-      }),
-      this.prisma.resNotification.count({ where: { user_id: userId } }),
-    ]);
+    const cacheKey = `notifications:${userId}:page:${page}:limit:${take}`;
+    const cacheTtl = 60; // 1 phút (notifications real-time)
 
-    return buildPaginatedResponse(notifications, total, page, take);
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const [notifications, total] = await Promise.all([
+          this.prisma.resNotification.findMany({
+            where: { user_id: userId },
+            take,
+            skip,
+            orderBy: { created_at: 'desc' },
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                },
+              },
+            },
+          }),
+          this.prisma.resNotification.count({ where: { user_id: userId } }),
+        ]);
+
+        return buildPaginatedResponse(notifications, total, page, take);
+      },
+      cacheTtl,
+    );
   }
 
   /**
    * Lấy số lượng unread notifications
+   * Cached for 30 seconds (real-time data)
    */
   async getUnreadCount(userId: string): Promise<number> {
-    return this.prisma.resNotification.count({
-      where: {
-        user_id: userId,
-        status: NotificationStatus.UNREAD,
+    const cacheKey = `notifications:${userId}:unread:count`;
+    const cacheTtl = 30; // 30 giây (real-time)
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        return this.prisma.resNotification.count({
+          where: {
+            user_id: userId,
+            status: NotificationStatus.UNREAD,
+          },
+        });
       },
-    });
+      cacheTtl,
+    );
   }
 
   /**
@@ -110,10 +135,25 @@ export class NotificationService {
    */
   async updateNotificationStatus(notificationId: string, dto: UpdateNotificationStatusDto) {
     try {
-      return await this.prisma.resNotification.update({
+      // Lấy notification để biết user_id
+      const notification = await this.prisma.resNotification.findUnique({
+        where: { id: notificationId },
+        select: { user_id: true },
+      });
+
+      if (!notification) {
+        throw new NotFoundException('Notification not found');
+      }
+
+      const updated = await this.prisma.resNotification.update({
         where: { id: notificationId },
         data: { status: dto.status },
       });
+
+      // Invalidate cache
+      await this.cacheService.delPattern(`notifications:${notification.user_id}:*`);
+
+      return updated;
     } catch (error) {
       if (error.code === 'P2025') {
         throw new NotFoundException('Notification not found');
@@ -136,6 +176,9 @@ export class NotificationService {
       },
     });
 
+    // Invalidate cache
+    await this.cacheService.delPattern(`notifications:${userId}:*`);
+
     return { message: 'All notifications marked as read' };
   }
 
@@ -150,6 +193,10 @@ export class NotificationService {
           user_id: userId, // Đảm bảo chỉ user sở hữu mới xóa được
         },
       });
+
+      // Invalidate cache
+      await this.cacheService.delPattern(`notifications:${userId}:*`);
+
       return { message: 'Notification deleted' };
     } catch (error) {
       if (error.code === 'P2025') {

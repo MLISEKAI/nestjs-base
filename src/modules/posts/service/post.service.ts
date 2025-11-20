@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { PostDto, CreatePostDto, UpdatePostDto } from '../dto/posts.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
@@ -9,6 +10,7 @@ import { WebSocketGateway } from '../../realtime/gateway/websocket.gateway';
 export class PostService {
   constructor(
     private prisma: PrismaService,
+    private cacheService: CacheService,
     @Inject(forwardRef(() => WebSocketGateway))
     private websocketGateway: WebSocketGateway,
   ) {}
@@ -18,17 +20,26 @@ export class PostService {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const [posts, total] = await Promise.all([
-      this.prisma.resPost.findMany({
-        where: { user_id: userId },
-        take,
-        skip,
-        orderBy: { created_at: 'desc' },
-      }),
-      this.prisma.resPost.count({ where: { user_id: userId } }),
-    ]);
+    const cacheKey = `posts:${userId}:page:${page}:limit:${take}`;
+    const cacheTtl = 300; // 5 phút
 
-    return buildPaginatedResponse(posts, total, page, take);
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const [posts, total] = await Promise.all([
+          this.prisma.resPost.findMany({
+            where: { user_id: userId },
+            take,
+            skip,
+            orderBy: { created_at: 'desc' },
+          }),
+          this.prisma.resPost.count({ where: { user_id: userId } }),
+        ]);
+
+        return buildPaginatedResponse(posts, total, page, take);
+      },
+      cacheTtl,
+    );
   }
 
   async createPost(userId: string, dto: CreatePostDto) {
@@ -69,6 +80,11 @@ export class PostService {
     } catch (error) {
       console.error('Failed to emit live update for post:', error);
     }
+
+    // Invalidate cache khi tạo post mới
+    await this.cacheService.delPattern(`posts:${userId}:*`);
+    await this.cacheService.del(`connections:${userId}:stats`);
+    await this.cacheService.del(`post:${post.id}:media`); // Post media cache
 
     return post;
   }
@@ -135,6 +151,10 @@ export class PostService {
         console.error('Failed to emit live update for post update:', error);
       }
 
+      // Invalidate cache khi update post
+      await this.cacheService.delPattern(`posts:${userId}:*`);
+      await this.cacheService.del(`post:${postId}:media`); // Post media cache
+
       return post;
     } catch (error) {
       if (error.code === 'P2025') {
@@ -167,6 +187,13 @@ export class PostService {
       } catch (error) {
         console.error('Failed to emit live update for post delete:', error);
       }
+
+      // Invalidate cache khi delete post
+      await this.cacheService.delPattern(`posts:${userId}:*`);
+      await this.cacheService.del(`post:${postId}:media`); // Post media cache
+      await this.cacheService.delPattern(`post:${postId}:likes:*`); // Post likes cache
+      await this.cacheService.del(`post:${postId}:like:stats`); // Post like stats cache
+      await this.cacheService.delPattern(`post:${postId}:comments:*`); // Post comments cache
 
       return { message: 'Post deleted' };
     } catch (error) {

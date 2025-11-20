@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { TransactionHistoryItemDto } from '../dto/diamond-wallet.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
@@ -7,10 +8,14 @@ import { IPaginatedResponse } from '../../../common/interfaces/pagination.interf
 
 @Injectable()
 export class TransactionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   /**
    * Get transaction history with pagination
+   * Cached for 1 minute (transactions change frequently)
    */
   async getTransactionHistory(
     userId: string,
@@ -20,6 +25,27 @@ export class TransactionService {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
+    const cacheKey = `wallet:${userId}:transactions:page:${page}:limit:${take}`;
+    const cacheTtl = 60; // 1 phút
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        return this.fetchTransactionHistory(userId, take, skip, page);
+      },
+      cacheTtl,
+    );
+  }
+
+  /**
+   * Fetch transaction history from database
+   */
+  private async fetchTransactionHistory(
+    userId: string,
+    take: number,
+    skip: number,
+    page: number,
+  ): Promise<IPaginatedResponse<TransactionHistoryItemDto>> {
     // Lấy tất cả wallets của user
     const wallets = await this.prisma.resWallet.findMany({
       where: { user_id: userId },

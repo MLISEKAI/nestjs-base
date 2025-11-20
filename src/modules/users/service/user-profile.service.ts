@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 import { UpdateUserDto } from '../dto/user-response';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class UserProfileService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   async findUser(id: string, includeAssociates = false) {
     // Tối ưu: Không include albums vì:
@@ -33,9 +37,18 @@ export class UserProfileService {
   }
 
   async findOne(id: string) {
-    const user = await this.findUser(id);
-    if (!user) return { message: 'User not found' };
-    return user;
+    const cacheKey = `user:${id}:detail`;
+    const cacheTtl = 1800; // 30 phút
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const user = await this.findUser(id);
+        if (!user) return { message: 'User not found' };
+        return user;
+      },
+      cacheTtl,
+    );
   }
 
   async updateProfile(id: string, dto: UpdateUserDto) {
@@ -61,6 +74,11 @@ export class UserProfileService {
         updated_at: true,
       },
     });
+
+    // Invalidate cache khi update profile
+    await this.cacheService.del(`user:${id}:detail`);
+    await this.cacheService.delPattern(`profile:${id}:*`);
+    await this.cacheService.delPattern(`users:search:*`); // Invalidate tất cả search results
 
     return { message: 'Profile updated successfully', user };
   }
@@ -88,27 +106,39 @@ export class UserProfileService {
     const page = params?.page && params.page > 0 ? params.page : 1;
     const skip = (page - 1) * take;
 
-    // Tối ưu: Chỉ select các fields cần thiết thay vì select tất cả
-    const [users, total] = await Promise.all([
-      this.prisma.resUser.findMany({
-        where,
-        orderBy,
-        take,
-        skip,
-        select: {
-          id: true,
-          nickname: true,
-          avatar: true,
-          bio: true,
-          created_at: true,
-          updated_at: true,
-        },
-      }),
-      this.prisma.resUser.count({ where }),
-    ]);
+    // Cache key với search term, page, limit, sort
+    const searchKey = search || 'all';
+    const sortKey = params?.sort || 'created_at:asc';
+    const cacheKey = `users:search:${searchKey}:page:${page}:limit:${take}:sort:${sortKey}`;
+    const cacheTtl = 300; // 5 phút (search results thay đổi thường xuyên)
 
-    // Return in standard pagination format
-    return buildPaginatedResponse(users, total, page, take);
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        // Tối ưu: Chỉ select các fields cần thiết thay vì select tất cả
+        const [users, total] = await Promise.all([
+          this.prisma.resUser.findMany({
+            where,
+            orderBy,
+            take,
+            skip,
+            select: {
+              id: true,
+              nickname: true,
+              avatar: true,
+              bio: true,
+              created_at: true,
+              updated_at: true,
+            },
+          }),
+          this.prisma.resUser.count({ where }),
+        ]);
+
+        // Return in standard pagination format
+        return buildPaginatedResponse(users, total, page, take);
+      },
+      cacheTtl,
+    );
   }
 
   async uploadAvatar(userId: string, fileUrl: string) {
@@ -116,6 +146,12 @@ export class UserProfileService {
       where: { id: userId },
       data: { avatar: fileUrl },
     });
+
+    // Invalidate cache khi upload avatar
+    await this.cacheService.del(`user:${userId}:detail`);
+    await this.cacheService.delPattern(`profile:${userId}:*`);
+    await this.cacheService.delPattern(`users:search:*`); // Invalidate search results
+
     return { message: 'Avatar updated', avatar: user.avatar };
   }
 }
