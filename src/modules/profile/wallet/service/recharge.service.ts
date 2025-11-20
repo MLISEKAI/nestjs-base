@@ -78,11 +78,18 @@ export class RechargeService {
       },
     });
 
+    // TODO: Tích hợp payment gateway thật (Stripe, PayPal, VNPay, etc.)
+    // Cần implement:
+    // - Tạo payment session với payment gateway
+    // - Lưu payment session ID vào transaction
+    // - Webhook handler để update transaction status khi payment thành công
+
     return {
       transactionId,
       amount: Number(packageData.price),
       status: 'pending',
-      paymentUrl: `https://payment.gateway/checkout/${transactionId}`, // TODO: Tích hợp payment gateway thật
+      // paymentUrl sẽ được tạo từ payment gateway integration
+      // paymentUrl: await this.paymentGateway.createCheckoutSession(transactionId, amount),
     };
   }
 }

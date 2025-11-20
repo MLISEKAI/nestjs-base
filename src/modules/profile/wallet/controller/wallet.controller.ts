@@ -27,6 +27,8 @@ import { TransactionService } from '../service/transaction.service';
 import { ConvertService } from '../service/convert.service';
 import { DepositService } from '../service/deposit.service';
 import { IapService } from '../service/iap.service';
+import { TransferService } from '../service/transfer.service';
+import { PaymentMethodService } from '../service/payment-method.service';
 import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
 import {
   WalletSummaryResponseDto,
@@ -40,12 +42,17 @@ import {
   TransactionHistoryItemDto,
   ConvertVexToDiamondDto,
   ConvertVexToDiamondResponseDto,
+  CreateDepositDto,
   CreateDepositResponseDto,
   WithdrawVexDto,
   WithdrawVexResponseDto,
   DepositInfoResponseDto,
   IapVerifyReceiptDto,
   IapVerifyReceiptResponseDto,
+  TransferVexDto,
+  TransferVexResponseDto,
+  UpdateDepositNetworkDto,
+  PaymentMethodDto,
 } from '../dto/diamond-wallet.dto';
 import { IPaginatedResponse } from '../../../../common/interfaces/pagination.interface';
 
@@ -62,6 +69,8 @@ export class WalletController {
     private readonly convertService: ConvertService,
     private readonly depositService: DepositService,
     private readonly iapService: IapService,
+    private readonly transferService: TransferService,
+    private readonly paymentMethodService: PaymentMethodService,
   ) {}
 
   // ========== CRUD Basic Wallet ==========
@@ -183,9 +192,13 @@ export class WalletController {
   @Post('deposit/create')
   @ApiOperation({ summary: 'Tạo địa chỉ Deposit, trả về QR Code và địa chỉ ví' })
   @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiBody({ type: CreateDepositDto, required: false })
   @ApiCreatedResponse({ type: CreateDepositResponseDto })
-  createDeposit(@Param('user_id') userId: string): Promise<CreateDepositResponseDto> {
-    return this.depositService.createDeposit(userId);
+  createDeposit(
+    @Param('user_id') userId: string,
+    @Body() dto?: CreateDepositDto,
+  ): Promise<CreateDepositResponseDto> {
+    return this.depositService.createDeposit(userId, dto);
   }
 
   @Post('withdraw')
@@ -218,5 +231,40 @@ export class WalletController {
     @Body() dto: IapVerifyReceiptDto,
   ): Promise<IapVerifyReceiptResponseDto> {
     return this.iapService.verifyIapReceipt(userId, dto);
+  }
+
+  // ========== Transfer VEX ==========
+  @Post('vex/transfer')
+  @ApiOperation({ summary: 'Chuyển VEX từ user này sang user khác' })
+  @ApiParam({ name: 'user_id', description: 'User ID (người gửi)' })
+  @ApiBody({ type: TransferVexDto })
+  @ApiCreatedResponse({ type: TransferVexResponseDto })
+  transferVex(
+    @Param('user_id') userId: string,
+    @Body() dto: TransferVexDto,
+  ): Promise<TransferVexResponseDto> {
+    return this.transferService.transferVex(userId, dto);
+  }
+
+  // ========== Update Deposit Network ==========
+  @Patch('deposit/network')
+  @ApiOperation({ summary: 'Cập nhật network cho deposit address (Polygon, BSC, Ethereum, etc.)' })
+  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiBody({ type: UpdateDepositNetworkDto })
+  @ApiOkResponse({ type: CreateDepositResponseDto })
+  updateDepositNetwork(
+    @Param('user_id') userId: string,
+    @Body() dto: UpdateDepositNetworkDto,
+  ): Promise<CreateDepositResponseDto> {
+    return this.depositService.updateDepositNetwork(userId, dto);
+  }
+
+  // ========== Payment Methods ==========
+  @Get('payment-methods')
+  @ApiOperation({ summary: 'Lấy danh sách phương thức thanh toán (Visa, Dolfie, etc.)' })
+  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOkResponse({ type: [PaymentMethodDto] })
+  getPaymentMethods(@Param('user_id') userId: string): Promise<PaymentMethodDto[]> {
+    return this.paymentMethodService.getPaymentMethods();
   }
 }

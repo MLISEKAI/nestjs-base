@@ -68,7 +68,10 @@ export class CheckoutRechargeResponseDto {
   @ApiProperty({ example: 'pending', description: 'Trạng thái: pending, success, failed' })
   status: string;
 
-  @ApiPropertyOptional({ example: 'https://payment.gateway/...', description: 'URL thanh toán' })
+  @ApiPropertyOptional({
+    example: 'https://payment.gateway/...',
+    description: 'URL thanh toán (sẽ có sau khi tích hợp payment gateway)',
+  })
   paymentUrl?: string;
 }
 
@@ -116,8 +119,8 @@ export class TransactionHistoryItemDto {
 
   @ApiProperty({
     example: 'recharge',
-    description: 'Loại giao dịch: recharge, withdraw, gift, convert, subscription',
-    enum: ['recharge', 'withdraw', 'gift', 'convert', 'subscription'],
+    description: 'Loại giao dịch: recharge, withdraw, gift, convert, subscription, transfer',
+    enum: ['recharge', 'withdraw', 'gift', 'convert', 'subscription', 'transfer'],
   })
   type: string;
 
@@ -130,8 +133,29 @@ export class TransactionHistoryItemDto {
   @ApiPropertyOptional({ example: 'success', description: 'Trạng thái: pending, success, failed' })
   status?: string;
 
-  @ApiPropertyOptional({ example: 'Nạp đá quý', description: 'Mô tả' })
+  @ApiPropertyOptional({ example: 'Deposit diamonds from the app', description: 'Mô tả' })
   description?: string;
+
+  @ApiPropertyOptional({
+    example: 'Ahmed Vetrovs',
+    description: 'Tên người gửi (cho gift/transfer)',
+  })
+  sender_name?: string;
+
+  @ApiPropertyOptional({
+    example: 'Angel Saris',
+    description: 'Tên người nhận (cho gift/transfer)',
+  })
+  receiver_name?: string;
+
+  @ApiPropertyOptional({ example: 'Ice Cream Cone x12', description: 'Tên quà (cho gift)' })
+  gift_name?: string;
+
+  @ApiPropertyOptional({
+    example: 'Live: Ice Cream Cone x12',
+    description: 'Thông tin live stream',
+  })
+  live_stream_info?: string;
 }
 
 // Convert VEX to Diamond
@@ -144,8 +168,14 @@ export class ConvertVexToDiamondDto {
 }
 
 export class ConvertVexToDiamondResponseDto {
-  @ApiProperty({ example: 100, description: 'Đá quý nhận được' })
+  @ApiProperty({ example: 100, description: 'Đá quý nhận được (base)' })
   diamondsReceived: number;
+
+  @ApiProperty({ example: 20, description: 'Bonus đá quý' })
+  bonusDiamonds: number;
+
+  @ApiProperty({ example: 120, description: 'Tổng đá quý nhận được (base + bonus)' })
+  totalDiamondsReceived: number;
 
   @ApiProperty({ example: 1300, description: 'Số đá quý mới' })
   newDiamondBalance: number;
@@ -154,7 +184,79 @@ export class ConvertVexToDiamondResponseDto {
   newVexBalance: number;
 }
 
+// Transfer VEX
+export class TransferVexDto {
+  @ApiProperty({ example: 'user-receiver-id', description: 'ID người nhận' })
+  @IsString()
+  receiver_id: string;
+
+  @ApiProperty({ example: 1000, description: 'Số VEX chuyển' })
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  amount: number;
+
+  @ApiPropertyOptional({ example: 'Gift from friend', description: 'Ghi chú' })
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
+export class TransferVexResponseDto {
+  @ApiProperty({ example: 'TRF123', description: 'ID giao dịch chuyển' })
+  transferId: string;
+
+  @ApiProperty({ example: 'success', description: 'Trạng thái: success, failed' })
+  status: string;
+
+  @ApiProperty({ example: 4000, description: 'Số VEX mới của người gửi' })
+  newSenderBalance: number;
+
+  @ApiProperty({ example: 5000, description: 'Số VEX mới của người nhận' })
+  newReceiverBalance: number;
+}
+
+// Update Deposit Network
+export class UpdateDepositNetworkDto {
+  @ApiProperty({
+    example: 'Polygon',
+    enum: ['Ethereum', 'Polygon', 'BSC', 'Arbitrum'],
+    description: 'Mạng blockchain',
+  })
+  @IsEnum(['Ethereum', 'Polygon', 'BSC', 'Arbitrum'])
+  network: string;
+}
+
+// Payment Methods
+export class PaymentMethodDto {
+  @ApiProperty({ example: 'visa', description: 'ID phương thức thanh toán' })
+  id: string;
+
+  @ApiProperty({ example: 'Visa Avocado Bank', description: 'Tên phương thức' })
+  name: string;
+
+  @ApiProperty({ example: 'card', enum: ['card', 'subscription', 'crypto'], description: 'Loại' })
+  type: string;
+
+  @ApiPropertyOptional({ example: '...1519', description: 'Thông tin bổ sung (masked)' })
+  masked_info?: string;
+
+  @ApiPropertyOptional({ example: true, description: 'Có active không' })
+  is_active?: boolean;
+}
+
 // Create Deposit
+export class CreateDepositDto {
+  @ApiPropertyOptional({
+    example: 'Polygon',
+    enum: ['Ethereum', 'Polygon', 'BSC', 'Arbitrum'],
+    description: 'Mạng blockchain (mặc định: Ethereum)',
+  })
+  @IsOptional()
+  @IsEnum(['Ethereum', 'Polygon', 'BSC', 'Arbitrum'])
+  network?: string;
+}
+
 export class CreateDepositResponseDto {
   @ApiProperty({ example: '0xabc123...', description: 'Địa chỉ nạp VEX' })
   deposit_address: string;
@@ -162,8 +264,8 @@ export class CreateDepositResponseDto {
   @ApiProperty({ example: 'https://example.com/qr.png', description: 'QR code nạp VEX' })
   qr_code: string;
 
-  @ApiPropertyOptional({ example: 'Ethereum', description: 'Mạng: Ethereum, BSC, etc.' })
-  network?: string;
+  @ApiProperty({ example: 'Polygon', description: 'Mạng: Ethereum, Polygon, BSC, etc.' })
+  network: string;
 }
 
 // Withdraw VEX

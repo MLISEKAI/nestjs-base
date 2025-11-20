@@ -22,7 +22,6 @@ import {
 } from '@nestjs/swagger';
 import { GiftCrudService } from '../service/gift-crud.service';
 import { GiftSummaryService } from '../service/gift-summary.service';
-import { GiftCatalogService } from '../service/gift-catalog.service';
 import { UserGiftWallService } from '../../../users/service/user-gift-wall.service';
 import { InventoryService } from '../../inventory/service/inventory.service';
 import {
@@ -45,7 +44,6 @@ export class GiftsController {
   constructor(
     private readonly crudService: GiftCrudService,
     private readonly summaryService: GiftSummaryService,
-    private readonly catalogService: GiftCatalogService,
     private readonly giftWallService: UserGiftWallService,
     private readonly inventoryService: InventoryService,
   ) {}
@@ -88,55 +86,6 @@ export class GiftsController {
   @ApiOkResponse({ type: [TopSupporterDto], description: 'Danh sách top supporter' })
   getTopGifts(@Param('user_id') userId: string) {
     return this.summaryService.getTopSupporters(userId);
-  }
-
-  @Get('categories')
-  @ApiOperation({ summary: 'Danh mục quà tặng' })
-  @ApiOkResponse({
-    description: 'Danh sách danh mục quà tặng',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { example: 'cat-1' },
-          name: { example: 'Flowers' },
-          icon: { example: 'https://icon.com/flower.png' },
-        },
-      },
-    },
-  })
-  getCategories() {
-    return this.catalogService.getGiftCategories();
-  }
-
-  @Get('items')
-  @ApiOperation({ summary: 'Danh sách item quà tặng' })
-  @ApiQuery({ name: 'category', required: false, description: 'ID của category' })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    description: 'Loại quà: hot, event, lucky, friendship, vip, normal',
-  })
-  @ApiOkResponse({
-    description: 'Danh sách item quà tặng',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { example: 'gift-item-1' },
-          name: { example: 'Rose' },
-          price: { example: 100 },
-          category_id: { example: 'cat-1' },
-          image_url: { example: 'https://img.com/rose.png' },
-          type: { example: 'normal' },
-        },
-      },
-    },
-  })
-  getItems(@Query('category') categoryId?: string, @Query('type') type?: string) {
-    return this.catalogService.getGiftItems(categoryId, type);
   }
 
   @Get('milestones')

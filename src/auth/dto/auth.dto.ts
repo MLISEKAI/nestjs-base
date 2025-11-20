@@ -123,8 +123,8 @@ export class LoginOAuthDto {
 
   @ApiPropertyOptional({
     description:
-      '⚠️ KHÔNG CẦN GỬI - Provider unique id sẽ được tự động lấy từ access_token sau khi verify với Google/Facebook API. Chỉ cần gửi cho anonymous provider.',
-    example: 'google-uid-123',
+      '⚠️ CHỈ CẦN CHO ANONYMOUS - Provider unique id. Với Google/Facebook, provider_id sẽ được tự động lấy từ access_token sau khi verify. KHÔNG gửi trường này khi đăng nhập qua Google/Facebook.',
+    example: 'anonymous-uid-123',
   })
   @ValidateIf((dto: LoginOAuthDto) => dto.provider === 'anonymous')
   @IsOptional()
@@ -133,18 +133,20 @@ export class LoginOAuthDto {
 
   @ApiPropertyOptional({
     description:
-      '⚠️ KHÔNG CẦN GỬI - Email sẽ được tự động lấy từ access_token sau khi verify. Chỉ cần gửi cho anonymous provider.',
+      '⚠️ CHỈ CẦN CHO ANONYMOUS - Email. Với Google/Facebook, email sẽ được tự động lấy từ access_token sau khi verify. KHÔNG gửi trường này khi đăng nhập qua Google/Facebook.',
     example: 'user@example.com',
   })
+  @ValidateIf((dto: LoginOAuthDto) => dto.provider === 'anonymous')
   @IsOptional()
   @IsEmail()
   email?: string;
 
   @ApiPropertyOptional({
     description:
-      '⚠️ KHÔNG CẦN GỬI - Nickname sẽ được tự động lấy từ access_token sau khi verify. Chỉ cần gửi cho anonymous provider.',
+      '⚠️ CHỈ CẦN CHO ANONYMOUS - Nickname. Với Google/Facebook, nickname sẽ được tự động lấy từ access_token sau khi verify. KHÔNG gửi trường này khi đăng nhập qua Google/Facebook.',
     example: 'NguyenVanA',
   })
+  @ValidateIf((dto: LoginOAuthDto) => dto.provider === 'anonymous')
   @IsOptional()
   @IsString()
   nickname?: string;

@@ -19,6 +19,7 @@ import { ClanService } from './clan/service/clan.service';
 
 // ==================== Gifts ====================
 import { GiftsController } from './gifts/controller/gifts.controller';
+import { GiftCatalogController } from './gifts/controller/gift-catalog.controller';
 import { GiftCrudService } from './gifts/service/gift-crud.service';
 import { GiftSummaryService } from './gifts/service/gift-summary.service';
 import { GiftCatalogService } from './gifts/service/gift-catalog.service';
@@ -34,6 +35,8 @@ import { TransactionService } from './wallet/service/transaction.service';
 import { ConvertService } from './wallet/service/convert.service';
 import { DepositService } from './wallet/service/deposit.service';
 import { IapService } from './wallet/service/iap.service';
+import { TransferService } from './wallet/service/transfer.service';
+import { PaymentMethodService } from './wallet/service/payment-method.service';
 
 // ==================== Inventory ====================
 import { InventoryController } from './inventory/controller/inventory.controller';
@@ -54,6 +57,11 @@ import { FeedbackService } from './feedback/service/feedback.service';
 // ==================== Post ====================
 import { PostController } from './post/controller/post.controller';
 import { PostService } from './post/service/post.service';
+import { CommentController } from './post/controller/comment.controller';
+import { CommentService } from './post/service/comment.service';
+import { LikeController } from './post/controller/like.controller';
+import { LikeService } from './post/service/like.service';
+import { PostMediaService } from './post/service/post-media.service';
 
 // ==================== LoveSpace ====================
 import { LoveSpaceController } from './love-space/controller/love-space.controller';
@@ -71,6 +79,18 @@ import { SupportService } from './support/service/support.service';
 import { ReferralController } from './referral/controller/referral.controller';
 import { ReferralService } from './referral/service/referral.service';
 
+// ==================== Story ====================
+import { StoryController } from './story/controller/story.controller';
+import { StoryService } from './story/service/story.service';
+
+// ==================== Group ====================
+import { GroupController } from './group/controller/group.controller';
+import { GroupService } from './group/service/group.service';
+
+// ==================== Event ====================
+import { EventController } from './event/controller/event.controller';
+import { EventService } from './event/service/event.service';
+
 // ==================== Block User ====================
 import { BlockUserController } from './block-user/controller/block-user.controller';
 import { BlockUserService } from './block-user/service/block-user.service';
@@ -86,6 +106,7 @@ import { BlockUserService } from './block-user/service/block-user.service';
     // Clan
     ClanController,
     // Gifts
+    GiftCatalogController,
     GiftsController,
     // Wallet
     WalletController,
@@ -107,6 +128,14 @@ import { BlockUserService } from './block-user/service/block-user.service';
     SupportController,
     // Post
     PostController,
+    CommentController,
+    LikeController,
+    // Story
+    StoryController,
+    // Group
+    GroupController,
+    // Event
+    EventController,
     // Block User
     BlockUserController,
   ],
@@ -133,6 +162,8 @@ import { BlockUserService } from './block-user/service/block-user.service';
     ConvertService,
     DepositService,
     IapService,
+    TransferService,
+    PaymentMethodService,
     // Inventory
     InventoryService,
     // Store
@@ -151,6 +182,15 @@ import { BlockUserService } from './block-user/service/block-user.service';
     SupportService,
     // Post
     PostService,
+    CommentService,
+    LikeService,
+    PostMediaService,
+    // Story
+    StoryService,
+    // Group
+    GroupService,
+    // Event
+    EventService,
     // Block User
     BlockUserService,
   ],

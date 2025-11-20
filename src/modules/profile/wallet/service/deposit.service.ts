@@ -2,10 +2,12 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import {
+  CreateDepositDto,
   CreateDepositResponseDto,
   WithdrawVexDto,
   WithdrawVexResponseDto,
   DepositInfoResponseDto,
+  UpdateDepositNetworkDto,
 } from '../dto/diamond-wallet.dto';
 
 @Injectable()
@@ -15,41 +17,45 @@ export class DepositService {
   /**
    * Create deposit address (generate wallet address for VEX deposit)
    */
-  async createDeposit(userId: string): Promise<CreateDepositResponseDto> {
+  async createDeposit(userId: string, dto?: CreateDepositDto): Promise<CreateDepositResponseDto> {
+    const network = dto?.network || 'Ethereum';
+
     // Kiểm tra xem đã có deposit address chưa
     const existing = await this.prisma.resDepositAddress.findUnique({
       where: { user_id: userId },
     });
 
     if (existing) {
-      // Nếu đã có, trả về address hiện tại
-      return {
-        deposit_address: existing.deposit_address,
-        qr_code: existing.qr_code || this.generateQrCode(existing.deposit_address),
-        network: existing.network,
-      };
+      // Nếu đã có và network giống nhau, trả về address hiện tại
+      if (existing.network === network) {
+        return {
+          deposit_address: existing.deposit_address,
+          qr_code: existing.qr_code || this.generateQrCode(existing.deposit_address),
+          network: existing.network,
+        };
+      }
+      // Nếu network khác, cần generate address mới từ blockchain service
+      throw new BadRequestException(
+        'Cannot change network. Please create new deposit address with blockchain service integration.',
+      );
     }
 
     // TODO: Tích hợp với blockchain service để generate address thật
-    // Hiện tại generate mock address
-    const depositAddress = `0x${Math.random().toString(16).substr(2, 40)}`;
-    const qrCode = this.generateQrCode(depositAddress);
+    // Cần implement integration với blockchain service (ví dụ: Infura, Alchemy, etc.)
+    throw new BadRequestException(
+      'Blockchain service not integrated. Please integrate with blockchain service to generate deposit addresses.',
+    );
+  }
 
-    // Lưu deposit address vào DB
-    await this.prisma.resDepositAddress.create({
-      data: {
-        user_id: userId,
-        deposit_address: depositAddress,
-        qr_code: qrCode,
-        network: 'Ethereum',
-      },
-    });
-
-    return {
-      deposit_address: depositAddress,
-      qr_code: qrCode,
-      network: 'Ethereum',
-    };
+  /**
+   * Update deposit network
+   */
+  async updateDepositNetwork(
+    userId: string,
+    dto: UpdateDepositNetworkDto,
+  ): Promise<CreateDepositResponseDto> {
+    // Tạo hoặc update deposit với network mới
+    return this.createDeposit(userId, { network: dto.network });
   }
 
   private generateQrCode(address: string): string {
@@ -90,12 +96,15 @@ export class DepositService {
     });
 
     // TODO: Gửi request đến blockchain service để process withdrawal
+    // Cần implement integration với blockchain service để thực hiện withdrawal thật
+
     // Hiện tại chỉ tạo transaction với status pending
+    // Trong production, cần gọi blockchain service API để process withdrawal
 
     return {
       withdrawalId,
       status: 'pending',
-      message: 'Withdrawal request submitted. Processing...',
+      message: 'Withdrawal request submitted. Please integrate with blockchain service to process.',
     };
   }
 

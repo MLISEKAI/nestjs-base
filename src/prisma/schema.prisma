@@ -70,6 +70,13 @@ model ResUser {
   interests          ResInterest[]
   roomStatus         ResRoomStatus?
   post               ResPost[]
+  postComments       ResComment[]      @relation("CommentAuthor")
+  postLikes          ResPostLike[]
+  stories            ResStory[]
+  groupMembers       ResGroupMember[]
+  groupMessages      ResGroupMessage[]
+  eventsCreated      ResEvent[]        @relation("EventCreator")
+  eventParticipants  ResEventParticipant[]
   giftMilestones     ResGiftMilestone[]
   walletTransactions ResWalletTransaction[]
   inventories        ResInventory[]
@@ -252,13 +259,16 @@ model ResGiftItem {
   image_url   String?
   price       Decimal @db.Decimal(10, 2)
   type        String? // normal | vip | event
+  event_id    String? // Link với event nếu là gift của event
 
   gifts ResGift[]
 
   category ResGiftCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  event    ResEvent?       @relation(fields: [event_id], references: [id], onDelete: SetNull)
 
   @@index([category_id])
   @@index([type])
+  @@index([event_id])
   @@index([category_id, type])
   @@map("res_gift_item")
 }
@@ -300,6 +310,8 @@ enum WalletTransactionType {
   withdraw
   gift
   convert
+  transfer
+  subscription
 }
 
 enum WalletTransactionStatus {
@@ -365,6 +377,22 @@ model ResMonthlyCard {
   @@index([card_id])
   @@index([is_active])
   @@map("res_monthly_card")
+}
+
+// PAYMENT METHOD
+model ResPaymentMethod {
+  id          String   @id @default(uuid())
+  method_id   String   @unique
+  name        String
+  type        String   // card, subscription, crypto
+  masked_info String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([method_id])
+  @@index([is_active])
+  @@map("res_payment_method")
 }
 
 // DEPOSIT ADDRESS
@@ -618,15 +646,186 @@ model ResRoomStatus {
 }
 
 model ResPost {
+  id         String          @id @default(uuid())
+  user_id    String
+  content    String
+  created_at DateTime        @default(now())
+
+  user       ResUser         @relation(fields: [user_id], references: [id])
+  comments   ResComment[]
+  likes      ResPostLike[]
+  media      ResPostMedia[]
+
+  @@map("res_post")
+  @@index([user_id])
+  @@index([created_at])
+}
+
+// POST COMMENT
+model ResComment {
   id         String   @id @default(uuid())
+  post_id    String
+  user_id    String
+  content    String
+  parent_id  String?  // For nested comments/replies
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  post   ResPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user   ResUser @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
+  parent ResComment? @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies ResComment[] @relation("CommentReplies")
+
+  @@index([post_id])
+  @@index([user_id])
+  @@index([parent_id])
+  @@index([created_at])
+  @@map("res_comment")
+}
+
+// POST LIKE/REACTION
+model ResPostLike {
+  id         String   @id @default(uuid())
+  post_id    String
+  user_id    String
+  reaction   String   @default("like") // like, love, haha, wow, sad, angry
+  created_at DateTime @default(now())
+
+  post ResPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user ResUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([post_id, user_id])
+  @@index([post_id])
+  @@index([user_id])
+  @@map("res_post_like")
+}
+
+// POST MEDIA ATTACHMENT
+model ResPostMedia {
+  id         String   @id @default(uuid())
+  post_id    String
+  media_url  String
+  media_type String   // image, video, audio, file
+  order      Int      @default(0)
+  created_at DateTime @default(now())
+
+  post ResPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@index([post_id])
+  @@index([post_id, order])
+  @@map("res_post_media")
+}
+
+// STORY/STATUS
+model ResStory {
+  id         String   @id @default(uuid())
+  user_id    String
+  content    String?
+  media_url  String?
+  media_type String?  // image, video
+  expires_at DateTime // Stories expire after 24 hours
+  created_at DateTime @default(now())
+
+  user ResUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@index([created_at])
+  @@map("res_story")
+}
+
+// GROUP/CHAT ROOM
+model ResGroup {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  avatar      String?
+  is_public   Boolean  @default(false)
+  created_by  String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  members  ResGroupMember[]
+  messages ResGroupMessage[]
+
+  @@index([created_by])
+  @@index([is_public])
+  @@map("res_group")
+}
+
+// GROUP MEMBER
+model ResGroupMember {
+  id         String   @id @default(uuid())
+  group_id   String
+  user_id    String
+  role       String   @default("member") // admin, moderator, member
+  joined_at  DateTime @default(now())
+
+  group ResGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user  ResUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([group_id, user_id])
+  @@index([group_id])
+  @@index([user_id])
+  @@map("res_group_member")
+}
+
+// GROUP MESSAGE
+model ResGroupMessage {
+  id         String   @id @default(uuid())
+  group_id   String
   user_id    String
   content    String
   created_at DateTime @default(now())
 
-  user ResUser @relation(fields: [user_id], references: [id])
+  group ResGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user  ResUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@map("res_post")
+  @@index([group_id])
   @@index([user_id])
+  @@index([group_id, created_at])
+  @@map("res_group_message")
+}
+
+// EVENT/CALENDAR
+model ResEvent {
+  id          String   @id @default(uuid())
+  created_by  String
+  title       String
+  description String?
+  location    String?
+  start_time  DateTime
+  end_time    DateTime?
+  is_public   Boolean  @default(false)
+  max_participants Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  creator     ResUser              @relation("EventCreator", fields: [created_by], references: [id], onDelete: Cascade)
+  participants ResEventParticipant[]
+  giftItems    ResGiftItem[]
+
+  @@index([created_by])
+  @@index([start_time])
+  @@index([is_public])
+  @@map("res_event")
+}
+
+// EVENT PARTICIPANT
+model ResEventParticipant {
+  id         String   @id @default(uuid())
+  event_id   String
+  user_id    String
+  status     String   @default("going") // going, maybe, not_going
+  joined_at  DateTime @default(now())
+
+  event ResEvent @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user  ResUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, user_id])
+  @@index([event_id])
+  @@index([user_id])
+  @@map("res_event_participant")
 }
 
 model ResTokenBlacklist {

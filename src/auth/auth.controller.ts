@@ -88,30 +88,39 @@ export class AuthController {
       '✅ ĐÃ VERIFY: Endpoint này verify access token với Google/Facebook API để đảm bảo dữ liệu thật.\n\n' +
       '📋 CÁCH SỬ DỤNG (Google/Facebook):\n' +
       '1. Client lấy access_token từ Google/Facebook OAuth flow (client-side)\n' +
-      '2. Gửi POST request với:\n' +
+      '2. Gửi POST request CHỈ với:\n' +
       '   - provider: "google" hoặc "facebook"\n' +
       '   - access_token: token từ OAuth flow\n' +
-      '   - KHÔNG CẦN gửi provider_id, email, nickname (sẽ được tự động lấy từ token)\n' +
+      '   - ❌ KHÔNG gửi provider_id, email, nickname (sẽ được tự động lấy từ token)\n' +
       '3. Server verify token với provider API\n' +
       '4. Server tự động lấy provider_id, email, nickname từ API\n' +
       '5. Đăng nhập hoặc tạo user mới\n\n' +
       '📋 CÁCH SỬ DỤNG (Anonymous):\n' +
       '1. Gửi POST request với:\n' +
       '   - provider: "anonymous"\n' +
-      '   - provider_id: ID tự định nghĩa\n' +
+      '   - provider_id: ID tự định nghĩa (required)\n' +
       '   - email, nickname: optional\n\n' +
       '🔒 BẢO MẬT:\n' +
       '- Google: Verify với https://www.googleapis.com/oauth2/v2/userinfo\n' +
       '- Facebook: Verify với https://graph.facebook.com/debug_token\n' +
       '- Anonymous: Không verify\n\n' +
-      '💡 VÍ DỤ REQUEST:\n' +
+      '💡 VÍ DỤ REQUEST (Google/Facebook):\n' +
       '```json\n' +
       '{\n' +
       '  "provider": "google",\n' +
       '  "access_token": "ya29.a0AfH6SMBx..."\n' +
       '}\n' +
       '```\n' +
-      'Server sẽ tự động lấy provider_id, email, nickname từ Google API.',
+      'Server sẽ tự động lấy provider_id, email, nickname từ Google API.\n\n' +
+      '💡 VÍ DỤ REQUEST (Anonymous):\n' +
+      '```json\n' +
+      '{\n' +
+      '  "provider": "anonymous",\n' +
+      '  "provider_id": "anonymous-uid-123",\n' +
+      '  "email": "user@example.com",\n' +
+      '  "nickname": "NguyenVanA"\n' +
+      '}\n' +
+      '```',
   })
   @ApiBody({ type: LoginOAuthDto })
   @Throttle({ oauth: RATE_LIMITS.oauth })

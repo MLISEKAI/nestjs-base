@@ -323,12 +323,12 @@ Hầu hết list endpoints hỗ trợ:
 
 ### 11. **Missing Features từ Schema**
 
-- ⚠️ Comments trên posts (chưa có model)
-- ⚠️ Likes/Reactions (chưa có model)
-- ⚠️ Post media attachments
-- ⚠️ Story/Status feature
-- ⚠️ Group/Chat rooms
-- ⚠️ Events/Calendar
+- ✅ Comments trên posts - Đã implement với nested comments/replies
+- ✅ Likes/Reactions - Đã implement với nhiều loại reaction (like, love, haha, wow, sad, angry)
+- ✅ Post media attachments - Đã implement với support image, video, audio, file
+- ✅ Story/Status feature - Đã implement với auto-expire sau 24h
+- ✅ Group/Chat rooms - Đã implement với group messages, members, roles
+- ✅ Events/Calendar - Đã implement với participants, status (going, maybe, not_going)
 
 ### 12. **Business Logic**
 

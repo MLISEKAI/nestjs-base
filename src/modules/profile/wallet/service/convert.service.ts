@@ -11,6 +11,26 @@ export class ConvertService {
   constructor(private prisma: PrismaService) {}
 
   /**
+   * Calculate bonus diamonds based on VEX amount
+   * Bonus tiers:
+   * - 435 VEX: +20 bonus
+   * - 1230 VEX: +50 bonus
+   * - 3210 VEX: +80 bonus
+   * - 15380 VEX: +120 bonus
+   * - 36920 VEX: +200 bonus
+   * - 112300 VEX: +420 bonus
+   */
+  private calculateBonus(vexAmount: number): number {
+    if (vexAmount >= 112300) return 420;
+    if (vexAmount >= 36920) return 200;
+    if (vexAmount >= 15380) return 120;
+    if (vexAmount >= 3210) return 80;
+    if (vexAmount >= 1230) return 50;
+    if (vexAmount >= 435) return 20;
+    return 0;
+  }
+
+  /**
    * Convert VEX to Diamond
    */
   async convertVexToDiamond(
@@ -31,8 +51,11 @@ export class ConvertService {
       throw new BadRequestException('Insufficient VEX balance');
     }
 
-    // Tính số Diamond nhận được
-    const diamondsReceived = Math.floor(dto.vexAmount * this.VEX_TO_DIAMOND_RATE);
+    // Tính số Diamond nhận được (base)
+    const baseDiamonds = Math.floor(dto.vexAmount * this.VEX_TO_DIAMOND_RATE);
+    // Tính bonus
+    const bonusDiamonds = this.calculateBonus(dto.vexAmount);
+    const totalDiamondsReceived = baseDiamonds + bonusDiamonds;
 
     // Lấy hoặc tạo Diamond wallet
     let diamondWallet = await this.prisma.resWallet.findFirst({
@@ -59,8 +82,8 @@ export class ConvertService {
         },
       });
 
-      // Cộng Diamond
-      const newDiamondBalance = Number(diamondWallet.balance) + diamondsReceived;
+      // Cộng Diamond (base + bonus)
+      const newDiamondBalance = Number(diamondWallet.balance) + totalDiamondsReceived;
       await tx.resWallet.update({
         where: { id: diamondWallet.id },
         data: {
@@ -74,7 +97,7 @@ export class ConvertService {
           wallet_id: diamondWallet.id,
           user_id: userId,
           type: 'convert',
-          amount: new Prisma.Decimal(diamondsReceived),
+          amount: new Prisma.Decimal(totalDiamondsReceived),
           balance_before: diamondWallet.balance,
           balance_after: new Prisma.Decimal(newDiamondBalance),
           status: 'success',
@@ -92,7 +115,9 @@ export class ConvertService {
     });
 
     return {
-      diamondsReceived,
+      diamondsReceived: baseDiamonds,
+      bonusDiamonds,
+      totalDiamondsReceived,
       newDiamondBalance: updatedDiamondWallet ? Number(updatedDiamondWallet.balance) : 0,
       newVexBalance: updatedVexWallet ? Number(updatedVexWallet.balance) : 0,
     };
