@@ -695,9 +695,9 @@ export class AuthService {
 
   private buildTokenResponse(accessToken: string, refreshToken: string, expiresAt: Date) {
     return {
-      accessToken,
-      refreshToken,
-      expiredAt: expiresAt.toISOString(),
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_at: expiresAt.toISOString(),
     };
   }
 }

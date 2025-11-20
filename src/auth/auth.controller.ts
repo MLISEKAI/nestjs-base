@@ -53,8 +53,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Đăng nhâp ' })
   @ApiBody({ type: LoginDto })
   @Throttle({ login: RATE_LIMITS.login })
-  login(@Body() dto: LoginDto, @Req() req: Request) {
-    return this.authService.login(dto, req.ip);
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
+    const res = await this.authService.login(dto, req.ip);
+
+    return {
+      access_token: (res as { access_token: string }).access_token,
+      refresh_token: (res as { refresh_token: string }).refresh_token,
+      expires_at: (res as { expires_at: string }).expires_at,
+    };
   }
 
   @Post('login/otp/request')
