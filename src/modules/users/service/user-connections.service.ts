@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserProfileService } from './user-profile.service';
 import { UserConnectionDto } from '../dto/connection-user.dto';
@@ -29,29 +29,46 @@ export class UserConnectionsService {
     targetId: string,
     currentUser?: any, // Optional: user object từ req.user để tránh query lại
   ) {
-    if (userId === targetId) return { message: 'Cannot follow yourself' };
+    if (userId === targetId) {
+      throw new BadRequestException('Cannot follow yourself');
+    }
 
     // Tối ưu: Nếu đã có currentUser từ req.user, không cần query lại
     const user = currentUser && currentUser.id === userId ? currentUser : null;
     const target = await this.profile.findUser(targetId);
 
-    if (!target) return { message: 'Target user not found' };
+    if (!target) {
+      throw new NotFoundException('Target user not found');
+    }
     // Nếu không có user và không phải từ req.user, query để verify
     if (!user) {
       const userCheck = await this.profile.findUser(userId);
-      if (!userCheck) return { message: 'User not found' };
+      if (!userCheck) {
+        throw new NotFoundException('User not found');
+      }
     }
 
-    await this.prisma.resFollow.upsert({
+    // Tạo hoặc cập nhật follow relationship
+    const follow = await this.prisma.resFollow.upsert({
       where: { follower_id_following_id: { follower_id: userId, following_id: targetId } },
       create: { follower_id: userId, following_id: targetId },
       update: {},
+      include: {
+        following: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
     const reverse = await this.prisma.resFollow.findUnique({
       where: { follower_id_following_id: { follower_id: targetId, following_id: userId } },
     });
 
+    let isFriend = false;
     if (reverse) {
       const existingFriend = await this.prisma.resFriend.findFirst({
         where: {
@@ -63,11 +80,20 @@ export class UserConnectionsService {
       });
       if (!existingFriend) {
         await this.prisma.resFriend.create({ data: { user_a_id: userId, user_b_id: targetId } });
-        return { message: `User ${userId} followed ${targetId} and became friends` };
+        isFriend = true;
+      } else {
+        isFriend = true;
       }
     }
 
-    return { message: `User ${userId} followed ${targetId}` };
+    // Trả về dữ liệu thực tế thay vì chỉ message
+    return {
+      follower_id: follow.follower_id,
+      following_id: follow.following_id,
+      following: follow.following,
+      is_friend: isFriend,
+      created_at: follow.created_at,
+    };
   }
 
   async unfollowUser(userId: string, targetId: string) {

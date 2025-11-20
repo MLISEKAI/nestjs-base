@@ -59,6 +59,26 @@ export class ConnectionsController {
   @Post('following/:target_id')
   @ApiOperation({ summary: 'Follow user khác' })
   @ApiParam({ name: 'target_id', description: 'ID của user muốn follow' })
+  @ApiOkResponse({
+    description: 'Follow relationship đã được tạo',
+    schema: {
+      type: 'object',
+      properties: {
+        follower_id: { type: 'string', example: 'user-id-123' },
+        following_id: { type: 'string', example: 'user-id-456' },
+        following: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            nickname: { type: 'string' },
+            avatar: { type: 'string', nullable: true },
+          },
+        },
+        is_friend: { type: 'boolean', example: false },
+        created_at: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
   async follow(@Req() req: any, @Param('target_id') targetId: string) {
     const userId = req.user.id;
     return this.connectionsService.followUser(userId, targetId, req.user);
