@@ -71,16 +71,72 @@ export class UserConnectionsService {
   }
 
   async unfollowUser(userId: string, targetId: string) {
+    // Check if follow relationship exists
+    const followExists = await this.prisma.resFollow.findUnique({
+      where: { follower_id_following_id: { follower_id: userId, following_id: targetId } },
+    });
+
+    if (!followExists) {
+      return { message: 'Follow relationship not found' };
+    }
+
+    // Delete the follow relationship
     await this.prisma.resFollow.deleteMany({
       where: { follower_id: userId, following_id: targetId },
     });
+
+    // Check if reverse follow exists (they were friends)
+    const reverseFollow = await this.prisma.resFollow.findUnique({
+      where: { follower_id_following_id: { follower_id: targetId, following_id: userId } },
+    });
+
+    // If reverse follow exists, they were friends, so remove friend relationship
+    if (reverseFollow) {
+      await this.prisma.resFriend.deleteMany({
+        where: {
+          OR: [
+            { user_a_id: userId, user_b_id: targetId },
+            { user_a_id: targetId, user_b_id: userId },
+          ],
+        },
+      });
+    }
+
     return { message: `User ${userId} unfollowed ${targetId}` };
   }
 
   async removeFollower(userId: string, followerId: string) {
+    // Check if follower relationship exists
+    const followerExists = await this.prisma.resFollow.findUnique({
+      where: { follower_id_following_id: { follower_id: followerId, following_id: userId } },
+    });
+
+    if (!followerExists) {
+      return { message: 'Follower relationship not found' };
+    }
+
+    // Delete the follower relationship
     await this.prisma.resFollow.deleteMany({
       where: { follower_id: followerId, following_id: userId },
     });
+
+    // Check if reverse follow exists (they were friends)
+    const reverseFollow = await this.prisma.resFollow.findUnique({
+      where: { follower_id_following_id: { follower_id: userId, following_id: followerId } },
+    });
+
+    // If reverse follow exists, they were friends, so remove friend relationship
+    if (reverseFollow) {
+      await this.prisma.resFriend.deleteMany({
+        where: {
+          OR: [
+            { user_a_id: userId, user_b_id: followerId },
+            { user_a_id: followerId, user_b_id: userId },
+          ],
+        },
+      });
+    }
+
     return { message: `Follower ${followerId} removed from user ${userId}` };
   }
 
@@ -213,22 +269,66 @@ export class UserConnectionsService {
     page = 1,
     limit = 20,
   ) {
-    let result: { items: UserConnectionDto[]; meta: any };
+    const take = limit > 0 ? limit : 20;
+    const currentPage = page > 0 ? page : 1;
+    const skip = (currentPage - 1) * take;
 
-    if (type === 'followers') result = await this.getFollowers(userId, page, limit);
-    else if (type === 'following') result = await this.getFollowing(userId, page, limit);
-    else if (type === 'friends') result = await this.getFriends(userId, page, limit);
-    else {
-      return buildPaginatedResponse([], 0, page, limit);
+    // If search is provided, we need to fetch all results, filter, then paginate
+    if (search) {
+      const searchLower = search.toLowerCase();
+      let allUsers: any[] = [];
+
+      if (type === 'followers') {
+        const followers = await this.prisma.resFollow.findMany({
+          where: { following_id: userId },
+          include: { follower: true },
+          orderBy: { created_at: 'desc' },
+        });
+        allUsers = followers.map((f) => f.follower);
+      } else if (type === 'following') {
+        const following = await this.prisma.resFollow.findMany({
+          where: { follower_id: userId },
+          include: { following: true },
+          orderBy: { created_at: 'desc' },
+        });
+        allUsers = following.map((f) => f.following);
+      } else if (type === 'friends') {
+        const where = { OR: [{ user_a_id: userId }, { user_b_id: userId }] };
+        const friends = await this.prisma.resFriend.findMany({
+          where,
+          include: { userA: true, userB: true },
+          orderBy: { created_at: 'desc' },
+        });
+        allUsers = friends.map((f) => (f.user_a_id === userId ? f.userB : f.userA));
+      } else {
+        return buildPaginatedResponse([], 0, currentPage, take);
+      }
+
+      // Filter users by search term
+      const filteredUsers = allUsers.filter(
+        (u) =>
+          u.nickname?.toLowerCase().includes(searchLower) ||
+          u.id.toLowerCase().includes(searchLower),
+      );
+
+      // Paginate filtered results
+      const paginatedUsers = filteredUsers.slice(skip, skip + take);
+      const data = await this.attachFollowStatus(userId, paginatedUsers);
+
+      return buildPaginatedResponse(data, filteredUsers.length, currentPage, take);
     }
 
-    if (search) {
-      const q = search.toLowerCase();
-      const filteredItems = result.items.filter(
-        (u) => u.nickname.toLowerCase().includes(q) || u.id.toLowerCase().includes(q),
-      );
-      // Recalculate meta for filtered results
-      return buildPaginatedResponse(filteredItems, filteredItems.length, page, limit);
+    // No search - use existing methods with pagination
+    let result: { items: UserConnectionDto[]; meta: any };
+
+    if (type === 'followers') {
+      result = await this.getFollowers(userId, page, limit);
+    } else if (type === 'following') {
+      result = await this.getFollowing(userId, page, limit);
+    } else if (type === 'friends') {
+      result = await this.getFriends(userId, page, limit);
+    } else {
+      return buildPaginatedResponse([], 0, page, limit);
     }
 
     return result;
