@@ -25,14 +25,15 @@ export class ReferralPublicController {
       },
     },
   })
-  getReferrals(@Param('user_id') userId: string) {
-    return this.referral.getReferrals(userId).then((referrals) => {
-      // Chỉ trả về thông tin public
-      return {
-        total_referrals: referrals?.length || 0,
-        total_earned: referrals?.reduce((sum, r) => sum + (r.earned || 0), 0) || 0,
-      };
-    });
+  async getReferrals(@Param('user_id') userId: string) {
+    const referrals = await this.referral.getReferrals(userId);
+    // Chỉ trả về thông tin public
+    const items = referrals?.items || [];
+    const total_earned = items.reduce((sum, r) => sum + (Number(r.reward_amount) || 0), 0);
+
+    return {
+      total_referrals: referrals?.meta?.total_items || 0,
+      total_earned,
+    };
   }
 }
-
