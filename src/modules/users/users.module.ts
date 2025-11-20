@@ -18,6 +18,10 @@ import { UsersPublicController } from './controller/users-public.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 
+// ==================== Block User ====================
+import { BlockUserController } from './block-user/controller/block-user.controller';
+import { BlockUserService } from './block-user/service/block-user.service';
+
 @Module({
   imports: [PrismaModule, forwardRef(() => NotificationsModule), forwardRef(() => RealtimeModule)],
   controllers: [
@@ -29,6 +33,8 @@ import { RealtimeModule } from '../realtime/realtime.module';
     ConnectionsController,
     ConnectionsAdminController,
     ConnectionsPublicController,
+    // Block User
+    BlockUserController,
   ],
   providers: [
     ResUserService,
@@ -38,7 +44,9 @@ import { RealtimeModule } from '../realtime/realtime.module';
     UserAlbumsService,
     UserLevelService,
     UserGiftWallService,
+    // Block User
+    BlockUserService,
   ],
-  exports: [ResUserService],
+  exports: [ResUserService, BlockUserService],
 })
 export class UsersModule {}

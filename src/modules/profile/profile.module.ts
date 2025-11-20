@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { UsersModule } from '../users/users.module';
 
 // ==================== User Profile ====================
 import { ProfileServiceDb } from './profile.service';
@@ -19,63 +20,10 @@ import { AlbumAdminController } from './album/controller/album-admin.controller'
 import { AlbumPublicController } from './album/controller/album-public.controller';
 import { AlbumService } from './album/service/album.service';
 
-// ==================== Clan ====================
-import { ClanController } from './clan/controller/clan.controller';
-import { ClanAdminController } from './clan/controller/clan-admin.controller';
-import { ClanPublicController } from './clan/controller/clan-public.controller';
-import { ClanService } from './clan/service/clan.service';
-
-// ==================== Gifts ====================
-import { GiftsController } from './gifts/controller/gifts.controller';
-import { GiftCatalogController } from './gifts/controller/gift-catalog.controller';
-import { GiftsPublicController } from './gifts/controller/gifts-public.controller';
-import { GiftsAdminController } from './gifts/controller/gifts-admin.controller';
-import { GiftCrudService } from './gifts/service/gift-crud.service';
-import { GiftSummaryService } from './gifts/service/gift-summary.service';
-import { GiftCatalogService } from './gifts/service/gift-catalog.service';
-import { UserGiftWallService } from '../users/service/user-gift-wall.service';
-
-// ==================== Wallet ====================
-import { WalletController } from './wallet/controller/wallet.controller';
-import { WalletAdminController } from './wallet/controller/wallet-admin.controller';
-import { WalletService } from './wallet/service/wallet.service';
-import { WalletSummaryService } from './wallet/service/wallet-summary.service';
-import { RechargeService } from './wallet/service/recharge.service';
-import { SubscriptionService } from './wallet/service/subscription.service';
-import { TransactionService } from './wallet/service/transaction.service';
-import { ConvertService } from './wallet/service/convert.service';
-import { DepositService } from './wallet/service/deposit.service';
-import { IapService } from './wallet/service/iap.service';
-import { TransferService } from './wallet/service/transfer.service';
-import { PaymentMethodService } from './wallet/service/payment-method.service';
-
 // ==================== Inventory ====================
 import { InventoryController } from './inventory/controller/inventory.controller';
 import { InventoryAdminController } from './inventory/controller/inventory-admin.controller';
 import { InventoryService } from './inventory/service/inventory.service';
-
-// ==================== Store ====================
-import { StoreController } from './store/controller/store.controller';
-import { StoreAdminController } from './store/controller/store-admin.controller';
-import { StorePublicController } from './store/controller/store-public.controller';
-import { StoreService } from './store/service/store.service';
-
-// ==================== Task ====================
-import { TaskController } from './task/controller/task.controller';
-import { TaskService } from './task/service/task.service';
-
-// ==================== Feedback ====================
-import { FeedbackController } from './feedback/controller/feedback.controller';
-import { FeedbackService } from './feedback/service/feedback.service';
-
-// ==================== Post ====================
-import { PostController } from './post/controller/post.controller';
-import { PostService } from './post/service/post.service';
-import { CommentController } from './post/controller/comment.controller';
-import { CommentService } from './post/service/comment.service';
-import { LikeController } from './post/controller/like.controller';
-import { LikeService } from './post/service/like.service';
-import { PostMediaService } from './post/service/post-media.service';
 
 // ==================== LoveSpace ====================
 import { LoveSpaceController } from './love-space/controller/love-space.controller';
@@ -88,34 +36,14 @@ import { VipAdminController } from './vip/controller/vip-admin.controller';
 import { VipPublicController } from './vip/controller/vip-public.controller';
 import { VipService } from './vip/service/vip.service';
 
-// ==================== Support ====================
-import { SupportController } from './support/controller/support.controller';
-import { SupportService } from './support/service/support.service';
-
 // ==================== Referral ====================
 import { ReferralController } from './referral/controller/referral.controller';
 import { ReferralAdminController } from './referral/controller/referral-admin.controller';
 import { ReferralPublicController } from './referral/controller/referral-public.controller';
 import { ReferralService } from './referral/service/referral.service';
 
-// ==================== Story ====================
-import { StoryController } from './story/controller/story.controller';
-import { StoryService } from './story/service/story.service';
-
-// ==================== Group ====================
-import { GroupController } from './group/controller/group.controller';
-import { GroupService } from './group/service/group.service';
-
-// ==================== Event ====================
-import { EventController } from './event/controller/event.controller';
-import { EventService } from './event/service/event.service';
-
-// ==================== Block User ====================
-import { BlockUserController } from './block-user/controller/block-user.controller';
-import { BlockUserService } from './block-user/service/block-user.service';
-
 @Module({
-  imports: [PrismaModule, forwardRef(() => RealtimeModule)],
+  imports: [PrismaModule, forwardRef(() => RealtimeModule), forwardRef(() => UsersModule)],
   controllers: [
     ProfileViewsControllerDb,
     ProfileViewsAdminController,
@@ -128,18 +56,6 @@ import { BlockUserService } from './block-user/service/block-user.service';
     AlbumController,
     AlbumAdminController,
     AlbumPublicController,
-    // Clan
-    ClanController,
-    ClanAdminController,
-    ClanPublicController,
-    // Gifts
-    GiftCatalogController,
-    GiftsController,
-    GiftsPublicController,
-    GiftsAdminController,
-    // Wallet
-    WalletController,
-    WalletAdminController,
     // Vip
     VipController,
     VipAdminController,
@@ -147,12 +63,6 @@ import { BlockUserService } from './block-user/service/block-user.service';
     // Inventory
     InventoryController,
     InventoryAdminController,
-    // Store
-    StoreController,
-    StoreAdminController,
-    StorePublicController,
-    // Task
-    TaskController,
     // Referral
     ReferralController,
     ReferralAdminController,
@@ -160,22 +70,6 @@ import { BlockUserService } from './block-user/service/block-user.service';
     // LoveSpace
     LoveSpaceController,
     LoveSpacePublicController,
-    // Feedback
-    FeedbackController,
-    // Support
-    SupportController,
-    // Post
-    PostController,
-    CommentController,
-    LikeController,
-    // Story
-    StoryController,
-    // Group
-    GroupController,
-    // Event
-    EventController,
-    // Block User
-    BlockUserController,
   ],
   providers: [
     ProfileServiceDb,
@@ -184,53 +78,15 @@ import { BlockUserService } from './block-user/service/block-user.service';
     UserProfileService,
     // Album
     AlbumService,
-    // Clan
-    ClanService,
-    // Gifts
-    GiftCrudService,
-    GiftSummaryService,
-    GiftCatalogService,
-    UserGiftWallService,
-    // Wallet
-    WalletService,
-    WalletSummaryService,
-    RechargeService,
-    SubscriptionService,
-    TransactionService,
-    ConvertService,
-    DepositService,
-    IapService,
-    TransferService,
-    PaymentMethodService,
     // Inventory
     InventoryService,
-    // Store
-    StoreService,
-    // Task
-    TaskService,
-    // Feedback
-    FeedbackService,
     // Vip
     VipService,
     // Referral
     ReferralService,
     // LoveSpace
     LoveSpaceService,
-    // Support
-    SupportService,
-    // Post
-    PostService,
-    CommentService,
-    LikeService,
-    PostMediaService,
-    // Story
-    StoryService,
-    // Group
-    GroupService,
-    // Event
-    EventService,
-    // Block User
-    BlockUserService,
   ],
+  exports: [InventoryService],
 })
 export class ProfileModuleDb {}

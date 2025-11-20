@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsDateString } from 'class-validator';
 import { AlbumDto } from '../../album/dto/album.dto';
 
 export class UserProfileDto {
@@ -52,17 +52,27 @@ export class CreateUserProfileDto {
 
 export class UpdateUserProfileDto {
   @ApiProperty({ example: 'NewName', required: false })
+  @IsOptional()
+  @IsString()
   nickname?: string;
 
   @ApiProperty({ example: 'https://avatar.com/new.png', required: false })
+  @IsOptional()
+  @IsString()
   avatar?: string;
 
   @ApiProperty({ example: 'Updated bio', required: false })
+  @IsOptional()
+  @IsString()
   bio?: string;
 
   @ApiProperty({ example: 'female', required: false })
+  @IsOptional()
+  @IsString()
   gender?: string;
 
   @ApiProperty({ example: '2001-01-01', required: false })
+  @IsOptional()
+  @IsDateString()
   birthday?: string;
 }

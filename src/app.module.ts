@@ -9,6 +9,18 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CommonModule } from './common/common.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
+// New modules
+import { PostsModule } from './modules/posts/posts.module';
+import { StoriesModule } from './modules/stories/stories.module';
+import { GroupsModule } from './modules/groups/groups.module';
+import { EventsModule } from './modules/events/events.module';
+import { StoreModule } from './modules/store/store.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+import { SupportModule } from './modules/support/support.module';
+import { WalletModule } from './modules/wallet/wallet.module';
+import { ClansModule } from './modules/clans/clans.module';
+import { GiftsModule } from './modules/gifts/gifts.module';
 import { CacheModule } from './common/cache/cache.module';
 import { MonitoringModule } from './common/monitoring/monitoring.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
@@ -36,6 +48,18 @@ import jwtConfig from './config/jwt.config';
     ProfileModuleDb,
     NotificationsModule,
     RealtimeModule,
+    // New modules
+    PostsModule,
+    StoriesModule,
+    GroupsModule,
+    EventsModule,
+    StoreModule,
+    TasksModule,
+    FeedbackModule,
+    SupportModule,
+    WalletModule,
+    ClansModule,
+    GiftsModule,
     CacheModule,
     MonitoringModule,
     RateLimitModule,

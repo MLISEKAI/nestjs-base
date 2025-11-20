@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/commo
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StatsQueryDto } from '../dto/stats-query.dto';
 import { UpdateUserProfileDto } from '../dto/profile.dto';
-import { BlockUserService } from '../../block-user/service/block-user.service';
+import { BlockUserService } from '../../../users/block-user/service/block-user.service';
 
 @Injectable()
 export class UserProfileService {
