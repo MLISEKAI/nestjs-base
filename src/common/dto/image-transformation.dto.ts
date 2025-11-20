@@ -93,4 +93,13 @@ export class ImageTransformationDto {
   @IsOptional()
   @IsString()
   effect?: string;
+
+  @ApiPropertyOptional({
+    example: 'avatars',
+    description: 'Thư mục lưu trữ (mặc định: uploads)',
+    default: 'uploads',
+  })
+  @IsOptional()
+  @IsString()
+  folder?: string;
 }
