@@ -1,10 +1,21 @@
-import { Controller, Get, Post, Delete, Param, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Query,
+  Req,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiOkResponse } from '@nestjs/swagger';
 import { UserConnectionsService } from '../service/user-connections.service';
 import { ConnectionsResponseDto } from '../dto/user-response';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
 @ApiTags('Connections')
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('users')
 export class ConnectionsController {
   constructor(private readonly connectionsService: UserConnectionsService) {}

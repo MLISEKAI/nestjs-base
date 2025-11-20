@@ -198,8 +198,8 @@ export class UserConnectionsService {
   }
 
   async getFollowing(userId: string, page = 1, limit = 20) {
-    const take = limit > 0 ? limit : 20;
-    const currentPage = page > 0 ? page : 1;
+    const take = Number(limit) > 0 ? Number(limit) : 20;
+    const currentPage = Number(page) > 0 ? Number(page) : 1;
     const skip = (currentPage - 1) * take;
 
     const [following, total] = await Promise.all([
@@ -219,8 +219,8 @@ export class UserConnectionsService {
   }
 
   async getFollowers(userId: string, page = 1, limit = 20) {
-    const take = limit > 0 ? limit : 20;
-    const currentPage = page > 0 ? page : 1;
+    const take = Number(limit) > 0 ? Number(limit) : 20;
+    const currentPage = Number(page) > 0 ? Number(page) : 1;
     const skip = (currentPage - 1) * take;
 
     const [followers, total] = await Promise.all([
@@ -240,8 +240,8 @@ export class UserConnectionsService {
   }
 
   async getFriends(userId: string, page = 1, limit = 20) {
-    const take = limit > 0 ? limit : 20;
-    const currentPage = page > 0 ? page : 1;
+    const take = Number(limit) > 0 ? Number(limit) : 20;
+    const currentPage = Number(page) > 0 ? Number(page) : 1;
     const skip = (currentPage - 1) * take;
 
     const where = { OR: [{ user_a_id: userId }, { user_b_id: userId }] };
@@ -269,8 +269,8 @@ export class UserConnectionsService {
     page = 1,
     limit = 20,
   ) {
-    const take = limit > 0 ? limit : 20;
-    const currentPage = page > 0 ? page : 1;
+    const take = Number(limit) > 0 ? Number(limit) : 20;
+    const currentPage = Number(page) > 0 ? Number(page) : 1;
     const skip = (currentPage - 1) * take;
 
     // If search is provided, we need to fetch all results, filter, then paginate
