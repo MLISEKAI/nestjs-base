@@ -630,6 +630,8 @@ export class AuthService {
     if (!result) {
       return undefined;
     }
+    // Trả về object có 'message' để ResponseInterceptor extract message
+    // nhưng vẫn giữ các field khác (expires_at, preview_code) trong data
     return {
       message: 'Verification code sent successfully',
       expires_at: result.expiresAt,

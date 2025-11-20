@@ -25,13 +25,19 @@ export class TransferService {
       throw new NotFoundException('Receiver not found');
     }
 
-    // Lấy VEX wallet của sender
-    const senderVexWallet = await this.prisma.resWallet.findFirst({
+    // Lấy hoặc tạo VEX wallet của sender
+    let senderVexWallet = await this.prisma.resWallet.findFirst({
       where: { user_id: senderId, currency: 'vex' },
     });
 
     if (!senderVexWallet) {
-      throw new NotFoundException('Sender VEX wallet not found');
+      senderVexWallet = await this.prisma.resWallet.create({
+        data: {
+          user_id: senderId,
+          currency: 'vex',
+          balance: new Prisma.Decimal(0),
+        },
+      });
     }
 
     const senderBalance = Number(senderVexWallet.balance);

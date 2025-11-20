@@ -20,13 +20,16 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Rsp<T>> {
           };
         }
 
-        // If data is an object with a message property, extract it
+        // If data is an object with a message property, extract message but keep other fields in data
         if (data && typeof data === 'object' && 'message' in data) {
+          const { message, ...restData } = data;
+          // If restData is empty, set data to null, otherwise keep the rest
+          const hasOtherFields = Object.keys(restData).length > 0;
           return {
             error: false,
             code: 0,
-            message: data.message,
-            data: null,
+            message: message,
+            data: hasOtherFields ? restData : null,
             traceId,
           };
         }

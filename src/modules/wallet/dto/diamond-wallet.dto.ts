@@ -17,6 +17,46 @@ export class WalletSummaryResponseDto {
   monthlyCardStatus: string;
 }
 
+// VEX Balance Response
+export class ExchangeRateDto {
+  @ApiProperty({ example: 0.01657, description: 'Tỷ giá VEX to USD' })
+  vex_to_usd: number;
+
+  @ApiProperty({ example: '2025-11-20T07:59:59Z', description: 'Thời gian cập nhật tỷ giá' })
+  last_updated: string;
+}
+
+export class DailyLimitsDto {
+  @ApiProperty({ example: 4500.0, description: 'Số tiền còn lại có thể nạp trong ngày' })
+  deposit_remaining: number;
+
+  @ApiProperty({ example: 2000.0, description: 'Số tiền còn lại có thể rút trong ngày' })
+  withdraw_remaining: number;
+
+  @ApiProperty({ example: 1000.0, description: 'Số tiền còn lại có thể chuyển trong ngày' })
+  transfer_remaining: number;
+}
+
+export class VexBalanceResponseDto {
+  @ApiProperty({ example: 54292.79, description: 'Số dư VEX' })
+  vex_balance: number;
+
+  @ApiProperty({ example: 900.0, description: 'Số dư VEX quy đổi sang USD' })
+  vex_balance_usd: number;
+
+  @ApiProperty({ type: ExchangeRateDto, description: 'Thông tin tỷ giá' })
+  exchange_rate: ExchangeRateDto;
+
+  @ApiProperty({ type: DailyLimitsDto, description: 'Giới hạn giao dịch trong ngày' })
+  daily_limits: DailyLimitsDto;
+}
+
+// Diamond Balance Response
+export class DiamondBalanceResponseDto {
+  @ApiProperty({ example: 54292.79, description: 'Số dư Diamond' })
+  diamond_balance: number;
+}
+
 // Recharge Packages
 export class RechargePackageDto {
   @ApiProperty({ example: 1 })

@@ -18,7 +18,17 @@ import {
   RequestPasswordResetDto,
   ResetPasswordDto,
 } from './dto/auth.dto';
-import { ApiTags, ApiBody, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBody,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiExcludeEndpoint,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiTooManyRequestsResponse,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
@@ -67,9 +77,52 @@ export class AuthController {
   @ApiOperation({
     summary: 'Yêu cầu OTP để đăng nhập qua số điện thoại',
     description:
-      'Gửi OTP đến số điện thoại để đăng nhập. Có thể dùng cho user mới (sẽ tự động tạo account) hoặc user đã có. Khác với /auth/phone/request (chỉ verify số điện thoại của user đã tồn tại).',
+      'Gửi mã OTP đến số điện thoại để đăng nhập. Endpoint này có thể được sử dụng cho cả user mới (hệ thống sẽ tự động tạo account) hoặc user đã tồn tại. OTP sẽ được gửi qua SMS và có thời hạn sử dụng. Sau khi nhận OTP, user cần gọi endpoint /auth/login/otp để verify và đăng nhập.\n\n**Lưu ý:**\n- Khác với `/auth/phone/request` (chỉ verify số điện thoại của user đã tồn tại, không đăng nhập)\n- Rate limit: Tối đa 3 requests/phút để tránh spam\n- Trong môi trường development, OTP code sẽ được trả về trong response để test\n- Trong production, OTP chỉ được gửi qua SMS',
   })
-  @ApiBody({ type: RequestPhoneCodeDto })
+  @ApiBody({
+    type: RequestPhoneCodeDto,
+    description: 'Số điện thoại theo định dạng E.164 (ví dụ: +84912345678)',
+  })
+  @ApiCreatedResponse({
+    description: 'OTP đã được gửi thành công đến số điện thoại',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Verification code sent successfully' },
+        data: {
+          type: 'object',
+          nullable: true,
+          properties: {
+            expires_at: {
+              type: 'string',
+              format: 'date-time',
+              example: '2025-11-20T08:50:00Z',
+              description: 'Thời gian hết hạn của OTP code',
+            },
+            preview_code: {
+              type: 'string',
+              example: '123456',
+              description: 'OTP code để test (chỉ có trong development mode)',
+            },
+          },
+          example: {
+            expires_at: '2025-11-20T08:50:00Z',
+            preview_code: '123456',
+          },
+        },
+        traceId: { type: 'string', example: 'BFu11CDQq4' },
+      },
+      required: ['error', 'code', 'message', 'data', 'traceId'],
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Bad Request - Số điện thoại không hợp lệ hoặc không đúng định dạng E.164',
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Too Many Requests - Vượt quá rate limit (tối đa 3 requests/phút)',
+  })
   @Throttle({ otpRequest: RATE_LIMITS.otpRequest })
   requestLoginOtp(@Body() dto: RequestPhoneCodeDto) {
     return this.authService.requestPhoneLoginOtp(dto.phone);

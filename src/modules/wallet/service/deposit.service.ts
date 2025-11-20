@@ -66,13 +66,19 @@ export class DepositService {
    * Withdraw VEX
    */
   async withdrawVex(userId: string, dto: WithdrawVexDto): Promise<WithdrawVexResponseDto> {
-    // Lấy VEX wallet
-    const vexWallet = await this.prisma.resWallet.findFirst({
+    // Lấy hoặc tạo VEX wallet
+    let vexWallet = await this.prisma.resWallet.findFirst({
       where: { user_id: userId, currency: 'vex' },
     });
 
     if (!vexWallet) {
-      throw new NotFoundException('VEX wallet not found');
+      vexWallet = await this.prisma.resWallet.create({
+        data: {
+          user_id: userId,
+          currency: 'vex',
+          balance: new Prisma.Decimal(0),
+        },
+      });
     }
 
     const vexBalance = Number(vexWallet.balance);

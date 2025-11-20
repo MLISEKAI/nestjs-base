@@ -92,6 +92,67 @@ export class ConnectionsController {
     return this.connectionsService.unfollowUser(userId, followingId);
   }
 
+  @Get('following')
+  @ApiOperation({
+    summary: 'Danh sách following của user hiện tại',
+    description:
+      'Lấy danh sách những người mà user hiện tại đang follow. Hỗ trợ pagination để phân trang kết quả.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách following với pagination (chuẩn format)',
+    schema: {
+      type: 'object',
+      properties: {
+        error: { type: 'boolean', example: false },
+        code: { type: 'number', example: 0 },
+        message: { type: 'string', example: 'Success' },
+        data: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', example: 'user-id-123' },
+                  nickname: { type: 'string', example: 'John Doe' },
+                  avatar: {
+                    type: 'string',
+                    nullable: true,
+                    example: 'https://example.com/avatar.jpg',
+                  },
+                  is_following: { type: 'boolean', example: true },
+                  is_friend: { type: 'boolean', example: false },
+                },
+              },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', example: 50 },
+                page: { type: 'number', example: 1 },
+                limit: { type: 'number', example: 20 },
+                totalPages: { type: 'number', example: 3 },
+              },
+            },
+          },
+        },
+        traceId: { type: 'string' },
+      },
+    },
+  })
+  async getFollowing(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
+    return this.connectionsService.getFollowing(userId, query.page || 1, query.limit || 20);
+  }
+
   @Get('followers')
   @ApiOperation({ summary: 'Danh sách followers của user hiện tại' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
