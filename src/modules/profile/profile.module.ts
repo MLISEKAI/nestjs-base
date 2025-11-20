@@ -6,15 +6,23 @@ import { RealtimeModule } from '../realtime/realtime.module';
 import { ProfileServiceDb } from './profile.service';
 import { UserProfileService } from './profile-user/service/profile-user.service';
 import { UserProfileController } from './profile-user/controller/profile-user.controller';
+import { ProfileAdminController } from './profile-user/controller/profile-admin.controller';
+import { ProfilePublicController } from './profile-user/controller/profile-public.controller';
 import { ProfileViewsControllerDb } from './profile-views/profile-views.controller';
+import { ProfileViewsAdminController } from './profile-views/profile-views-admin.controller';
+import { ProfileViewsPublicController } from './profile-views/profile-views-public.controller';
 import { ProfileViewsServiceDb } from './profile-views/profile-views.service';
 
 // ==================== Album ====================
 import { AlbumController } from './album/controller/album.controller';
+import { AlbumAdminController } from './album/controller/album-admin.controller';
+import { AlbumPublicController } from './album/controller/album-public.controller';
 import { AlbumService } from './album/service/album.service';
 
 // ==================== Clan ====================
 import { ClanController } from './clan/controller/clan.controller';
+import { ClanAdminController } from './clan/controller/clan-admin.controller';
+import { ClanPublicController } from './clan/controller/clan-public.controller';
 import { ClanService } from './clan/service/clan.service';
 
 // ==================== Gifts ====================
@@ -110,12 +118,20 @@ import { BlockUserService } from './block-user/service/block-user.service';
   imports: [PrismaModule, forwardRef(() => RealtimeModule)],
   controllers: [
     ProfileViewsControllerDb,
+    ProfileViewsAdminController,
+    ProfileViewsPublicController,
     // User Profile
     UserProfileController,
+    ProfileAdminController,
+    ProfilePublicController,
     // Album
     AlbumController,
+    AlbumAdminController,
+    AlbumPublicController,
     // Clan
     ClanController,
+    ClanAdminController,
+    ClanPublicController,
     // Gifts
     GiftCatalogController,
     GiftsController,

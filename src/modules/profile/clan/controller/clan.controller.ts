@@ -9,6 +9,8 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,7 +20,9 @@ import {
   ApiCreatedResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import {
   UpdateClanRankDto,
@@ -29,31 +33,20 @@ import {
 } from '../dto/clan.dto';
 import { ClanService } from '../service/clan.service';
 
-@ApiTags('Clans')
+/**
+ * User Clans Controller - Yêu cầu authentication
+ * User chỉ có thể quản lý clans của chính mình
+ */
+@ApiTags('Clans (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-@Controller('profile/:user_id/clans')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('clans')
 export class ClanController {
   constructor(private readonly clans: ClanService) {}
 
-  @Get('all')
-  @ApiOperation({ summary: 'Danh sách tất cả clan có sẵn để tham gia' })
-  @ApiOkResponse({
-    description: 'Danh sách clan khả dụng',
-    type: ClanBasicDto,
-    isArray: true,
-  })
-  getAllClans() {
-    return this.clans.getAllClans();
-  }
-
-  // ----------------------- [GET] Danh sách clan của user -----------------------
   @Get()
-  @ApiOperation({ summary: 'Danh sách clan của user' })
-  @ApiParam({
-    name: 'user_id',
-    type: String,
-    description: 'ID của user muốn lấy danh sách clan',
-  })
+  @ApiOperation({ summary: 'Danh sách clan của user hiện tại' })
   @ApiQuery({
     name: 'limit',
     required: false,
@@ -66,31 +59,25 @@ export class ClanController {
     type: UserClanDto,
     isArray: true,
   })
-  getClans(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getClans(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.clans.getClans(userId, query);
   }
 
-  // ----------------------- [POST] Tạo clan -----------------------
   @Post()
-  @ApiOperation({ summary: 'Tạo clan mới' })
-  @ApiParam({ name: 'user_id', type: String, description: 'ID của user tạo clan' })
+  @ApiOperation({ summary: 'Tạo clan mới cho user hiện tại' })
   @ApiBody({ description: 'Thông tin clan', type: CreateClanDto })
   @ApiCreatedResponse({
     description: 'Clan được tạo',
     type: ClanDetailDto,
   })
-  createClan(@Param('user_id') userId: string, @Body() dto: CreateClanDto) {
+  createClan(@Req() req: any, @Body() dto: CreateClanDto) {
+    const userId = req.user.id;
     return this.clans.createClan(userId, dto);
   }
 
-  // ----------------------- [POST] Tham gia clan -----------------------
   @Post(':clan_id/join')
   @ApiOperation({ summary: 'Tham gia clan' })
-  @ApiParam({
-    name: 'user_id',
-    type: String,
-    description: 'ID của user tham gia clan',
-  })
   @ApiParam({
     name: 'clan_id',
     type: String,
@@ -100,18 +87,13 @@ export class ClanController {
     description: 'Kết quả khi user tham gia clan',
     type: UserClanDto,
   })
-  joinClan(@Param('user_id') userId: string, @Param('clan_id') clanId: string) {
+  joinClan(@Req() req: any, @Param('clan_id') clanId: string) {
+    const userId = req.user.id;
     return this.clans.joinClan(userId, clanId);
   }
 
-  // ----------------------- [DELETE] Rời clan -----------------------
   @Delete(':clan_id/leave')
   @ApiOperation({ summary: 'Rời clan' })
-  @ApiParam({
-    name: 'user_id',
-    type: String,
-    description: 'ID của user rời clan',
-  })
   @ApiParam({
     name: 'clan_id',
     type: String,
@@ -121,18 +103,13 @@ export class ClanController {
     description: 'Kết quả rời clan',
     schema: { type: 'object', properties: { message: { example: 'Left clan' } } },
   })
-  leaveClan(@Param('user_id') userId: string, @Param('clan_id') clanId: string) {
+  leaveClan(@Req() req: any, @Param('clan_id') clanId: string) {
+    const userId = req.user.id;
     return this.clans.leaveClan(userId, clanId);
   }
 
-  // ----------------------- [PATCH] Cập nhật vai trò -----------------------
   @Patch(':clan_id/role')
-  @ApiOperation({ summary: 'Cập nhật vai trò trong clan' })
-  @ApiParam({
-    name: 'user_id',
-    type: String,
-    description: 'ID của user cập nhật vai trò trong clan',
-  })
+  @ApiOperation({ summary: 'Cập nhật vai trò trong clan của user hiện tại' })
   @ApiParam({
     name: 'clan_id',
     type: String,
@@ -157,26 +134,22 @@ export class ClanController {
     type: UserClanDto,
   })
   updateClanRole(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Param('clan_id') clanId: string,
     @Body() dto: UpdateClanRankDto,
   ) {
+    const userId = req.user.id;
     return this.clans.updateClanRole(userId, clanId, dto);
   }
 
-  // ----------------------- [GET] Thông tin clan của user -----------------------
   @Get('info')
-  @ApiOperation({ summary: 'Thông tin clan hiện tại của user' })
-  @ApiParam({
-    name: 'user_id',
-    type: String,
-    description: 'ID của user muốn lấy thông tin clan',
-  })
+  @ApiOperation({ summary: 'Thông tin clan hiện tại của user hiện tại' })
   @ApiOkResponse({
     description: 'Thông tin clan mà user đang tham gia',
     type: UserClanDto,
   })
-  getClanInfo(@Param('user_id') userId: string) {
+  getClanInfo(@Req() req: any) {
+    const userId = req.user.id;
     return this.clans.getClanInfo(userId);
   }
 }

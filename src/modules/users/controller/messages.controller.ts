@@ -1,16 +1,22 @@
-import { Controller, Post, Param, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiOkResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBody, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { UserMessagingService } from '../service/user-messaging.service';
 
-@ApiTags('Messages')
-@Controller('users')
+/**
+ * User Messages Controller - Yêu cầu authentication
+ * User chỉ có thể gửi messages từ chính mình
+ */
+@ApiTags('Messages (User)')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('messages')
 export class MessagesController {
   constructor(private readonly messagingService: UserMessagingService) {}
 
-  @Post(':id/messages')
-  @ApiOperation({ summary: 'Gửi tin nhắn đến user khác' })
-  @ApiParam({ name: 'id', description: 'ID người gửi' })
+  @Post()
+  @ApiOperation({ summary: 'Gửi tin nhắn đến user khác (sender tự động từ JWT token)' })
   @ApiBody({ type: SendMessageDto })
   @ApiOkResponse({
     description: 'Tin nhắn đã gửi',
@@ -25,7 +31,8 @@ export class MessagesController {
       },
     },
   })
-  async sendMessage(@Param('id') senderId: string, @Body() dto: SendMessageDto) {
+  async sendMessage(@Req() req: any, @Body() dto: SendMessageDto) {
+    const senderId = req.user.id;
     return this.messagingService.sendMessage(senderId, dto);
   }
 }

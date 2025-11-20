@@ -1,12 +1,13 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { NotificationController } from './controller/notification.controller';
+import { NotificationAdminController } from './controller/notification-admin.controller';
 import { NotificationService } from './service/notification.service';
 import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   imports: [PrismaModule, forwardRef(() => RealtimeModule)],
-  controllers: [NotificationController],
+  controllers: [NotificationController, NotificationAdminController],
   providers: [NotificationService],
   exports: [NotificationService],
 })

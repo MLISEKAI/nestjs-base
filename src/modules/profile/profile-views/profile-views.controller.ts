@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -6,21 +6,29 @@ import {
   ApiQuery,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProfileViewsServiceDb } from './profile-views.service';
 
-@ApiTags('Profile Views')
-@Controller('/profile')
+/**
+ * User Profile Views Controller - Yêu cầu authentication
+ * User chỉ có thể xem profile views của chính mình
+ */
+@ApiTags('Profile Views (User)')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('profile-views')
 export class ProfileViewsControllerDb {
   constructor(
     private prisma: PrismaService,
     private profileViewsService: ProfileViewsServiceDb,
   ) {}
 
-  // POST: Ghi log khi user A xem hồ sơ user B
-  @Post(':target_user_id/profile-views')
-  @ApiOperation({ summary: 'Ghi log khi user A xem hồ sơ của user B' })
+  // POST: Ghi log khi user hiện tại xem hồ sơ user khác
+  @Post(':target_user_id')
+  @ApiOperation({ summary: 'Ghi log khi user hiện tại xem hồ sơ của user khác' })
   @ApiParam({ name: 'target_user_id', description: 'ID của user được xem hồ sơ', type: String })
   @ApiCreatedResponse({
     description: 'Profile view theo schema Prisma',
@@ -34,15 +42,15 @@ export class ProfileViewsControllerDb {
       },
     },
   })
-  logProfileView(@Param('target_user_id') targetId: string, @Query('viewer_id') viewerId: string) {
+  logProfileView(@Req() req: any, @Param('target_user_id') targetId: string) {
+    const viewerId = req.user.id;
     return this.profileViewsService.logProfileView(targetId, viewerId);
   }
 
-  // GET: Lấy thời gian cuối cùng user xem hồ sơ người khác
-  @Get(':target_user_id/last-view')
-  @ApiOperation({ summary: 'Lấy thời gian cuối cùng user xem hồ sơ của người khác' })
+  // GET: Lấy thời gian cuối cùng user hiện tại xem hồ sơ người khác
+  @Get('last-view/:target_user_id')
+  @ApiOperation({ summary: 'Lấy thời gian cuối cùng user hiện tại xem hồ sơ của người khác' })
   @ApiParam({ name: 'target_user_id', description: 'ID của user được xem hồ sơ', type: String })
-  @ApiQuery({ name: 'viewer_id', description: 'ID của user xem hồ sơ', type: String })
   @ApiOkResponse({
     description: 'Lần xem cuối cùng theo schema Prisma',
     schema: {
@@ -55,13 +63,14 @@ export class ProfileViewsControllerDb {
       },
     },
   })
-  getLastView(@Param('target_user_id') targetId: string, @Query('viewer_id') viewerId: string) {
+  getLastView(@Req() req: any, @Param('target_user_id') targetId: string) {
+    const viewerId = req.user.id;
     return this.profileViewsService.getLastView(targetId, viewerId);
   }
-  // GET: Lấy danh sách hoặc tổng lượt xem hồ sơ
-  @Get(':user_id/profile-views')
-  @ApiOperation({ summary: 'Lấy danh sách hoặc tổng lượt xem hồ sơ của user' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+
+  // GET: Lấy danh sách hoặc tổng lượt xem hồ sơ của user hiện tại
+  @Get()
+  @ApiOperation({ summary: 'Lấy danh sách hoặc tổng lượt xem hồ sơ của user hiện tại' })
   @ApiQuery({
     name: 'full',
     required: false,
@@ -96,14 +105,14 @@ export class ProfileViewsControllerDb {
       ],
     },
   })
-  getProfileViews(@Param('user_id') userId: string, @Query('full') full?: string) {
+  getProfileViews(@Req() req: any, @Query('full') full?: string) {
+    const userId = req.user.id;
     return this.profileViewsService.getProfileViews(userId, full === 'true');
   }
 
-  // GET: Lấy thông tin các tính năng user đã kích hoạt
-  @Get(':user_id/features')
-  @ApiOperation({ summary: 'Lấy danh sách tính năng user đã kích hoạt (mock data)' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  // GET: Lấy thông tin các tính năng user hiện tại đã kích hoạt
+  @Get('features')
+  @ApiOperation({ summary: 'Lấy danh sách tính năng user hiện tại đã kích hoạt (mock data)' })
   @ApiOkResponse({
     description: 'Thông tin tính năng',
     schema: {
@@ -121,7 +130,8 @@ export class ProfileViewsControllerDb {
       },
     },
   })
-  getUserFeatures(@Param('user_id') userId: string) {
+  getUserFeatures(@Req() req: any) {
+    const userId = req.user.id;
     const features = {
       profile_view_full: false,
       boost_post: false,

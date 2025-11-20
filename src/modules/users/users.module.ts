@@ -7,15 +7,29 @@ import { UserAlbumsService } from './service/user-albums.service';
 import { UserLevelService } from './service/user-level.service';
 import { UserGiftWallService } from './service/user-gift-wall.service';
 import { MessagesController } from './controller/messages.controller';
+import { MessagesAdminController } from './controller/messages-admin.controller';
 import { ResUserService } from './service/res-user.service';
 import { ConnectionsController } from './controller/connections.controller';
+import { ConnectionsAdminController } from './controller/connections-admin.controller';
+import { ConnectionsPublicController } from './controller/connections-public.controller';
 import { UserController } from './controller/users.controller';
+import { UsersAdminController } from './controller/users-admin.controller';
+import { UsersPublicController } from './controller/users-public.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   imports: [PrismaModule, forwardRef(() => NotificationsModule), forwardRef(() => RealtimeModule)],
-  controllers: [UserController, MessagesController, ConnectionsController],
+  controllers: [
+    UserController,
+    UsersAdminController,
+    UsersPublicController,
+    MessagesController,
+    MessagesAdminController,
+    ConnectionsController,
+    ConnectionsAdminController,
+    ConnectionsPublicController,
+  ],
   providers: [
     ResUserService,
     UserProfileService,

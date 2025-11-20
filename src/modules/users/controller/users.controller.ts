@@ -1,5 +1,14 @@
-import { Controller, Get, Param, Put, Body, Post, Query, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiOkResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Param, Put, Body, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiOkResponse,
+  ApiBody,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { UserProfileService } from '../service/user-profile.service';
 import {
   UserResponseDto,
@@ -11,7 +20,10 @@ import { UserConnectionsService } from '../service/user-connections.service';
 import { UserLevelService } from '../service/user-level.service';
 import { UserBalanceDto } from '../dto/user-level.dto';
 
-@ApiTags('Users')
+/**
+ * User Controller - Một số endpoints cần auth, một số public
+ */
+@ApiTags('Users (User)')
 @Controller('users')
 export class UserController {
   constructor(
@@ -94,27 +106,33 @@ export class UserController {
     return this.profileService.findOne(id);
   }
 
-  @Put(':id')
-  @ApiOperation({ summary: 'Cập nhật thông tin cá nhân của user' })
-  @ApiParam({ name: 'id', description: 'ID của user', example: 'User ID' })
+  @Put('me')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Cập nhật thông tin cá nhân của user hiện tại' })
   @ApiBody({ type: UpdateUserDto })
-  async updateProfile(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.profileService.updateProfile(id, dto);
+  async updateProfile(@Req() req: any, @Body() dto: UpdateUserDto) {
+    const userId = req.user.id;
+    return this.profileService.updateProfile(userId, dto);
   }
 
-  @Post(':id/avatar')
-  @ApiOperation({ summary: 'Upload avatar cho user' })
-  @ApiParam({ name: 'id', description: 'ID user', example: 'User ID' })
+  @Post('me/avatar')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Upload avatar cho user hiện tại' })
   @ApiBody({ type: UploadAvatarDto })
-  async uploadAvatar(@Param('id') id: string, @Body() dto: UploadAvatarDto) {
-    return this.profileService.uploadAvatar(id, dto.fileUrl);
+  async uploadAvatar(@Req() req: any, @Body() dto: UploadAvatarDto) {
+    const userId = req.user.id;
+    return this.profileService.uploadAvatar(userId, dto.fileUrl);
   }
 
-  @Get(':id/balance')
-  @ApiOperation({ summary: 'Lấy thông tin cấp độ và XP của user' })
-  @ApiParam({ name: 'id', description: 'ID của user', example: 'user-id-123' })
+  @Get('me/balance')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Lấy thông tin cấp độ và XP của user hiện tại' })
   @ApiOkResponse({ type: UserBalanceDto })
-  async getBalance(@Param('id') id: string) {
-    return this.levelService.getUserBalance(id);
+  async getBalance(@Req() req: any) {
+    const userId = req.user.id;
+    return this.levelService.getUserBalance(userId);
   }
 }

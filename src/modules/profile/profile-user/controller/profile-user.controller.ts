@@ -8,14 +8,28 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiBody,
+  ApiOkResponse,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { UserProfileService } from '../service/profile-user.service';
 import { ProfileServiceDb } from '../../profile.service';
 import { UpdateUserProfileDto } from '../dto/profile.dto';
 import { StatsQueryDto } from '../dto/stats-query.dto';
 
-@ApiTags('Profile')
+/**
+ * User Profile Controller - Một số endpoints cần auth, một số public
+ */
+@ApiTags('Profile (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('profile')
 export class UserProfileController {
@@ -24,94 +38,41 @@ export class UserProfileController {
     private readonly service: ProfileServiceDb,
   ) {}
 
-  @Get(':user_id')
-  @ApiOperation({ summary: 'Lấy thông tin cơ bản của user' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
-  @ApiQuery({
-    name: 'current_user_id',
-    description: 'ID của user đang xem (optional, để check block status)',
-    required: false,
-    type: String,
-  })
+  @Get('me')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Lấy thông tin cơ bản của user hiện tại' })
   @ApiOkResponse({
     description: 'Hồ sơ user theo schema Prisma',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { example: 'user-1' },
-        union_id: { example: 'union-1' },
-        role: { example: 'user' },
-        nickname: { example: 'NguyenVanA' },
-        bio: { example: 'I love coding' },
-        avatar: { example: 'https://avatar.com/a.png' },
-        gender: { example: 'male' },
-        birthday: { example: '2000-01-01T00:00:00.000Z' },
-        albums: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { example: 'album-1' },
-              title: { example: 'Summer Memories' },
-              image_url: { example: 'https://img.com/cover1.png' },
-              photos: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { example: 'photo-1' },
-                    album_id: { example: 'album-1' },
-                    image_url: { example: 'https://img.com/1.png' },
-                    created_at: { example: '2025-01-01T00:00:00.000Z' },
-                  },
-                },
-              },
-            },
-          },
-        },
-        wallet: {
-          type: 'object',
-          properties: {
-            id: { example: 'wallet-1' },
-            balance: { example: 1000 },
-            currency: { example: 'gem' },
-          },
-        },
-        vipStatus: {
-          type: 'object',
-          properties: {
-            id: { example: 'vip-1' },
-            is_vip: { example: true },
-            expiry: { example: '2025-12-31T00:00:00.000Z' },
-          },
-        },
-        statusBadge: { example: 'Bronze' },
-        isAccountLocked: { example: false },
-        isBlockedByMe: { example: false },
-        hasBlockedMe: { example: false },
-        relationshipStatus: { example: 'single' },
-      },
-    },
   })
-  getProfile(@Param('user_id') userId: string, @Query('current_user_id') currentUserId?: string) {
-    return this.userProfile.getProfile(userId, currentUserId);
+  getMyProfile(@Req() req: any) {
+    const userId = req.user.id;
+    return this.userProfile.getProfile(userId, userId);
   }
 
-  @Patch(':user_id')
-  @ApiOperation({ summary: 'Cập nhật hồ sơ user' })
+  @Patch('me')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Cập nhật hồ sơ của user hiện tại' })
   @ApiBody({ type: UpdateUserProfileDto })
-  updateProfile(@Param('user_id') userId: string, @Body() dto: UpdateUserProfileDto) {
+  updateProfile(@Req() req: any, @Body() dto: UpdateUserProfileDto) {
+    const userId = req.user.id;
     return this.userProfile.updateProfile(userId, dto);
   }
 
-  @Delete(':user_id')
-  @ApiOperation({ summary: 'Xóa hồ sơ user' })
-  deleteProfile(@Param('user_id') userId: string) {
+  @Delete('me')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Xóa hồ sơ của user hiện tại' })
+  deleteProfile(@Req() req: any) {
+    const userId = req.user.id;
     return this.userProfile.deleteProfile(userId);
   }
 
-  @Get(':user_id/stats')
-  @ApiOperation({ summary: 'Lấy thống kê của user' })
+  @Get('me/stats')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Lấy thống kê của user hiện tại' })
   @ApiOkResponse({
     description: 'Thống kê user theo schema Prisma',
     schema: {
@@ -124,12 +85,15 @@ export class UserProfileController {
       },
     },
   })
-  getStats(@Param('user_id') userId: string, @Query() query: StatsQueryDto) {
+  getStats(@Req() req: any, @Query() query: StatsQueryDto) {
+    const userId = req.user.id;
     return this.userProfile.getStats(userId, query);
   }
 
-  @Get(':user_id/room/status')
-  @ApiOperation({ summary: 'Trạng thái phòng của user' })
+  @Get('me/room/status')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Trạng thái phòng của user hiện tại' })
   @ApiOkResponse({
     description: 'Trạng thái phòng hiện tại của user',
     schema: {
@@ -146,12 +110,15 @@ export class UserProfileController {
       },
     },
   })
-  getRoomStatus(@Param('user_id') userId: string) {
+  getRoomStatus(@Req() req: any) {
+    const userId = req.user.id;
     return this.userProfile.getRoomStatus(userId);
   }
 
-  @Get(':user_id/interests')
-  @ApiOperation({ summary: 'Danh sách sở thích của user' })
+  @Get('me/interests')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Danh sách sở thích của user hiện tại' })
   @ApiOkResponse({
     description: 'Danh sách sở thích',
     schema: {
@@ -166,12 +133,15 @@ export class UserProfileController {
       },
     },
   })
-  getUserInterests(@Param('user_id') userId: string) {
+  getUserInterests(@Req() req: any) {
+    const userId = req.user.id;
     return this.service.getUserInterests(userId);
   }
 
-  @Get(':user_id/contribution')
-  @ApiOperation({ summary: 'Lấy đóng góp của user' })
+  @Get('me/contribution')
+  @UseGuards(AuthGuard('account-auth'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Lấy đóng góp của user hiện tại' })
   @ApiOkResponse({
     description: 'Thông tin đóng góp của user',
     schema: {
@@ -184,7 +154,8 @@ export class UserProfileController {
       },
     },
   })
-  getUserContribution(@Param('user_id') userId: string) {
+  getUserContribution(@Req() req: any) {
+    const userId = req.user.id;
     return this.service.getUserContribution(userId);
   }
 }
