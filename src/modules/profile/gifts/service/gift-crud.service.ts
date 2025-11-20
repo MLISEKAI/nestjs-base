@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGiftDto, UpdateGiftDto } from '../dto/gift.dto';
 import { buildPaginatedResponse } from '../../../../common/utils/pagination.util';
@@ -8,7 +8,7 @@ import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 export class GiftCrudService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateGiftDto) {
+  async create(dto: CreateGiftDto & { sender_id: string }) {
     return this.prisma.resGift.create({
       data: {
         sender_id: dto.sender_id,
@@ -44,13 +44,41 @@ export class GiftCrudService {
     return buildPaginatedResponse(gifts, total, page, take);
   }
 
-  async findOne(id: string) {
+  /**
+   * Find one gift by ID
+   * @param id Gift ID
+   * @param userId Optional: Check if user is sender or receiver (for authorization)
+   */
+  async findOne(id: string, userId?: string) {
     const gift = await this.prisma.resGift.findUnique({ where: { id } });
     if (!gift) throw new NotFoundException('Gift not found');
+
+    // Authorization check: User chỉ có thể xem gift mà họ là sender hoặc receiver
+    if (userId && gift.sender_id !== userId && gift.receiver_id !== userId) {
+      throw new ForbiddenException('You can only view gifts you sent or received');
+    }
+
     return gift;
   }
 
-  async update(id: string, dto: UpdateGiftDto) {
+  /**
+   * Update gift
+   * @param id Gift ID
+   * @param dto Update data
+   * @param userId Optional: Check if user is sender (only sender can update)
+   */
+  async update(id: string, dto: UpdateGiftDto, userId?: string) {
+    // Check if gift exists and user has permission
+    if (userId) {
+      const gift = await this.prisma.resGift.findUnique({ where: { id } });
+      if (!gift) throw new NotFoundException('Gift not found');
+
+      // Authorization: Chỉ sender mới có thể update gift
+      if (gift.sender_id !== userId) {
+        throw new ForbiddenException('You can only update gifts you sent');
+      }
+    }
+
     try {
       return await this.prisma.resGift.update({
         where: { id },
@@ -68,7 +96,23 @@ export class GiftCrudService {
     }
   }
 
-  async remove(id: string) {
+  /**
+   * Delete gift
+   * @param id Gift ID
+   * @param userId Optional: Check if user is sender (only sender can delete)
+   */
+  async remove(id: string, userId?: string) {
+    // Check if gift exists and user has permission
+    if (userId) {
+      const gift = await this.prisma.resGift.findUnique({ where: { id } });
+      if (!gift) throw new NotFoundException('Gift not found');
+
+      // Authorization: Chỉ sender mới có thể delete gift
+      if (gift.sender_id !== userId) {
+        throw new ForbiddenException('You can only delete gifts you sent');
+      }
+    }
+
     try {
       await this.prisma.resGift.delete({ where: { id } });
       return { message: 'Gift deleted successfully' };

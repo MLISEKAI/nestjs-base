@@ -118,9 +118,9 @@ export class UserProfileController {
       type: 'object',
       properties: {
         posts: { example: 10 },
-        followers: { example: 100 },
-        following: { example: 50 },
-        totalViews: { example: 500 },
+        followers_count: { example: 100 },
+        following_count: { example: 50 },
+        totalViews_count: { example: 500 },
       },
     },
   })

@@ -9,15 +9,31 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { LoveSpaceDto, CreateLoveSpaceDto, UpdateLoveSpaceDto } from '../dto/lovespace.dto';
 import { LoveSpaceService } from '../service/love-space.service';
 
-@ApiTags('Love Space')
+/**
+ * User Love Space Controller - Yêu cầu authentication
+ * User chỉ có thể edit Love Space của chính mình
+ */
+@ApiTags('Love Space (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-@Controller('profile/:user_id/love-space')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('love-space')
 export class LoveSpaceController {
   constructor(private readonly loveSpace: LoveSpaceService) {}
 
@@ -36,12 +52,13 @@ export class LoveSpaceController {
       },
     },
   })
-  getLoveSpace(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getLoveSpace(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.loveSpace.getLoveSpace(userId, query);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Tạo Love Space' })
+  @ApiOperation({ summary: 'Tạo Love Space cho user hiện tại' })
   @ApiBody({ type: CreateLoveSpaceDto })
   @ApiCreatedResponse({
     description: 'Love Space được tạo theo schema Prisma',
@@ -56,12 +73,13 @@ export class LoveSpaceController {
       },
     },
   })
-  createLoveSpace(@Param('user_id') userId: string, @Body() dto: CreateLoveSpaceDto) {
+  createLoveSpace(@Req() req: any, @Body() dto: CreateLoveSpaceDto) {
+    const userId = req.user.id;
     return this.loveSpace.createLoveSpace(userId, dto);
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Cập nhật Love Space' })
+  @ApiOperation({ summary: 'Cập nhật Love Space của user hiện tại' })
   @ApiBody({ type: UpdateLoveSpaceDto })
   @ApiOkResponse({
     description: 'Love Space sau cập nhật theo schema Prisma',
@@ -76,17 +94,19 @@ export class LoveSpaceController {
       },
     },
   })
-  updateLoveSpace(@Param('user_id') userId: string, @Body() dto: UpdateLoveSpaceDto) {
+  updateLoveSpace(@Req() req: any, @Body() dto: UpdateLoveSpaceDto) {
+    const userId = req.user.id;
     return this.loveSpace.updateLoveSpace(userId, dto);
   }
 
   @Delete()
-  @ApiOperation({ summary: 'Xóa Love Space' })
+  @ApiOperation({ summary: 'Xóa Love Space của user hiện tại' })
   @ApiOkResponse({
     description: 'Kết quả xóa',
     schema: { type: 'object', properties: { message: { example: 'Love Space deleted' } } },
   })
-  deleteLoveSpace(@Param('user_id') userId: string) {
+  deleteLoveSpace(@Req() req: any) {
+    const userId = req.user.id;
     return this.loveSpace.deleteLoveSpace(userId);
   }
 }

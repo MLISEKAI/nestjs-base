@@ -20,6 +20,8 @@ import { ClanService } from './clan/service/clan.service';
 // ==================== Gifts ====================
 import { GiftsController } from './gifts/controller/gifts.controller';
 import { GiftCatalogController } from './gifts/controller/gift-catalog.controller';
+import { GiftsPublicController } from './gifts/controller/gifts-public.controller';
+import { GiftsAdminController } from './gifts/controller/gifts-admin.controller';
 import { GiftCrudService } from './gifts/service/gift-crud.service';
 import { GiftSummaryService } from './gifts/service/gift-summary.service';
 import { GiftCatalogService } from './gifts/service/gift-catalog.service';
@@ -27,6 +29,7 @@ import { UserGiftWallService } from '../users/service/user-gift-wall.service';
 
 // ==================== Wallet ====================
 import { WalletController } from './wallet/controller/wallet.controller';
+import { WalletAdminController } from './wallet/controller/wallet-admin.controller';
 import { WalletService } from './wallet/service/wallet.service';
 import { WalletSummaryService } from './wallet/service/wallet-summary.service';
 import { RechargeService } from './wallet/service/recharge.service';
@@ -40,10 +43,13 @@ import { PaymentMethodService } from './wallet/service/payment-method.service';
 
 // ==================== Inventory ====================
 import { InventoryController } from './inventory/controller/inventory.controller';
+import { InventoryAdminController } from './inventory/controller/inventory-admin.controller';
 import { InventoryService } from './inventory/service/inventory.service';
 
 // ==================== Store ====================
 import { StoreController } from './store/controller/store.controller';
+import { StoreAdminController } from './store/controller/store-admin.controller';
+import { StorePublicController } from './store/controller/store-public.controller';
 import { StoreService } from './store/service/store.service';
 
 // ==================== Task ====================
@@ -65,10 +71,13 @@ import { PostMediaService } from './post/service/post-media.service';
 
 // ==================== LoveSpace ====================
 import { LoveSpaceController } from './love-space/controller/love-space.controller';
+import { LoveSpacePublicController } from './love-space/controller/love-space-public.controller';
 import { LoveSpaceService } from './love-space/service/love-space.service';
 
 // ==================== Vip ====================
 import { VipController } from './vip/controller/vip.controller';
+import { VipAdminController } from './vip/controller/vip-admin.controller';
+import { VipPublicController } from './vip/controller/vip-public.controller';
 import { VipService } from './vip/service/vip.service';
 
 // ==================== Support ====================
@@ -77,6 +86,8 @@ import { SupportService } from './support/service/support.service';
 
 // ==================== Referral ====================
 import { ReferralController } from './referral/controller/referral.controller';
+import { ReferralAdminController } from './referral/controller/referral-admin.controller';
+import { ReferralPublicController } from './referral/controller/referral-public.controller';
 import { ReferralService } from './referral/service/referral.service';
 
 // ==================== Story ====================
@@ -108,20 +119,31 @@ import { BlockUserService } from './block-user/service/block-user.service';
     // Gifts
     GiftCatalogController,
     GiftsController,
+    GiftsPublicController,
+    GiftsAdminController,
     // Wallet
     WalletController,
+    WalletAdminController,
     // Vip
     VipController,
+    VipAdminController,
+    VipPublicController,
     // Inventory
     InventoryController,
+    InventoryAdminController,
     // Store
     StoreController,
+    StoreAdminController,
+    StorePublicController,
     // Task
     TaskController,
     // Referral
     ReferralController,
+    ReferralAdminController,
+    ReferralPublicController,
     // LoveSpace
     LoveSpaceController,
+    LoveSpacePublicController,
     // Feedback
     FeedbackController,
     // Support

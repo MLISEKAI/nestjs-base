@@ -9,6 +9,8 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,7 +19,9 @@ import {
   ApiBody,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { WalletService } from '../service/wallet.service';
 import { WalletSummaryService } from '../service/wallet-summary.service';
@@ -56,9 +60,15 @@ import {
 } from '../dto/diamond-wallet.dto';
 import { IPaginatedResponse } from '../../../../common/interfaces/pagination.interface';
 
-@ApiTags('Wallet')
+/**
+ * User Wallet Controller - Yêu cầu authentication
+ * User chỉ có thể xem/sửa wallet của chính mình
+ */
+@ApiTags('Wallet (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-@Controller('users/:user_id/wallet')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('wallet')
 export class WalletController {
   constructor(
     private readonly walletService: WalletService,
@@ -75,196 +85,191 @@ export class WalletController {
 
   // ========== CRUD Basic Wallet ==========
   @Get()
-  @ApiOperation({ summary: 'Lấy thông tin ví của user' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOperation({ summary: 'Lấy thông tin ví của user hiện tại' })
   @ApiOkResponse({ description: 'Ví của user theo schema Prisma' })
-  getWallet(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getWallet(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.walletService.getWallet(userId, query);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Tạo ví cho user' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOperation({ summary: 'Tạo ví cho user hiện tại' })
   @ApiBody({ type: CreateWalletDto })
   @ApiCreatedResponse({ description: 'Ví được tạo theo schema Prisma' })
-  createWallet(@Param('user_id') userId: string, @Body() dto: CreateWalletDto) {
+  createWallet(@Req() req: any, @Body() dto: CreateWalletDto) {
+    const userId = req.user.id;
     return this.walletService.createWallet(userId, dto);
   }
 
   @Patch()
-  @ApiOperation({ summary: 'Cập nhật ví của user' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOperation({ summary: 'Cập nhật ví của user hiện tại' })
   @ApiBody({ type: UpdateWalletDto })
   @ApiOkResponse({ description: 'Ví sau cập nhật theo schema Prisma' })
-  updateWallet(@Param('user_id') userId: string, @Body() dto: UpdateWalletDto) {
+  updateWallet(@Req() req: any, @Body() dto: UpdateWalletDto) {
+    const userId = req.user.id;
     return this.walletService.updateWallet(userId, dto);
   }
 
   @Delete()
-  @ApiOperation({ summary: 'Xóa ví của user' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
-  deleteWallet(@Param('user_id') userId: string) {
+  @ApiOperation({ summary: 'Xóa ví của user hiện tại' })
+  deleteWallet(@Req() req: any) {
+    const userId = req.user.id;
     return this.walletService.deleteWallet(userId);
   }
 
   // ========== Diamond Wallet Features ==========
   @Get('summary')
-  @ApiOperation({ summary: 'Lấy số dư Kim Cương, VEX và trạng thái Thẻ Tháng' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOperation({ summary: 'Lấy số dư Kim Cương, VEX và trạng thái Thẻ Tháng của user hiện tại' })
   @ApiOkResponse({ type: WalletSummaryResponseDto })
-  getWalletSummary(@Param('user_id') userId: string): Promise<WalletSummaryResponseDto> {
+  getWalletSummary(@Req() req: any): Promise<WalletSummaryResponseDto> {
+    const userId = req.user.id;
     return this.walletSummaryService.getWalletSummary(userId);
   }
 
   @Get('recharge/packages')
   @ApiOperation({ summary: 'Lấy danh sách gói nạp Kim Cương' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiOkResponse({ type: [RechargePackageDto] })
-  getRechargePackages(@Param('user_id') userId: string): Promise<RechargePackageDto[]> {
+  getRechargePackages(): Promise<RechargePackageDto[]> {
     return this.rechargeService.getRechargePackages();
   }
 
   @Get('recharge/monthly-cards')
   @ApiOperation({ summary: 'Lấy danh sách Thẻ Tháng (Monthly Cards)' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiOkResponse({ type: [MonthlyCardDto] })
-  getMonthlyCards(@Param('user_id') userId: string): Promise<MonthlyCardDto[]> {
+  getMonthlyCards(): Promise<MonthlyCardDto[]> {
     return this.subscriptionService.getMonthlyCards();
   }
 
   @Post('recharge/checkout')
   @ApiOperation({ summary: 'Khởi tạo giao dịch mua gói nạp Kim Cương' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: CheckoutRechargeDto })
   @ApiCreatedResponse({ type: CheckoutRechargeResponseDto })
   checkoutRecharge(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto: CheckoutRechargeDto,
   ): Promise<CheckoutRechargeResponseDto> {
+    const userId = req.user.id;
     return this.rechargeService.checkoutRecharge(userId, dto);
   }
 
   @Post('subscription/purchase')
   @ApiOperation({ summary: 'Đăng ký Thẻ Tháng' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: PurchaseSubscriptionDto })
   @ApiCreatedResponse({ type: PurchaseSubscriptionResponseDto })
   purchaseSubscription(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto: PurchaseSubscriptionDto,
   ): Promise<PurchaseSubscriptionResponseDto> {
+    const userId = req.user.id;
     return this.subscriptionService.purchaseSubscription(userId, dto);
   }
 
   @Get('subscription/details')
-  @ApiOperation({ summary: 'Lấy chi tiết đăng ký Thẻ Tháng' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOperation({ summary: 'Lấy chi tiết đăng ký Thẻ Tháng của user hiện tại' })
   @ApiOkResponse({ type: SubscriptionDetailsResponseDto })
-  getSubscriptionDetails(
-    @Param('user_id') userId: string,
-  ): Promise<SubscriptionDetailsResponseDto> {
+  getSubscriptionDetails(@Req() req: any): Promise<SubscriptionDetailsResponseDto> {
+    const userId = req.user.id;
     return this.subscriptionService.getSubscriptionDetails(userId);
   }
 
   @Get('transactions/history')
-  @ApiOperation({ summary: 'Lấy lịch sử giao dịch (nạp, rút, quà tặng)' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOperation({ summary: 'Lấy lịch sử giao dịch (nạp, rút, quà tặng) của user hiện tại' })
   @ApiOkResponse({ type: [TransactionHistoryItemDto] })
   getTransactionHistory(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Query() query: BaseQueryDto,
   ): Promise<IPaginatedResponse<TransactionHistoryItemDto>> {
+    const userId = req.user.id;
     return this.transactionService.getTransactionHistory(userId, query);
   }
 
   @Post('vex/convert')
   @ApiOperation({ summary: 'Chuyển đổi VEX sang Kim Cương' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: ConvertVexToDiamondDto })
   @ApiOkResponse({ type: ConvertVexToDiamondResponseDto })
   convertVexToDiamond(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto: ConvertVexToDiamondDto,
   ): Promise<ConvertVexToDiamondResponseDto> {
+    const userId = req.user.id;
     return this.convertService.convertVexToDiamond(userId, dto);
   }
 
   @Post('deposit/create')
   @ApiOperation({ summary: 'Tạo địa chỉ Deposit, trả về QR Code và địa chỉ ví' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: CreateDepositDto, required: false })
   @ApiCreatedResponse({ type: CreateDepositResponseDto })
   createDeposit(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto?: CreateDepositDto,
   ): Promise<CreateDepositResponseDto> {
+    const userId = req.user.id;
     return this.depositService.createDeposit(userId, dto);
   }
 
   @Post('withdraw')
   @ApiOperation({ summary: 'Khởi tạo yêu cầu rút VEX' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: WithdrawVexDto })
   @ApiCreatedResponse({ type: WithdrawVexResponseDto })
   withdrawVex(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto: WithdrawVexDto,
   ): Promise<WithdrawVexResponseDto> {
+    const userId = req.user.id;
     return this.depositService.withdrawVex(userId, dto);
   }
 
   @Get('deposit/info')
-  @ApiOperation({ summary: 'Lấy thông tin địa chỉ Deposit hiện tại' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
+  @ApiOperation({ summary: 'Lấy thông tin địa chỉ Deposit hiện tại của user hiện tại' })
   @ApiOkResponse({ type: DepositInfoResponseDto })
-  getDepositInfo(@Param('user_id') userId: string): Promise<DepositInfoResponseDto> {
+  getDepositInfo(@Req() req: any): Promise<DepositInfoResponseDto> {
+    const userId = req.user.id;
     return this.depositService.getDepositInfo(userId);
   }
 
   @Post('iap/verify-receipt')
   @ApiOperation({ summary: 'Xác minh giao dịch In-App Purchase' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: IapVerifyReceiptDto })
   @ApiOkResponse({ type: IapVerifyReceiptResponseDto })
   verifyIapReceipt(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto: IapVerifyReceiptDto,
   ): Promise<IapVerifyReceiptResponseDto> {
+    const userId = req.user.id;
     return this.iapService.verifyIapReceipt(userId, dto);
   }
 
   // ========== Transfer VEX ==========
   @Post('vex/transfer')
-  @ApiOperation({ summary: 'Chuyển VEX từ user này sang user khác' })
-  @ApiParam({ name: 'user_id', description: 'User ID (người gửi)' })
+  @ApiOperation({ summary: 'Chuyển VEX từ user hiện tại sang user khác' })
   @ApiBody({ type: TransferVexDto })
   @ApiCreatedResponse({ type: TransferVexResponseDto })
   transferVex(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto: TransferVexDto,
   ): Promise<TransferVexResponseDto> {
+    const userId = req.user.id;
     return this.transferService.transferVex(userId, dto);
   }
 
   // ========== Update Deposit Network ==========
   @Patch('deposit/network')
   @ApiOperation({ summary: 'Cập nhật network cho deposit address (Polygon, BSC, Ethereum, etc.)' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: UpdateDepositNetworkDto })
   @ApiOkResponse({ type: CreateDepositResponseDto })
   updateDepositNetwork(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Body() dto: UpdateDepositNetworkDto,
   ): Promise<CreateDepositResponseDto> {
+    const userId = req.user.id;
     return this.depositService.updateDepositNetwork(userId, dto);
   }
 
   // ========== Payment Methods ==========
   @Get('payment-methods')
   @ApiOperation({ summary: 'Lấy danh sách phương thức thanh toán (Visa, Dolfie, etc.)' })
-  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiOkResponse({ type: [PaymentMethodDto] })
-  getPaymentMethods(@Param('user_id') userId: string): Promise<PaymentMethodDto[]> {
+  getPaymentMethods(): Promise<PaymentMethodDto[]> {
     return this.paymentMethodService.getPaymentMethods();
   }
 }

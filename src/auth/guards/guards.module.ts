@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { OptionalAuthGuard } from './optional-auth.guard';
+import { AdminGuard } from '../../common/guards/admin.guard';
 
 /**
  * GuardsModule - Module riêng cho các guards
@@ -11,7 +12,7 @@ import { OptionalAuthGuard } from './optional-auth.guard';
  */
 @Module({
   imports: [PassportModule],
-  providers: [OptionalAuthGuard],
-  exports: [OptionalAuthGuard],
+  providers: [OptionalAuthGuard, AdminGuard],
+  exports: [OptionalAuthGuard, AdminGuard],
 })
 export class GuardsModule {}

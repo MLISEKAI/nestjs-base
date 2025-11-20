@@ -9,15 +9,30 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiOkResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { TaskSummaryDto, CreateTaskDto, UpdateTaskDto } from '../dto/task-summary.dto';
 import { TaskService } from '../service/task.service';
 
-@ApiTags('Tasks')
+/**
+ * User Tasks Controller - Yêu cầu authentication
+ * User chỉ có thể xem/sửa tasks của chính mình
+ */
+@ApiTags('Tasks (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-@Controller('profile/:user_id/tasks')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('tasks')
 export class TaskController {
   constructor(private readonly tasks: TaskService) {}
 
@@ -38,31 +53,35 @@ export class TaskController {
       },
     },
   })
-  getTaskSummary(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getTaskSummary(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.tasks.getTaskSummary(userId, query);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Tạo nhiệm vụ' })
+  @ApiOperation({ summary: 'Tạo nhiệm vụ cho user hiện tại' })
   @ApiBody({ type: CreateTaskDto })
-  createTask(@Param('user_id') userId: string, @Body() dto: CreateTaskDto) {
+  createTask(@Req() req: any, @Body() dto: CreateTaskDto) {
+    const userId = req.user.id;
     return this.tasks.createTask(userId, dto);
   }
 
   @Patch(':task_id')
-  @ApiOperation({ summary: 'Cập nhật nhiệm vụ' })
+  @ApiOperation({ summary: 'Cập nhật nhiệm vụ của user hiện tại' })
   @ApiBody({ type: UpdateTaskDto })
   updateTask(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Param('task_id') taskId: string,
     @Body() dto: UpdateTaskDto,
   ) {
+    const userId = req.user.id;
     return this.tasks.updateTask(userId, taskId, dto);
   }
 
   @Delete(':task_id')
-  @ApiOperation({ summary: 'Xóa nhiệm vụ' })
-  deleteTask(@Param('user_id') userId: string, @Param('task_id') taskId: string) {
+  @ApiOperation({ summary: 'Xóa nhiệm vụ của user hiện tại' })
+  deleteTask(@Req() req: any, @Param('task_id') taskId: string) {
+    const userId = req.user.id;
     return this.tasks.deleteTask(userId, taskId);
   }
 }

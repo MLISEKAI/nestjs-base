@@ -9,8 +9,18 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiOkResponse,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import {
   InventoryItemDto,
@@ -19,9 +29,15 @@ import {
 } from '../dto/inventory.dto';
 import { InventoryService } from '../service/inventory.service';
 
-@ApiTags('Inventory')
+/**
+ * User Inventory Controller - Yêu cầu authentication
+ * User chỉ có thể xem/sửa inventory của chính mình
+ */
+@ApiTags('Inventory (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-@Controller('profile/:user_id/inventory')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventory: InventoryService) {}
 
@@ -64,31 +80,35 @@ export class InventoryController {
       },
     },
   })
-  getInventory(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getInventory(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.inventory.getInventory(userId, query);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Thêm vật phẩm vào inventory' })
+  @ApiOperation({ summary: 'Thêm vật phẩm vào inventory của user hiện tại' })
   @ApiBody({ type: CreateInventoryItemDto })
-  addInventoryItem(@Param('user_id') userId: string, @Body() dto: CreateInventoryItemDto) {
+  addInventoryItem(@Req() req: any, @Body() dto: CreateInventoryItemDto) {
+    const userId = req.user.id;
     return this.inventory.addInventoryItem(userId, dto);
   }
 
   @Patch(':item_id')
-  @ApiOperation({ summary: 'Cập nhật vật phẩm inventory' })
+  @ApiOperation({ summary: 'Cập nhật vật phẩm inventory của user hiện tại' })
   @ApiBody({ type: UpdateInventoryItemDto })
   updateInventoryItem(
-    @Param('user_id') userId: string,
+    @Req() req: any,
     @Param('item_id') itemId: string,
     @Body() dto: UpdateInventoryItemDto,
   ) {
+    const userId = req.user.id;
     return this.inventory.updateInventoryItem(userId, itemId, dto);
   }
 
   @Delete(':item_id')
-  @ApiOperation({ summary: 'Xóa vật phẩm inventory' })
-  deleteInventoryItem(@Param('user_id') userId: string, @Param('item_id') itemId: string) {
+  @ApiOperation({ summary: 'Xóa vật phẩm inventory của user hiện tại' })
+  deleteInventoryItem(@Req() req: any, @Param('item_id') itemId: string) {
+    const userId = req.user.id;
     return this.inventory.deleteInventoryItem(userId, itemId);
   }
 }

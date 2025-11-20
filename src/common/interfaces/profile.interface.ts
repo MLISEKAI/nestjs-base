@@ -28,7 +28,7 @@ export interface IProfileView {
  */
 export interface IProfileStats {
   posts: number;
-  followers: number;
-  following: number;
-  totalViews: number;
+  followers_count: number;
+  following_count: number;
+  totalViews_count: number;
 }

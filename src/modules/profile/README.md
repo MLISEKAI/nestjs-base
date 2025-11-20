@@ -3,7 +3,9 @@
 ## ✅ **Tổng quan các thay đổi đã thực hiện**
 
 ### **1. Pagination**
+
 Tất cả endpoints list đã có pagination với format chuẩn:
+
 - ✅ `getAlbums()` - Album Service
 - ✅ `getClans()` - Clan Service
 - ✅ `getAllClans()` - Clan Service
@@ -15,7 +17,9 @@ Tất cả endpoints list đã có pagination với format chuẩn:
 - ✅ `getTaskSummary()` - Task Service
 
 ### **2. Optimize Update/Delete**
+
 Các methods đã được optimize (bỏ query trước khi không cần):
+
 - ✅ `updateFeedback()` - Feedback Service
 - ✅ `deleteFeedback()` - Feedback Service (thêm error handling)
 - ✅ `updateLoveSpace()` - Love Space Service
@@ -26,9 +30,11 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 - ✅ `updateClanRole()` - Clan Service
 
 ### **3. Error Handling**
+
 - ✅ `deleteFeedback()` - Thêm error handling với P2025
 
 ### **4. Logic Issues**
+
 - ✅ `getStats()` - Tính posts thật từ database thay vì hardcode
 
 ---
@@ -38,6 +44,7 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **1. Album Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/albums` - Lấy danh sách albums (với pagination)
 - `POST /profile/:user_id/albums` - Tạo album mới
 - `PATCH /profile/:user_id/albums/:album_id` - Cập nhật album
@@ -46,13 +53,17 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 - `DELETE /profile/:user_id/albums/:album_id/photos/:photo_id` - Xóa photo
 
 #### **Test Cases:**
+
 1. **GET albums với pagination:**
+
    ```
    GET /profile/{user_id}/albums?page=1&limit=10
    ```
+
    - Response format: `{ error: false, code: 0, message: "Success", data: { items: [...], meta: {...} }, traceId: "..." }`
 
 2. **Tạo album:**
+
    ```
    POST /profile/{user_id}/albums
    Body: { "title": "My Album", "imageUrl": "https://..." }
@@ -69,6 +80,7 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **2. Clan Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/clans/all` - Lấy tất cả clans (với pagination)
 - `GET /profile/:user_id/clans` - Lấy clans của user (với pagination)
 - `POST /profile/:user_id/clans` - Tạo clan mới
@@ -78,12 +90,15 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 - `GET /profile/:user_id/clans/info` - Thông tin clan của user
 
 #### **Test Cases:**
+
 1. **GET all clans với pagination:**
+
    ```
    GET /profile/{user_id}/clans/all?page=1&limit=20
    ```
 
 2. **GET user clans với pagination:**
+
    ```
    GET /profile/{user_id}/clans?page=1&limit=10
    ```
@@ -97,13 +112,16 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **3. Feedback Service**
 
 #### **Endpoints:**
+
 - `POST /profile/feedback` - Gửi feedback
 - `GET /profile/feedback/:user_id` - Lấy feedbacks (với pagination)
 - `PATCH /profile/feedback/:feedback_id` - Cập nhật feedback
 - `DELETE /profile/feedback/:feedback_id` - Xóa feedback
 
 #### **Test Cases:**
+
 1. **GET feedbacks với pagination:**
+
    ```
    GET /profile/feedback/{user_id}?page=1&limit=20
    ```
@@ -121,12 +139,14 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **4. Love Space Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/love-space` - Lấy love space
 - `POST /profile/:user_id/love-space` - Tạo love space
 - `PATCH /profile/:user_id/love-space` - Cập nhật love space
 - `DELETE /profile/:user_id/love-space` - Xóa love space
 
 #### **Test Cases:**
+
 1. **Update love space:**
    - Test với `bio` hợp lệ
    - Test với ID không tồn tại → 404
@@ -136,16 +156,20 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **5. Post Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/posts` - Lấy posts (với pagination) ⚠️ **Cần thêm endpoint này vào controller**
 - `POST /profile/:user_id/posts` - Tạo post
 - `PATCH /profile/:user_id/posts/:post_id` - Cập nhật post
 - `DELETE /profile/:user_id/posts/:post_id` - Xóa post
 
 #### **Test Cases:**
+
 1. **GET posts với pagination:**
+
    ```
    GET /profile/{user_id}/posts?page=1&limit=20
    ```
+
    ⚠️ **Cần thêm endpoint này vào controller**
 
 2. **Update post:**
@@ -161,11 +185,13 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **6. Referral Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/referrals` - Lấy referrals (với pagination)
 - `POST /profile/:user_id/referrals` - Thêm referral
 - `DELETE /profile/:user_id/referrals/:referred_id` - Xóa referral
 
 #### **Test Cases:**
+
 1. **GET referrals với pagination:**
    ```
    GET /profile/{user_id}/referrals?page=1&limit=20
@@ -176,13 +202,16 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **7. Store Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/store` - Lấy store items (với pagination)
 - `POST /profile/:user_id/store/items` - Thêm item
 - `PATCH /profile/:user_id/store/items/:item_id` - Cập nhật item
 - `DELETE /profile/:user_id/store/items/:item_id` - Xóa item
 
 #### **Test Cases:**
+
 1. **GET store với pagination:**
+
    ```
    GET /profile/{user_id}/store?page=1&limit=20
    ```
@@ -202,11 +231,13 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **8. Support Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/support/company` - Lấy company info
 - `GET /profile/:user_id/support/info` - Lấy support info
 - `GET /profile/:user_id/support/articles` - Lấy help articles (với pagination)
 
 #### **Test Cases:**
+
 1. **GET help articles với pagination:**
    ```
    GET /profile/{user_id}/support/articles?page=1&limit=20
@@ -217,12 +248,14 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **9. Task Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/tasks/summary` - Lấy tasks (với pagination)
 - `POST /profile/:user_id/tasks` - Tạo task
 - `PATCH /profile/:user_id/tasks/:task_id` - Cập nhật task
 - `DELETE /profile/:user_id/tasks/:task_id` - Xóa task
 
 #### **Test Cases:**
+
 1. **GET tasks với pagination:**
    ```
    GET /profile/{user_id}/tasks/summary?page=1&limit=20
@@ -233,6 +266,7 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **10. User Profile Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id` - Lấy profile
 - `PATCH /profile/:user_id` - Cập nhật profile
 - `DELETE /profile/:user_id` - Xóa profile
@@ -240,23 +274,27 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 - `GET /profile/:user_id/room-status` - Lấy room status
 
 #### **Test Cases:**
+
 1. **GET stats:**
    ```
    GET /profile/{user_id}/stats
    ```
-   - Response: `{ posts: <số thật>, followers: <số thật>, following: <số thật>, totalViews: <random> }`
+
+   - Response: `{ posts: <số thật>, followers_count: <số thật>, following_count: <số thật>, totalViews_count: <random> }`
 
 ---
 
 ### **11. Vip Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/vip` - Lấy VIP status
 - `POST /profile/:user_id/vip` - Tạo VIP status
 - `PATCH /profile/:user_id/vip` - Cập nhật VIP status
 - `DELETE /profile/:user_id/vip` - Xóa VIP status
 
 #### **Test Cases:**
+
 1. **Update VIP status:**
    - Test với cả `is_vip` và `expiry`
    - Test chỉ với `is_vip`
@@ -268,12 +306,14 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ### **12. Wallet Service**
 
 #### **Endpoints:**
+
 - `GET /profile/:user_id/wallet` - Lấy wallet
 - `POST /profile/:user_id/wallet` - Tạo wallet
 - `PATCH /profile/:user_id/wallet` - Cập nhật wallet
 - `DELETE /profile/:user_id/wallet` - Xóa wallet
 
 #### **Test Cases:**
+
 1. **Update wallet:**
    - Test với cả `balance` và `currency`
    - Test chỉ với `balance`
@@ -284,7 +324,9 @@ Các methods đã được optimize (bỏ query trước khi không cần):
 ## ⚠️ **Lưu ý quan trọng**
 
 ### **1. Controllers cần cập nhật:**
+
 Một số controllers cần cập nhật để truyền `query` params vào services:
+
 - `PostController` - Cần thêm endpoint `GET /profile/:user_id/posts` với query params
 - `FeedbackController` - Cần cập nhật `getFeedback()` để truyền query
 - `ReferralController` - Cần cập nhật `getReferrals()` để truyền query
@@ -295,7 +337,9 @@ Một số controllers cần cập nhật để truyền `query` params vào ser
 - `TaskController` - Cần cập nhật `getTaskSummary()` để truyền query
 
 ### **2. Response Format:**
+
 Tất cả endpoints pagination trả về format chuẩn:
+
 ```json
 {
   "error": false,
@@ -316,6 +360,7 @@ Tất cả endpoints pagination trả về format chuẩn:
 ```
 
 ### **3. Error Handling:**
+
 Tất cả update/delete methods đã có error handling với P2025 (record not found)
 
 ---
@@ -335,10 +380,10 @@ Tất cả update/delete methods đã có error handling với P2025 (record not
 ## 🎯 **Kết luận**
 
 Tất cả services đã được:
+
 - ✅ Thêm pagination cho list endpoints
 - ✅ Optimize update/delete methods
 - ✅ Thêm error handling
 - ✅ Sửa logic issues
 
 **Cần cập nhật controllers để truyền query params!** ⚠️
-

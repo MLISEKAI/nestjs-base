@@ -10,16 +10,18 @@ export class ConnectionsController {
   constructor(private readonly connectionsService: UserConnectionsService) {}
 
   @Get(':id/stats')
-  @ApiOperation({ summary: 'Lấy thông tin tổng quan (followers, following, friends)' })
+  @ApiOperation({
+    summary: 'Lấy thông tin tổng quan (followers_count, following_count, friends_count)',
+  })
   @ApiParam({ name: 'id', description: 'ID của user' })
   @ApiOkResponse({
     description: 'Stats',
     schema: {
       type: 'object',
       properties: {
-        followers: { example: 100 },
-        following: { example: 50 },
-        friends: { example: 25 },
+        followers_count: { example: 100 },
+        following_count: { example: 50 },
+        friends_count: { example: 25 },
       },
     },
   })

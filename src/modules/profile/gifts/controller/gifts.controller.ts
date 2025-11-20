@@ -10,6 +10,7 @@ import {
   UsePipes,
   ValidationPipe,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,7 +20,9 @@ import {
   ApiBody,
   ApiQuery,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { GiftCrudService } from '../service/gift-crud.service';
 import { GiftSummaryService } from '../service/gift-summary.service';
 import { UserGiftWallService } from '../../../users/service/user-gift-wall.service';
@@ -37,9 +40,15 @@ import {
   RateLimitPresets,
 } from '../../../../common/rate-limit/decorators/user-rate-limit.decorator';
 
-@ApiTags('Gifts')
+/**
+ * User Gifts Controller - Yêu cầu authentication
+ * User chỉ có thể xem/sửa gifts của chính mình
+ */
+@ApiTags('Gifts (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-@Controller('profile/:user_id/gifts')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('gifts')
 export class GiftsController {
   constructor(
     private readonly crudService: GiftCrudService,
@@ -49,8 +58,7 @@ export class GiftsController {
   ) {}
 
   @Get('summary')
-  @ApiOperation({ summary: 'Tổng quan quà tặng của user (với pagination)' })
-  @ApiParam({ name: 'user_id', description: 'ID của user nhận quà' })
+  @ApiOperation({ summary: 'Tổng quan quà tặng của user hiện tại (với pagination)' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({
     name: 'limit',
@@ -77,19 +85,21 @@ export class GiftsController {
       },
     },
   })
-  getGiftsSummary(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getGiftsSummary(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.summaryService.getGiftsSummary(userId, query);
   }
 
   @Get('top')
-  @ApiOperation({ summary: 'Top quà tặng của user' })
+  @ApiOperation({ summary: 'Top quà tặng của user hiện tại' })
   @ApiOkResponse({ type: [TopSupporterDto], description: 'Danh sách top supporter' })
-  getTopGifts(@Param('user_id') userId: string) {
+  getTopGifts(@Req() req: any) {
+    const userId = req.user.id;
     return this.summaryService.getTopSupporters(userId);
   }
 
   @Get('milestones')
-  @ApiOperation({ summary: 'Mốc quà tặng của user' })
+  @ApiOperation({ summary: 'Mốc quà tặng của user hiện tại' })
   @ApiOkResponse({
     description: 'Danh sách mốc quà tặng',
     schema: {
@@ -104,13 +114,13 @@ export class GiftsController {
       },
     },
   })
-  getMilestones(@Param('user_id') userId: string) {
+  getMilestones(@Req() req: any) {
+    const userId = req.user.id;
     return this.summaryService.getGiftMilestones(userId);
   }
 
   @Get('gift-wall')
-  @ApiOperation({ summary: 'Lấy thông tin tổng quan Gift Wall' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiOperation({ summary: 'Lấy thông tin tổng quan Gift Wall của user hiện tại' })
   @ApiOkResponse({
     description: 'Thông tin Gift Wall',
     schema: {
@@ -126,13 +136,13 @@ export class GiftsController {
       },
     },
   })
-  getGiftWall(@Param('user_id') userId: string) {
+  getGiftWall(@Req() req: any) {
+    const userId = req.user.id;
     return this.giftWallService.getGiftWall(userId);
   }
 
   @Get('gift-wall/:milestone_id/givers')
-  @ApiOperation({ summary: 'Lấy danh sách milestones với progress' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiOperation({ summary: 'Lấy danh sách milestones với progress của user hiện tại' })
   @ApiParam({
     name: 'milestone_id',
     description: 'ID của milestone (optional, nếu không có thì trả về tất cả)',
@@ -157,16 +167,13 @@ export class GiftsController {
       },
     },
   })
-  getGiftWallMilestones(
-    @Param('user_id') userId: string,
-    @Param('milestone_id') milestoneId?: string,
-  ) {
+  getGiftWallMilestones(@Req() req: any, @Param('milestone_id') milestoneId?: string) {
+    const userId = req.user.id;
     return this.giftWallService.getGiftWallMilestones(userId);
   }
 
   @Get('recent-gifts')
-  @ApiOperation({ summary: 'Lấy danh sách quà nhận gần đây' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiOperation({ summary: 'Lấy danh sách quà nhận gần đây của user hiện tại' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({
     name: 'limit',
@@ -218,15 +225,15 @@ export class GiftsController {
       },
     },
   })
-  getRecentGifts(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getRecentGifts(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const limit = query?.limit && query.limit > 0 ? query.limit : 20;
     return this.giftWallService.getRecentGifts(userId, page, limit);
   }
 
   @Get('inventory')
-  @ApiOperation({ summary: 'Lấy danh sách vật phẩm trong inventory (gift bag)' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
+  @ApiOperation({ summary: 'Lấy danh sách vật phẩm trong inventory (gift bag) của user hiện tại' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({
     name: 'limit',
@@ -254,29 +261,29 @@ export class GiftsController {
       },
     },
   })
-  getInventory(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getInventory(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.inventoryService.getInventory(userId, query);
   }
 
   @Post()
   @UseGuards(UserRateLimitGuard)
   @UserRateLimit({ limit: 10, ttl: 60000 }) // 10 requests per minute
-  @ApiOperation({ summary: 'Tạo mới quà tặng' })
+  @ApiOperation({ summary: 'Gửi quà tặng (sender tự động từ JWT token)' })
   @ApiBody({ type: CreateGiftDto })
   @ApiCreatedResponse({ description: 'Quà tặng được tạo thành công' })
-  create(@Param('user_id') userId: string, @Body() dto: CreateGiftDto) {
-    // Set sender_id từ path param nếu chưa có
-    const giftDto = { ...dto, sender_id: dto.sender_id || userId };
+  create(@Req() req: any, @Body() dto: CreateGiftDto) {
+    // Lấy sender_id từ JWT token
+    const senderId = req.user.id;
+    const giftDto = { ...dto, sender_id: senderId };
     return this.crudService.create(giftDto);
   }
 
   @Get()
   @ApiOperation({
-    summary: 'Lấy danh sách quà tặng của user (với pagination)',
-    description:
-      'Lấy danh sách quà tặng mà user nhận được. Nếu không có user_id trong path, trả về tất cả quà tặng (admin only).',
+    summary: 'Lấy danh sách quà tặng của user hiện tại (với pagination)',
+    description: 'Lấy danh sách quà tặng mà user hiện tại nhận được.',
   })
-  @ApiParam({ name: 'user_id', description: 'ID của user nhận quà' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({
     name: 'limit',
@@ -306,32 +313,36 @@ export class GiftsController {
       },
     },
   })
-  findAll(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  findAll(@Req() req: any, @Query() query: BaseQueryDto) {
+    const userId = req.user.id;
     return this.crudService.findAll(userId, query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Lấy thông tin chi tiết 1 quà tặng' })
+  @ApiOperation({ summary: 'Lấy thông tin chi tiết 1 quà tặng (chỉ gift mà user gửi hoặc nhận)' })
   @ApiOkResponse({ description: 'Chi tiết quà tặng', type: CreateGiftDto })
-  findOne(@Param('id') id: string) {
-    return this.crudService.findOne(id);
+  findOne(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.id;
+    return this.crudService.findOne(id, userId);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Cập nhật quà tặng' })
+  @ApiOperation({ summary: 'Cập nhật quà tặng (chỉ gift mà user đã gửi)' })
   @ApiBody({ type: UpdateGiftDto })
   @ApiOkResponse({ description: 'Quà tặng cập nhật thành công', type: CreateGiftDto })
-  update(@Param('id') id: string, @Body() dto: UpdateGiftDto) {
-    return this.crudService.update(id, dto);
+  update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateGiftDto) {
+    const userId = req.user.id;
+    return this.crudService.update(id, dto, userId);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Xóa quà tặng' })
+  @ApiOperation({ summary: 'Xóa quà tặng (chỉ gift mà user đã gửi)' })
   @ApiOkResponse({
     description: 'Quà tặng đã bị xóa',
     schema: { type: 'object', properties: { message: { example: 'Gift deleted' } } },
   })
-  remove(@Param('id') id: string) {
-    return this.crudService.remove(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.id;
+    return this.crudService.remove(id, userId);
   }
 }

@@ -1,13 +1,10 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, IsNotEmpty } from 'class-validator';
 
 export class CreateGiftDto {
-  @ApiProperty({ example: 'user-2', description: 'Người gửi quà' })
+  @ApiProperty({ example: 'user-1', description: 'Người nhận quà (sender tự động từ JWT token)' })
   @IsString()
-  sender_id: string;
-
-  @ApiProperty({ example: 'user-1', description: 'Người nhận quà' })
-  @IsString()
+  @IsNotEmpty()
   receiver_id: string;
 
   @ApiProperty({ example: 'gift-item-1', description: 'ID món quà' })

@@ -17,7 +17,11 @@ export class UserConnectionsService {
       this.prisma.resFollow.count({ where: { follower_id: userId } }),
       this.getFriends(userId, 1, 1), // Chỉ cần lấy total, không cần data
     ]);
-    return { followers, following, friends: friendsResult.meta.total_items };
+    return {
+      followers_count: followers,
+      following_count: following,
+      friends_count: friendsResult.meta.total_items,
+    };
   }
 
   async followUser(
