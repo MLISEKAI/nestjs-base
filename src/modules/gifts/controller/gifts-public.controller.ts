@@ -49,18 +49,40 @@ export class GiftsPublicController {
     required: false,
     type: String,
   })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
   @ApiOkResponse({
-    description: 'Danh sách milestones với progress',
+    description: 'Danh sách milestones với progress và pagination',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', example: 'gift-item-1' },
-          name: { type: 'string', example: 'Quà tặng 1' },
-          image_url: { type: 'string', example: '/images/gift_milestone_1.png' },
-          required_count: { type: 'number', example: 10 },
-          current_count: { type: 'number', example: 5 },
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'gift-item-1' },
+              name: { type: 'string', example: 'Quà tặng 1' },
+              image_url: { type: 'string', example: '/images/gift_milestone_1.png' },
+              required_count: { type: 'number', example: 10 },
+              current_count: { type: 'number', example: 5 },
+            },
+          },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            item_count: { type: 'number', example: 10 },
+            total_items: { type: 'number', example: 100 },
+            items_per_page: { type: 'number', example: 20 },
+            total_pages: { type: 'number', example: 5 },
+            current_page: { type: 'number', example: 1 },
+          },
         },
       },
     },
@@ -68,7 +90,8 @@ export class GiftsPublicController {
   getGiftWallMilestones(
     @Param('user_id') userId: string,
     @Param('milestone_id') milestoneId?: string,
+    @Query() query?: BaseQueryDto,
   ) {
-    return this.giftWallService.getGiftWallMilestones(userId, milestoneId);
+    return this.giftWallService.getGiftWallMilestones(userId, milestoneId, query);
   }
 }

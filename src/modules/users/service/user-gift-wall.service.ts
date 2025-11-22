@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
+import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
 @Injectable()
 export class UserGiftWallService {
@@ -126,11 +127,20 @@ export class UserGiftWallService {
    * Cached for 5 minutes
    * @param userId - User ID
    * @param milestoneId - Optional: ID của gift item (gift_item_id) để filter milestone cụ thể
+   * @param query - Optional: Pagination query (page, limit)
    */
-  async getGiftWallMilestones(userId: string, milestoneId?: string) {
+  async getGiftWallMilestones(
+    userId: string,
+    milestoneId?: string,
+    query?: { page?: number; limit?: number },
+  ) {
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const limit = query?.limit && query.limit > 0 ? query.limit : 20;
+    const skip = (page - 1) * limit;
+
     const cacheKey = milestoneId
-      ? `user:${userId}:gift-wall:milestones:${milestoneId}`
-      : `user:${userId}:gift-wall:milestones`;
+      ? `user:${userId}:gift-wall:milestones:${milestoneId}:${page}:${limit}`
+      : `user:${userId}:gift-wall:milestones:${page}:${limit}`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
@@ -138,13 +148,18 @@ export class UserGiftWallService {
       async () => {
         // Get gift items (filter by milestoneId nếu có)
         const where = milestoneId ? { id: milestoneId } : {};
-        const giftItems = await this.prisma.resGiftItem.findMany({
-          where,
-          orderBy: { name: 'asc' },
-        });
+        const [giftItems, total] = await Promise.all([
+          this.prisma.resGiftItem.findMany({
+            where,
+            orderBy: { name: 'asc' },
+            skip,
+            take: limit,
+          }),
+          this.prisma.resGiftItem.count({ where }),
+        ]);
 
         if (giftItems.length === 0) {
-          return [];
+          return buildPaginatedResponse([], 0, page, limit);
         }
 
         // Get all gifts received by user, grouped by gift_item_id
@@ -177,7 +192,7 @@ export class UserGiftWallService {
           };
         });
 
-        return milestones;
+        return buildPaginatedResponse(milestones, total, page, limit);
       },
       cacheTtl,
     );
