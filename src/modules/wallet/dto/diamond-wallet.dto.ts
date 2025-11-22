@@ -260,24 +260,8 @@ export class TransactionModelDto {
   @ApiProperty({ example: 'Deposit diamonds from the app', description: 'Mô tả' })
   description: string;
 
-  @ApiPropertyOptional({ type: TransactionItemDto, description: 'Item thông tin (cho gift)' })
-  item?: TransactionItemDto;
-
-  @ApiPropertyOptional({ type: RelatedUserDto, description: 'User liên quan (cho gift/transfer)' })
-  relatedUser?: RelatedUserDto;
-
-  @ApiPropertyOptional({
-    type: ExchangeDetailsDto,
-    description: 'Chi tiết exchange (cho convert)',
-  })
-  exchange?: ExchangeDetailsDto;
-
-  @ApiProperty({
-    enum: TransactionStatus,
-    example: TransactionStatus.completed,
-    description: 'Trạng thái',
-  })
-  status: TransactionStatus;
+  @ApiProperty({ example: 'user-uuid', description: 'ID của user' })
+  user_id: string;
 }
 
 // Transaction History Response (Flutter compatible)
