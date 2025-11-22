@@ -245,7 +245,7 @@ export class UserGiftWallService {
           },
           gift_info: {
             gift_name: gift.giftItem.name,
-            icon_url: gift.giftItem.image_url || null,
+            image_url: gift.giftItem.image_url || null,
             quantity: gift.quantity,
           },
           timestamp: gift.created_at,

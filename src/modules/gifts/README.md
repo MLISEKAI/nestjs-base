@@ -454,7 +454,7 @@ GET /profile/:user_id/gifts/milestones
       "milestone": 100,
       "current": 50,
       "reward_name": "Gold Badge",
-      "icon_url": "https://...",
+      "image_url": "https://...",
       "is_unlocked": false,
       "created_at": "2025-01-20T10:00:00.000Z"
     }
@@ -520,7 +520,7 @@ GET /profile/:user_id/gifts/gift-wall/:milestone_id/givers
     {
       "milestone_id": "gift-item-1",
       "name": "Quà tặng 1",
-      "icon_url": "/images/gift_milestone_1.png",
+      "image_url": "/images/gift_milestone_1.png",
       "required_count": 10,
       "current_count": 5,
       "is_unlocked": false,
@@ -567,7 +567,7 @@ GET /profile/:user_id/gifts/recent-gifts?page=1&limit=20
         },
         "gift_info": {
           "gift_name": "Quà x1",
-          "icon_url": "/images/gift_icon_a.png",
+          "image_url": "/images/gift_icon_a.png",
           "quantity": 1
         },
         "timestamp": "2025-11-07T18:00:00Z"

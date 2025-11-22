@@ -181,7 +181,7 @@ export class GiftsController {
                 type: 'object',
                 properties: {
                   gift_name: { type: 'string', example: 'Quà x1' },
-                  icon_url: { type: 'string', example: '/images/gift_icon_a.png' },
+                  image_url: { type: 'string', example: '/images/gift_icon_a.png' },
                   quantity: { type: 'number', example: 1 },
                 },
               },

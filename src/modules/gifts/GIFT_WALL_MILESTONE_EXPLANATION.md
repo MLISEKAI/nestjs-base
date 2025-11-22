@@ -31,14 +31,14 @@ Lấy danh sách milestones với **progress** (tiến độ) của user.
   {
     "id": "gift-item-rose-uuid", // ← milestone_id (gift_item_id)
     "name": "Rose",
-    "icon_url": "/images/rose.png",
+    "image_url": "/images/rose.png",
     "required_count": 10, // Số lượng cần để unlock milestone
     "current_count": 5 // Số lượng user đã nhận được
   },
   {
     "id": "gift-item-heart-uuid", // ← milestone_id (gift_item_id)
     "name": "Heart",
-    "icon_url": "/images/heart.png",
+    "image_url": "/images/heart.png",
     "required_count": 10,
     "current_count": 3
   }
