@@ -7,6 +7,11 @@ import {
   TransactionHistoryResponseDto,
   TransactionModelDto,
   TransactionType,
+  TransactionStatus,
+  CurrencyType,
+  TransactionItemDto,
+  RelatedUserDto,
+  ExchangeDetailsDto,
 } from '../dto/diamond-wallet.dto';
 
 @Injectable()
@@ -92,6 +97,28 @@ export class TransactionService {
 
     const giftMap = new Map(gifts.map((g) => [g.id, g]));
 
+    // Lấy VEX transactions cho convert để tính exchange details chính xác
+    const convertReferenceIds = transactions
+      .filter((tx) => tx.type === 'convert' && tx.reference_id)
+      .map((tx) => tx.reference_id);
+
+    const vexTransactions =
+      convertReferenceIds.length > 0
+        ? await this.prisma.resWalletTransaction.findMany({
+            where: {
+              user_id: userId,
+              type: 'convert',
+              reference_id: { in: convertReferenceIds },
+              wallet: { currency: 'vex' },
+            },
+            select: { reference_id: true, amount: true },
+          })
+        : [];
+
+    const vexAmountMap = new Map(
+      vexTransactions.map((vt) => [vt.reference_id, Math.abs(Number(vt.amount))]),
+    );
+
     // Lấy thông tin user cho transfer transactions
     const transferReferenceIds = transactions
       .filter((tx) => tx.type === 'transfer' && tx.reference_id)
@@ -145,6 +172,30 @@ export class TransactionService {
           transactionType = TransactionType.deposit; // Default
         }
 
+        // Map status
+        let transactionStatus: TransactionStatus;
+        switch (tx.status) {
+          case 'success':
+            transactionStatus = TransactionStatus.completed;
+            break;
+          case 'pending':
+            transactionStatus = TransactionStatus.pending;
+            break;
+          case 'failed':
+            transactionStatus = TransactionStatus.failed;
+            break;
+          default:
+            transactionStatus = TransactionStatus.pending;
+        }
+
+        // Prepare exchange details for convert
+        let exchangeDetails: { fromAmount: number; toAmount: number } | undefined;
+        if (tx.type === 'convert' && tx.reference_id) {
+          const vexAmount = vexAmountMap.get(tx.reference_id) || Math.abs(Number(tx.amount));
+          const diamondAmount = Math.abs(Number(tx.amount));
+          exchangeDetails = { fromAmount: vexAmount, toAmount: diamondAmount };
+        }
+
         // Get gift info for description
         const gift =
           tx.type === 'gift' && tx.reference_id ? giftMap.get(tx.reference_id) : undefined;
@@ -153,23 +204,71 @@ export class TransactionService {
           id: tx.id,
           type: transactionType,
           amount: Number(tx.amount),
+          balanceAfter: tx.balance_after ? Number(tx.balance_after) : undefined,
           timestamp: tx.created_at.toISOString(),
-          description: this.buildDescription(tx, gift, isGiftSent),
-          user_id: tx.user_id,
+          description: this.buildDescription(tx, gift, isGiftSent, exchangeDetails),
+          status: transactionStatus,
         };
+
+        // Add item for gift transactions
+        if (tx.type === 'gift' && tx.reference_id && gift && gift.giftItem) {
+          transaction.item = {
+            name: gift.giftItem.name,
+            quantity: gift.quantity,
+            icon: gift.giftItem.image_url || undefined,
+            value: gift.giftItem.price ? Number(gift.giftItem.price) : undefined,
+          };
+        }
+
+        // Add relatedUser for gift/transfer transactions
+        if (tx.type === 'gift' && tx.reference_id && gift) {
+          const relatedUser = isGiftSent ? gift.receiver : gift.sender;
+          if (relatedUser) {
+            transaction.relatedUser = {
+              id: relatedUser.id,
+              username: relatedUser.nickname || '',
+              displayName: relatedUser.nickname || '',
+              avatar: relatedUser.avatar || '',
+              isVerified: false, // TODO: Add is_verified field to ResUser if needed
+            };
+          }
+        } else if (tx.type === 'transfer' && tx.reference_id) {
+          const relatedTx = relatedTxMap.get(tx.reference_id);
+          if (relatedTx && relatedTx.user) {
+            transaction.relatedUser = {
+              id: relatedTx.user.id,
+              username: relatedTx.user.nickname || '',
+              displayName: relatedTx.user.nickname || '',
+              avatar: relatedTx.user.avatar || '',
+              isVerified: false,
+            };
+          }
+        }
+
+        // Add exchange details for convert transactions
+        if (exchangeDetails) {
+          const rate =
+            exchangeDetails.fromAmount > 0
+              ? exchangeDetails.toAmount / exchangeDetails.fromAmount
+              : 1;
+          transaction.exchange = {
+            fromCurrency: CurrencyType.VEX,
+            fromAmount: exchangeDetails.fromAmount,
+            toCurrency: CurrencyType.Diamonds,
+            toAmount: exchangeDetails.toAmount,
+            rate: rate,
+          };
+        }
 
         return transaction;
       }),
     );
 
-    // Build pagination metadata
-    const totalPages = Math.ceil(total / take) || 1;
+    // Build pagination metadata (Flutter format: limit, offset, total)
     const pagination = {
-      item_count: data.length,
-      total_items: total,
-      items_per_page: take,
-      total_pages: totalPages,
-      current_page: page,
+      limit: take,
+      offset: skip,
+      total: total,
     };
 
     return {

@@ -254,14 +254,33 @@ export class TransactionModelDto {
   @ApiProperty({ example: 500, description: 'Số tiền' })
   amount: number;
 
+  @ApiPropertyOptional({ example: 1500, description: 'Số dư sau giao dịch' })
+  balanceAfter?: number;
+
   @ApiProperty({ example: '2025-11-01T10:00:00Z', description: 'Thời gian giao dịch' })
   timestamp: string;
 
   @ApiProperty({ example: 'Deposit diamonds from the app', description: 'Mô tả' })
   description: string;
 
-  @ApiProperty({ example: 'user-uuid', description: 'ID của user' })
-  user_id: string;
+  @ApiPropertyOptional({ type: TransactionItemDto, description: 'Item thông tin (cho gift)' })
+  item?: TransactionItemDto;
+
+  @ApiPropertyOptional({ type: RelatedUserDto, description: 'User liên quan (cho gift/transfer)' })
+  relatedUser?: RelatedUserDto;
+
+  @ApiPropertyOptional({
+    type: ExchangeDetailsDto,
+    description: 'Chi tiết exchange (cho convert)',
+  })
+  exchange?: ExchangeDetailsDto;
+
+  @ApiProperty({
+    enum: TransactionStatus,
+    example: TransactionStatus.completed,
+    description: 'Trạng thái',
+  })
+  status: TransactionStatus;
 }
 
 // Transaction History Response (Flutter compatible)
@@ -271,11 +290,9 @@ export class TransactionHistoryResponseDto {
 
   @ApiProperty({ description: 'Pagination metadata' })
   pagination: {
-    item_count: number;
-    total_items: number;
-    items_per_page: number;
-    total_pages: number;
-    current_page: number;
+    limit: number;
+    offset: number;
+    total: number;
   };
 }
 
