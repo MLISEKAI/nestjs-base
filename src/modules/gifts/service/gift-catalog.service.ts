@@ -33,10 +33,13 @@ export class GiftCatalogService {
     }
 
     // Build orderBy
+    // ResGiftItem có các field: id, category_id, name, image_url, price, type, event_id
+    // Không có created_at, nên chỉ cho phép sort theo các field hợp lệ
+    const allowedSortFields = ['id', 'name', 'price', 'type'];
     let orderBy: any = { name: 'asc' }; // Default
     if (query?.sort) {
       const [field, order] = query.sort.split(':');
-      if (field && (order === 'asc' || order === 'desc')) {
+      if (field && allowedSortFields.includes(field) && (order === 'asc' || order === 'desc')) {
         orderBy = { [field]: order };
       }
     }
