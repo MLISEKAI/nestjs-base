@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { GiftCatalogService } from '../service/gift-catalog.service';
-import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import { GiftItemsQueryDto } from '../dto/gift-items-query.dto';
 import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
 @ApiTags('Gift Catalog')
@@ -12,23 +12,6 @@ export class GiftCatalogController {
 
   @Get('items')
   @ApiOperation({ summary: 'Danh sách item quà tặng' })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    description: 'Loại quà: hot, event, lucky, friendship, vip, normal',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Số trang (mặc định: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Số lượng mỗi trang (mặc định: 10)',
-  })
   @ApiOkResponse({
     description: 'Danh sách item quà tặng với pagination',
     schema: {
@@ -89,10 +72,7 @@ export class GiftCatalogController {
       },
     },
   })
-  getItems(
-    @Query('type') type?: string,
-    @Query() query?: BaseQueryDto,
-  ): Promise<IPaginatedResponse<any>> {
-    return this.catalogService.getGiftItems(type, query);
+  getItems(@Query() query: GiftItemsQueryDto): Promise<IPaginatedResponse<any>> {
+    return this.catalogService.getGiftItems(query.type, query);
   }
 }

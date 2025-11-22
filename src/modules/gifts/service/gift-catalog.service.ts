@@ -24,6 +24,23 @@ export class GiftCatalogService {
       where.type = type;
     }
 
+    // Search filter
+    if (query?.search) {
+      where.name = {
+        contains: query.search,
+        mode: 'insensitive',
+      };
+    }
+
+    // Build orderBy
+    let orderBy: any = { name: 'asc' }; // Default
+    if (query?.sort) {
+      const [field, order] = query.sort.split(':');
+      if (field && (order === 'asc' || order === 'desc')) {
+        orderBy = { [field]: order };
+      }
+    }
+
     // Query với pagination
     const [items, total] = await Promise.all([
       this.prisma.resGiftItem.findMany({
@@ -43,7 +60,7 @@ export class GiftCatalogService {
             },
           },
         },
-        orderBy: { name: 'asc' },
+        orderBy,
       }),
       this.prisma.resGiftItem.count({
         where: Object.keys(where).length > 0 ? where : undefined,
