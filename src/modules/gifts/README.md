@@ -561,9 +561,9 @@ GET /profile/:user_id/gifts/recent-gifts?page=1&limit=20
       {
         "transaction_id": "tx12345",
         "sender": {
-          "user_id": "101",
-          "username": "Malenna Calzoni",
-          "avatar_url": "/avatars/malenna.jpg"
+          "id": "101",
+          "nickname": "Malenna Calzoni",
+          "avatar": "/avatars/malenna.jpg"
         },
         "gift_info": {
           "name": "Quà x1",

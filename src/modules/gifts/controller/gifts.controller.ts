@@ -172,9 +172,9 @@ export class GiftsController {
               sender: {
                 type: 'object',
                 properties: {
-                  user_id: { type: 'string', example: '101' },
-                  username: { type: 'string', example: 'Malenna Calzoni' },
-                  avatar_url: { type: 'string', example: '/avatars/malenna.jpg' },
+                  id: { type: 'string', example: '101' },
+                  nickname: { type: 'string', example: 'Malenna Calzoni' },
+                  avatar: { type: 'string', example: '/avatars/malenna.jpg' },
                 },
               },
               gift_info: {

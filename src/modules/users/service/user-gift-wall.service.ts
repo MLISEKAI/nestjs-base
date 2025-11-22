@@ -239,9 +239,9 @@ export class UserGiftWallService {
         const items = gifts.map((gift) => ({
           transaction_id: gift.id,
           sender: {
-            user_id: gift.sender.id,
-            username: gift.sender.nickname,
-            avatar_url: gift.sender.avatar || null,
+            id: gift.sender.id,
+            nickname: gift.sender.nickname,
+            avatar: gift.sender.avatar || null,
           },
           gift_info: {
             name: gift.giftItem.name,
