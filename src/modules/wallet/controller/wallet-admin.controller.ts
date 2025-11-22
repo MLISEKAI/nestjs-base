@@ -30,8 +30,8 @@ import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
 import {
   WalletSummaryResponseDto,
   TransactionHistoryItemDto,
+  TransactionHistoryResponseDto,
 } from '../dto/diamond-wallet.dto';
-import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
 /**
  * Admin Wallet Controller - Chỉ admin mới truy cập được
@@ -83,7 +83,9 @@ export class WalletAdminController {
   }
 
   @Get('summary')
-  @ApiOperation({ summary: '[ADMIN] Lấy số dư Kim Cương, VEX và trạng thái Thẻ Tháng của user bất kỳ' })
+  @ApiOperation({
+    summary: '[ADMIN] Lấy số dư Kim Cương, VEX và trạng thái Thẻ Tháng của user bất kỳ',
+  })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ type: WalletSummaryResponseDto })
   getWalletSummary(@Param('user_id') userId: string): Promise<WalletSummaryResponseDto> {
@@ -93,12 +95,11 @@ export class WalletAdminController {
   @Get('transactions/history')
   @ApiOperation({ summary: '[ADMIN] Lấy lịch sử giao dịch của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
-  @ApiOkResponse({ type: [TransactionHistoryItemDto] })
+  @ApiOkResponse({ type: TransactionHistoryResponseDto })
   getTransactionHistory(
     @Param('user_id') userId: string,
     @Query() query: BaseQueryDto,
-  ): Promise<IPaginatedResponse<TransactionHistoryItemDto>> {
+  ): Promise<TransactionHistoryResponseDto> {
     return this.transactionService.getTransactionHistory(userId, query);
   }
 }
-

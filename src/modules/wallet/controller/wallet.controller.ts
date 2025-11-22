@@ -42,6 +42,7 @@ import {
   PurchaseSubscriptionResponseDto,
   SubscriptionDetailsResponseDto,
   TransactionHistoryItemDto,
+  TransactionHistoryResponseDto,
   ConvertVexToDiamondDto,
   ConvertVexToDiamondResponseDto,
   VexPackageDto,
@@ -410,16 +411,16 @@ export class WalletController {
   @ApiOperation({
     summary: 'Lấy lịch sử giao dịch',
     description:
-      'Lấy lịch sử tất cả các giao dịch của user: deposit, withdraw, gift, convert, transfer, subscription. Hỗ trợ pagination (page, limit) và sắp xếp theo thời gian (mới nhất trước). Mỗi transaction bao gồm: type, amount, date, status, description, và thông tin chi tiết (sender_name, receiver_name, gift_name) nếu có.',
+      'Lấy lịch sử tất cả các giao dịch của user: deposit, withdraw, gift, convert, transfer, subscription. Hỗ trợ pagination (page, limit) và sắp xếp theo thời gian (mới nhất trước). Format tương thích với Flutter model.',
   })
   @ApiOkResponse({
-    description: 'Danh sách lịch sử giao dịch với pagination',
-    type: [TransactionHistoryItemDto],
+    description: 'Danh sách lịch sử giao dịch với pagination (Flutter compatible)',
+    type: TransactionHistoryResponseDto,
   })
   getTransactionHistory(
     @Req() req: any,
     @Query() query: BaseQueryDto,
-  ): Promise<IPaginatedResponse<TransactionHistoryItemDto>> {
+  ): Promise<TransactionHistoryResponseDto> {
     const userId = req.user.id;
     return this.transactionService.getTransactionHistory(userId, query);
   }

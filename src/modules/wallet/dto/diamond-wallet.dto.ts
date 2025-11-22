@@ -167,7 +167,135 @@ export class SubscriptionDetailsResponseDto {
   username: string;
 }
 
-// Transaction History
+// Transaction History - Flutter Model Compatible
+export enum TransactionType {
+  deposit = 'deposit',
+  withdrawal = 'withdrawal',
+  exchange = 'exchange',
+  gift_sent = 'gift_sent',
+  gift_received = 'gift_received',
+  refund = 'refund',
+  reward = 'reward',
+}
+
+export enum TransactionStatus {
+  completed = 'completed',
+  pending = 'pending',
+  failed = 'failed',
+  cancelled = 'cancelled',
+}
+
+export enum CurrencyType {
+  Diamonds = 'Diamonds',
+  VEX = 'VEX',
+}
+
+// Nested Models
+export class TransactionItemDto {
+  @ApiProperty({ example: 'Ice Cream Cone', description: 'Tên item' })
+  name: string;
+
+  @ApiProperty({ example: 12, description: 'Số lượng' })
+  quantity: number;
+
+  @ApiPropertyOptional({ example: '/images/ice-cream.png', description: 'Icon URL' })
+  icon?: string;
+
+  @ApiPropertyOptional({ example: 100, description: 'Giá trị' })
+  value?: number;
+}
+
+export class RelatedUserDto {
+  @ApiProperty({ example: 'user-uuid', description: 'User ID' })
+  id: string;
+
+  @ApiProperty({ example: 'john_doe', description: 'Username' })
+  username: string;
+
+  @ApiProperty({ example: 'John Doe', description: 'Display name' })
+  displayName: string;
+
+  @ApiProperty({ example: '/avatars/john.jpg', description: 'Avatar URL' })
+  avatar: string;
+
+  @ApiPropertyOptional({ example: true, description: 'Is verified' })
+  isVerified?: boolean;
+}
+
+export class ExchangeDetailsDto {
+  @ApiProperty({ enum: CurrencyType, example: CurrencyType.VEX, description: 'From currency' })
+  fromCurrency: CurrencyType;
+
+  @ApiProperty({ example: 1000, description: 'From amount' })
+  fromAmount: number;
+
+  @ApiProperty({ enum: CurrencyType, example: CurrencyType.Diamonds, description: 'To currency' })
+  toCurrency: CurrencyType;
+
+  @ApiProperty({ example: 100, description: 'To amount' })
+  toAmount: number;
+
+  @ApiProperty({ example: 0.1, description: 'Exchange rate' })
+  rate: number;
+}
+
+// Main Transaction Model
+export class TransactionModelDto {
+  @ApiProperty({ example: 'TX001', description: 'ID giao dịch' })
+  id: string;
+
+  @ApiProperty({
+    enum: TransactionType,
+    example: TransactionType.deposit,
+    description: 'Loại giao dịch',
+  })
+  type: TransactionType;
+
+  @ApiProperty({ example: 500, description: 'Số tiền' })
+  amount: number;
+
+  @ApiProperty({ example: '2025-11-01T10:00:00Z', description: 'Thời gian giao dịch' })
+  timestamp: string;
+
+  @ApiProperty({ example: 'Deposit diamonds from the app', description: 'Mô tả' })
+  description: string;
+
+  @ApiPropertyOptional({ type: TransactionItemDto, description: 'Item thông tin (cho gift)' })
+  item?: TransactionItemDto;
+
+  @ApiPropertyOptional({ type: RelatedUserDto, description: 'User liên quan (cho gift/transfer)' })
+  relatedUser?: RelatedUserDto;
+
+  @ApiPropertyOptional({
+    type: ExchangeDetailsDto,
+    description: 'Chi tiết exchange (cho convert)',
+  })
+  exchange?: ExchangeDetailsDto;
+
+  @ApiProperty({
+    enum: TransactionStatus,
+    example: TransactionStatus.completed,
+    description: 'Trạng thái',
+  })
+  status: TransactionStatus;
+}
+
+// Transaction History Response (Flutter compatible)
+export class TransactionHistoryResponseDto {
+  @ApiProperty({ type: [TransactionModelDto], description: 'Danh sách giao dịch' })
+  data: TransactionModelDto[];
+
+  @ApiProperty({ description: 'Pagination metadata' })
+  pagination: {
+    item_count: number;
+    total_items: number;
+    items_per_page: number;
+    total_pages: number;
+    current_page: number;
+  };
+}
+
+// Legacy DTO (deprecated - keep for backward compatibility)
 export class TransactionHistoryItemDto {
   @ApiProperty({ example: 'TX001', description: 'ID giao dịch' })
   id: string;

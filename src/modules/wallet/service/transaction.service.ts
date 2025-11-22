@@ -2,9 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
-import { TransactionHistoryItemDto } from '../dto/diamond-wallet.dto';
-import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
-import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
+import {
+  TransactionHistoryItemDto,
+  TransactionHistoryResponseDto,
+  TransactionModelDto,
+  TransactionType,
+  TransactionStatus,
+  CurrencyType,
+  TransactionItemDto,
+  RelatedUserDto,
+  ExchangeDetailsDto,
+} from '../dto/diamond-wallet.dto';
 
 @Injectable()
 export class TransactionService {
@@ -14,13 +22,13 @@ export class TransactionService {
   ) {}
 
   /**
-   * Get transaction history with pagination
+   * Get transaction history with pagination (Flutter compatible format)
    * Cached for 1 minute (transactions change frequently)
    */
   async getTransactionHistory(
     userId: string,
     query?: BaseQueryDto,
-  ): Promise<IPaginatedResponse<TransactionHistoryItemDto>> {
+  ): Promise<TransactionHistoryResponseDto> {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
@@ -38,21 +46,22 @@ export class TransactionService {
   }
 
   /**
-   * Fetch transaction history from database
+   * Fetch transaction history from database (Flutter compatible format)
    */
   private async fetchTransactionHistory(
     userId: string,
     take: number,
     skip: number,
     page: number,
-  ): Promise<IPaginatedResponse<TransactionHistoryItemDto>> {
-    // Lấy tất cả wallets của user
+  ): Promise<TransactionHistoryResponseDto> {
+    // Lấy tất cả wallets của user với currency info
     const wallets = await this.prisma.resWallet.findMany({
       where: { user_id: userId },
-      select: { id: true },
+      select: { id: true, currency: true },
     });
 
     const walletIds = wallets.map((w) => w.id);
+    const walletMap = new Map(wallets.map((w) => [w.id, w]));
 
     const [transactions, total] = await Promise.all([
       this.prisma.resWalletTransaction.findMany({
@@ -60,11 +69,36 @@ export class TransactionService {
         take,
         skip,
         orderBy: { created_at: 'desc' },
+        include: {
+          wallet: { select: { currency: true } },
+        },
       }),
       this.prisma.resWalletTransaction.count({
         where: { user_id: userId, wallet_id: { in: walletIds } },
       }),
     ]);
+
+    // Lấy VEX transactions cho convert để tính exchange details chính xác
+    const convertReferenceIds = transactions
+      .filter((tx) => tx.type === 'convert' && tx.reference_id)
+      .map((tx) => tx.reference_id);
+
+    const vexTransactions =
+      convertReferenceIds.length > 0
+        ? await this.prisma.resWalletTransaction.findMany({
+            where: {
+              user_id: userId,
+              type: 'convert',
+              reference_id: { in: convertReferenceIds },
+              wallet: { currency: 'vex' },
+            },
+            select: { reference_id: true, amount: true },
+          })
+        : [];
+
+    const vexAmountMap = new Map(
+      vexTransactions.map((vt) => [vt.reference_id, Math.abs(Number(vt.amount))]),
+    );
 
     // Lấy thông tin chi tiết cho gift transactions
     const giftReferenceIds = transactions
@@ -76,85 +110,213 @@ export class TransactionService {
         ? await this.prisma.resGift.findMany({
             where: { id: { in: giftReferenceIds } },
             include: {
-              sender: { select: { id: true, nickname: true } },
-              receiver: { select: { id: true, nickname: true } },
-              giftItem: { select: { id: true, name: true } },
+              sender: { select: { id: true, nickname: true, avatar: true } },
+              receiver: { select: { id: true, nickname: true, avatar: true } },
+              giftItem: { select: { id: true, name: true, image_url: true, price: true } },
             },
           })
         : [];
 
     const giftMap = new Map(gifts.map((g) => [g.id, g]));
 
-    const data: TransactionHistoryItemDto[] = await Promise.all(
-      transactions.map(async (tx) => {
-        const baseData: TransactionHistoryItemDto = {
-          id: tx.id,
-          type: tx.type,
-          amount: Number(tx.amount),
-          date: tx.created_at.toISOString(),
-          status: tx.status,
-          description: this.buildDescription(tx),
-        };
+    // Lấy thông tin user cho transfer transactions
+    const transferReferenceIds = transactions
+      .filter((tx) => tx.type === 'transfer' && tx.reference_id)
+      .map((tx) => tx.reference_id);
 
-        // Thêm thông tin chi tiết cho gift
-        if (tx.type === 'gift' && tx.reference_id) {
-          const gift = giftMap.get(tx.reference_id);
-          if (gift) {
-            baseData.sender_name = gift.sender?.nickname;
-            baseData.receiver_name = gift.receiver?.nickname;
-            baseData.gift_name = gift.giftItem
-              ? `${gift.giftItem.name} x${gift.quantity}`
-              : undefined;
-            // Nếu có live stream info (có thể thêm field vào ResGift sau)
-            if (gift.message?.includes('Live:')) {
-              baseData.live_stream_info = gift.message;
-            }
-          }
-        }
-
-        // Thêm thông tin cho transfer
-        if (tx.type === 'transfer' && tx.reference_id) {
-          // Tìm transaction tương ứng của receiver
-          const relatedTx = await this.prisma.resWalletTransaction.findFirst({
+    const relatedTransactions =
+      transferReferenceIds.length > 0
+        ? await this.prisma.resWalletTransaction.findMany({
             where: {
-              reference_id: tx.reference_id,
+              reference_id: { in: transferReferenceIds },
               user_id: { not: userId },
             },
             include: {
-              user: { select: { nickname: true } },
+              user: { select: { id: true, nickname: true, avatar: true } },
             },
-          });
+          })
+        : [];
 
+    const relatedTxMap = new Map(relatedTransactions.map((rtx) => [rtx.reference_id, rtx]));
+
+    const data: TransactionModelDto[] = await Promise.all(
+      transactions.map(async (tx) => {
+        const wallet = walletMap.get(tx.wallet_id);
+        const currency = wallet?.currency || 'diamond';
+        const isDiamond = currency === 'diamond' || currency === 'gem';
+        const currencyType = isDiamond ? CurrencyType.Diamonds : CurrencyType.VEX;
+
+        // Map transaction type
+        let transactionType: TransactionType;
+        let isGiftSent = false;
+        let isGiftReceived = false;
+
+        if (tx.type === 'deposit') {
+          transactionType = TransactionType.deposit;
+        } else if (tx.type === 'withdraw') {
+          transactionType = TransactionType.withdrawal;
+        } else if (tx.type === 'convert') {
+          transactionType = TransactionType.exchange;
+        } else if (tx.type === 'gift') {
+          // Determine if gift sent or received
+          const gift = giftMap.get(tx.reference_id || '');
+          if (gift) {
+            isGiftSent = gift.sender_id === userId;
+            isGiftReceived = gift.receiver_id === userId;
+            transactionType = isGiftSent
+              ? TransactionType.gift_sent
+              : TransactionType.gift_received;
+          } else {
+            transactionType = TransactionType.gift_sent; // Default
+          }
+        } else if (tx.type === 'subscription') {
+          transactionType = TransactionType.reward;
+        } else if (tx.type === 'transfer') {
+          // Transfer có thể là deposit (incoming) hoặc withdrawal (outgoing)
+          transactionType =
+            Number(tx.amount) > 0 ? TransactionType.deposit : TransactionType.withdrawal;
+        } else {
+          transactionType = TransactionType.deposit; // Default
+        }
+
+        // Map status
+        let transactionStatus: TransactionStatus;
+        switch (tx.status) {
+          case 'success':
+            transactionStatus = TransactionStatus.completed;
+            break;
+          case 'pending':
+            transactionStatus = TransactionStatus.pending;
+            break;
+          case 'failed':
+            transactionStatus = TransactionStatus.failed;
+            break;
+          default:
+            transactionStatus = TransactionStatus.pending;
+        }
+
+        // Prepare exchange details for convert
+        let exchangeDetails: { fromAmount: number; toAmount: number } | undefined;
+        if (tx.type === 'convert' && tx.reference_id) {
+          const vexAmount = vexAmountMap.get(tx.reference_id) || Math.abs(Number(tx.amount));
+          const diamondAmount = Math.abs(Number(tx.amount));
+          exchangeDetails = { fromAmount: vexAmount, toAmount: diamondAmount };
+        }
+
+        // Get gift info for description
+        const gift =
+          tx.type === 'gift' && tx.reference_id ? giftMap.get(tx.reference_id) : undefined;
+
+        const transaction: TransactionModelDto = {
+          id: tx.id,
+          type: transactionType,
+          amount: Number(tx.amount),
+          timestamp: tx.created_at.toISOString(),
+          description: this.buildDescription(tx, gift, isGiftSent, exchangeDetails),
+          status: transactionStatus,
+        };
+
+        // Add item for gift transactions
+        if (tx.type === 'gift' && tx.reference_id && gift && gift.giftItem) {
+          transaction.item = {
+            name: gift.giftItem.name,
+            quantity: gift.quantity,
+            icon: gift.giftItem.image_url || undefined,
+            value: gift.giftItem.price ? Number(gift.giftItem.price) : undefined,
+          };
+        }
+
+        // Add relatedUser for gift/transfer transactions
+        if (tx.type === 'gift' && tx.reference_id && gift) {
+          const relatedUser = isGiftSent ? gift.receiver : gift.sender;
+          if (relatedUser) {
+            transaction.relatedUser = {
+              id: relatedUser.id,
+              username: relatedUser.nickname || '',
+              displayName: relatedUser.nickname || '',
+              avatar: relatedUser.avatar || '',
+            };
+          }
+        } else if (tx.type === 'transfer' && tx.reference_id) {
+          const relatedTx = relatedTxMap.get(tx.reference_id);
           if (relatedTx && relatedTx.user) {
-            if (Number(tx.amount) > 0) {
-              // Incoming transfer
-              baseData.sender_name = relatedTx.user.nickname;
-            } else {
-              // Outgoing transfer
-              baseData.receiver_name = relatedTx.user.nickname;
-            }
+            transaction.relatedUser = {
+              id: relatedTx.user.id,
+              username: relatedTx.user.nickname || '',
+              displayName: relatedTx.user.nickname || '',
+              avatar: relatedTx.user.avatar || '',
+            };
           }
         }
 
-        return baseData;
+        // Add exchange details for convert transactions
+        if (exchangeDetails) {
+          const rate =
+            exchangeDetails.fromAmount > 0
+              ? exchangeDetails.toAmount / exchangeDetails.fromAmount
+              : 1;
+          transaction.exchange = {
+            fromCurrency: CurrencyType.VEX,
+            fromAmount: exchangeDetails.fromAmount,
+            toCurrency: CurrencyType.Diamonds,
+            toAmount: exchangeDetails.toAmount,
+            rate: rate,
+          };
+        }
+
+        return transaction;
       }),
     );
 
-    return buildPaginatedResponse(data, total, page, take);
+    // Build pagination metadata
+    const totalPages = Math.ceil(total / take) || 1;
+    const pagination = {
+      item_count: data.length,
+      total_items: total,
+      items_per_page: take,
+      total_pages: totalPages,
+      current_page: page,
+    };
+
+    return {
+      data,
+      pagination,
+    };
   }
 
   /**
-   * Build description for transaction
+   * Build description for transaction (matching UI format)
    */
-  private buildDescription(tx: any): string {
+  private buildDescription(
+    tx: any,
+    gift?: any,
+    isGiftSent?: boolean,
+    exchange?: { fromAmount: number; toAmount: number },
+  ): string {
     switch (tx.type) {
       case 'deposit':
+      case 'recharge':
         return 'Deposit diamonds from the app';
       case 'withdraw':
         return `Withdraw VEX - ${tx.reference_id || ''}`;
       case 'gift':
-        return `Gift sent: ${tx.reference_id || ''}`;
+        if (gift && gift.giftItem) {
+          const itemName = gift.giftItem.name;
+          const quantity = gift.quantity;
+          const isLive = gift.message?.includes('Live:');
+          if (isGiftSent) {
+            return `Gift sent: ${itemName} x${quantity}`;
+          } else {
+            return isLive
+              ? `Received from Live: ${itemName} x${quantity}`
+              : `Received: ${itemName} x${quantity}`;
+          }
+        }
+        return `Gift transaction - ${tx.reference_id || ''}`;
       case 'convert':
+        if (exchange) {
+          return `Exchange ${exchange.fromAmount} VEX for ${exchange.toAmount} Diamonds`;
+        }
         return `Exchange ${Math.abs(Number(tx.amount))} VEX for ${Math.abs(Number(tx.amount))} Diamonds`;
       case 'transfer':
         return Number(tx.amount) > 0 ? 'Received VEX transfer' : 'Sent VEX transfer';
@@ -163,5 +325,18 @@ export class TransactionService {
       default:
         return `${tx.type} - ${tx.reference_id || ''}`;
     }
+  }
+
+  /**
+   * Build note for transaction
+   */
+  private buildNote(tx: any): string | undefined {
+    if (tx.status === 'failed') {
+      return 'Transaction failed';
+    }
+    if (tx.status === 'pending') {
+      return 'Transaction pending';
+    }
+    return undefined;
   }
 }
