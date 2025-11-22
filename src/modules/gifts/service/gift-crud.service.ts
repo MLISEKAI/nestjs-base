@@ -22,6 +22,10 @@ export class GiftCrudService {
   ) {}
 
   async create(dto: CreateGiftDto & { sender_id: string }) {
+    this.logger.log(
+      `User ${dto.sender_id} attempting to send gift ${dto.gift_item_id} x${dto.quantity ?? 1} to ${dto.receiver_id}`,
+    );
+
     // Kiểm tra gift item tồn tại
     const giftItem = await this.prisma.resGiftItem.findUnique({
       where: { id: dto.gift_item_id },
@@ -31,18 +35,84 @@ export class GiftCrudService {
       throw new NotFoundException(`Gift item with ID ${dto.gift_item_id} not found`);
     }
 
-    const gift = await this.prisma.resGift.create({
-      data: {
-        sender_id: dto.sender_id,
-        receiver_id: dto.receiver_id,
-        gift_item_id: dto.gift_item_id,
-        quantity: dto.quantity ?? 1,
-        message: dto.message,
-      },
+    // Tính tổng giá (price là Decimal trong Prisma)
+    const giftPrice = Number(giftItem.price);
+    const quantity = dto.quantity ?? 1;
+    const totalPrice = giftPrice * quantity;
+
+    this.logger.log(
+      `Gift price: ${giftPrice} Diamond, Quantity: ${quantity}, Total: ${totalPrice} Diamond`,
+    );
+
+    // Lấy hoặc tạo Diamond wallet của sender
+    let diamondWallet = await this.prisma.resWallet.findFirst({
+      where: { user_id: dto.sender_id, currency: 'diamond' },
     });
 
-    // Tự động thêm gift vào inventory của receiver
-    await this.addGiftToInventory(dto.receiver_id, giftItem, dto.quantity ?? 1);
+    if (!diamondWallet) {
+      diamondWallet = await this.prisma.resWallet.create({
+        data: {
+          user_id: dto.sender_id,
+          currency: 'diamond',
+          balance: new Prisma.Decimal(0),
+        },
+      });
+    }
+
+    const currentBalance = Number(diamondWallet.balance);
+    this.logger.log(`Sender ${dto.sender_id} current Diamond balance: ${currentBalance}`);
+
+    // Kiểm tra số dư có đủ không
+    if (currentBalance < totalPrice) {
+      const insufficientAmount = totalPrice - currentBalance;
+      this.logger.warn(
+        `Insufficient balance for sender ${dto.sender_id}. Required: ${totalPrice}, Current: ${currentBalance}, Missing: ${insufficientAmount}`,
+      );
+      throw new BadRequestException(
+        `Số dư không đủ để gửi quà. Cần: ${totalPrice} Diamond, Hiện có: ${currentBalance} Diamond, Thiếu: ${insufficientAmount} Diamond`,
+      );
+    }
+
+    // Số dư đủ, tiến hành trừ tiền và tạo gift trong transaction
+    const transactionId = `GIFT${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    let gift;
+
+    await this.prisma.$transaction(async (tx) => {
+      // Trừ tiền từ Diamond wallet của sender
+      const newBalance = currentBalance - totalPrice;
+      await tx.resWallet.update({
+        where: { id: diamondWallet.id },
+        data: { balance: new Prisma.Decimal(newBalance) },
+      });
+
+      // Tạo transaction record
+      await tx.resWalletTransaction.create({
+        data: {
+          wallet_id: diamondWallet.id,
+          user_id: dto.sender_id,
+          type: 'gift', // Dùng type 'gift' cho việc gửi quà
+          amount: new Prisma.Decimal(-totalPrice), // Negative vì trừ tiền
+          balance_before: diamondWallet.balance,
+          balance_after: new Prisma.Decimal(newBalance),
+          status: 'success',
+          reference_id: transactionId,
+        },
+      });
+
+      // Tạo gift record
+      gift = await tx.resGift.create({
+        data: {
+          sender_id: dto.sender_id,
+          receiver_id: dto.receiver_id,
+          gift_item_id: dto.gift_item_id,
+          quantity,
+          message: dto.message,
+        },
+      });
+    });
+
+    // Tự động thêm gift vào inventory của receiver (sau khi transaction thành công)
+    await this.addGiftToInventory(dto.receiver_id, giftItem, quantity);
 
     // Invalidate cache khi có gift mới
     // Invalidate cache của receiver (quà đã nhận)
@@ -52,11 +122,18 @@ export class GiftCrudService {
     await this.cacheService.delPattern(`user:${dto.receiver_id}:gift-wall:*`);
     await this.cacheService.delPattern(`user:${dto.receiver_id}:gifts:*`);
 
-    // Invalidate cache của sender (quà đã tặng - để cập nhật total_diamond_value)
+    // Invalidate cache của sender (quà đã tặng - để cập nhật total_diamond_value và wallet balance)
     await this.cacheService.del(`user:${dto.sender_id}:balance`);
+    await this.cacheService.del(`wallet:${dto.sender_id}:diamond:balance`);
+    await this.cacheService.del(`wallet:${dto.sender_id}:summary`);
+    await this.cacheService.delPattern(`wallet:${dto.sender_id}:*`);
     await this.cacheService.del(`user:${dto.sender_id}:gift-wall`);
     await this.cacheService.delPattern(`user:${dto.sender_id}:gift-wall:*`);
     await this.cacheService.delPattern(`user:${dto.sender_id}:gifts:*`);
+
+    this.logger.log(
+      `Gift sent successfully. Sender: ${dto.sender_id}, Receiver: ${dto.receiver_id}, Gift: ${giftItem.name}, Quantity: ${quantity}, Total price: ${totalPrice}, New sender balance: ${currentBalance - totalPrice}`,
+    );
 
     return gift;
   }
