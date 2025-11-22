@@ -244,7 +244,7 @@ export class UserGiftWallService {
             avatar_url: gift.sender.avatar || null,
           },
           gift_info: {
-            gift_name: gift.giftItem.name,
+            name: gift.giftItem.name,
             image_url: gift.giftItem.image_url || null,
             quantity: gift.quantity,
           },

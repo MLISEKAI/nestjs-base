@@ -180,7 +180,7 @@ export class GiftsController {
               gift_info: {
                 type: 'object',
                 properties: {
-                  gift_name: { type: 'string', example: 'Quà x1' },
+                  name: { type: 'string', example: 'Quà x1' },
                   image_url: { type: 'string', example: '/images/gift_icon_a.png' },
                   quantity: { type: 'number', example: 1 },
                 },

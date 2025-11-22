@@ -566,7 +566,7 @@ GET /profile/:user_id/gifts/recent-gifts?page=1&limit=20
           "avatar_url": "/avatars/malenna.jpg"
         },
         "gift_info": {
-          "gift_name": "Quà x1",
+          "name": "Quà x1",
           "image_url": "/images/gift_icon_a.png",
           "quantity": 1
         },
