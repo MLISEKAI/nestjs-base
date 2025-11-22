@@ -71,7 +71,7 @@ export class GiftsAdminController {
     @Param('user_id') userId: string,
     @Param('milestone_id') milestoneId?: string,
   ) {
-    return this.giftWallService.getGiftWallMilestones(userId);
+    return this.giftWallService.getGiftWallMilestones(userId, milestoneId);
   }
 
   @Get('recent-gifts')

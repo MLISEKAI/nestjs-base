@@ -124,18 +124,28 @@ export class UserGiftWallService {
   /**
    * Get gift wall milestones with progress per gift item
    * Cached for 5 minutes
+   * @param userId - User ID
+   * @param milestoneId - Optional: ID của gift item (gift_item_id) để filter milestone cụ thể
    */
-  async getGiftWallMilestones(userId: string) {
-    const cacheKey = `user:${userId}:gift-wall:milestones`;
+  async getGiftWallMilestones(userId: string, milestoneId?: string) {
+    const cacheKey = milestoneId
+      ? `user:${userId}:gift-wall:milestones:${milestoneId}`
+      : `user:${userId}:gift-wall:milestones`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
-        // Get all gift items
+        // Get gift items (filter by milestoneId nếu có)
+        const where = milestoneId ? { id: milestoneId } : {};
         const giftItems = await this.prisma.resGiftItem.findMany({
+          where,
           orderBy: { name: 'asc' },
         });
+
+        if (giftItems.length === 0) {
+          return [];
+        }
 
         // Get all gifts received by user, grouped by gift_item_id
         const giftsReceived = await this.prisma.resGift.findMany({
@@ -161,7 +171,7 @@ export class UserGiftWallService {
           return {
             id: item.id,
             name: item.name,
-            icon_url: item.image_url || null,
+            image_url: item.image_url || null,
             required_count: required_count,
             current_count: current_count,
           };

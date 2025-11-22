@@ -111,7 +111,7 @@ export class GiftsController {
         properties: {
           id: { type: 'string', example: 'gift-item-1' },
           name: { type: 'string', example: 'Quà tặng 1' },
-          icon_url: { type: 'string', example: '/images/gift_milestone_1.png' },
+          image_url: { type: 'string', example: '/images/gift_milestone_1.png' },
           required_count: { type: 'number', example: 10 },
           current_count: { type: 'number', example: 5 },
         },
@@ -120,7 +120,7 @@ export class GiftsController {
   })
   getGiftWallMilestones(@Req() req: any, @Param('milestone_id') milestoneId?: string) {
     const userId = req.user.id;
-    return this.giftWallService.getGiftWallMilestones(userId);
+    return this.giftWallService.getGiftWallMilestones(userId, milestoneId);
   }
 
   @Get('recent-gifts')
