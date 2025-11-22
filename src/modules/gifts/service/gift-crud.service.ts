@@ -27,32 +27,85 @@ export class GiftCrudService {
       `User ${dto.sender_id} attempting to send gift ${dto.gift_item_id}${dto.item_id ? ` (from inventory item_id: ${dto.item_id})` : ''} x${quantity} to ${dto.receiver_id}`,
     );
 
+    // Kiểm tra không cho phép gửi quà cho chính mình
+    if (dto.sender_id === dto.receiver_id) {
+      throw new BadRequestException('Bạn không thể gửi quà cho chính mình');
+    }
+
     let giftItem;
     let inventoryItem = null;
+    let actualItemId: string | null = null; // Lưu actual item_id để dùng trong transaction
 
-    // Nếu có item_id (gửi từ inventory), tìm ResItem trước
+    // Validation: Phải có ít nhất một trong hai (gift_item_id hoặc item_id)
+    if (!dto.item_id && !dto.gift_item_id) {
+      throw new BadRequestException(
+        'Phải cung cấp gift_item_id (từ catalog) hoặc item_id (từ inventory)',
+      );
+    }
+
+    // Nếu có item_id (gửi từ inventory), tìm ResItem hoặc ResInventory
     if (dto.item_id) {
+      // Thử tìm ResItem trước (item_id là ID của ResItem)
       inventoryItem = await this.prisma.resItem.findUnique({
         where: { id: dto.item_id },
       });
 
+      let userInventory = null;
+      actualItemId = dto.item_id;
+
+      if (inventoryItem) {
+        // Tìm thấy ResItem, tìm ResInventory tương ứng
+        userInventory = await this.prisma.resInventory.findUnique({
+          where: {
+            user_id_item_id: {
+              user_id: dto.sender_id,
+              item_id: dto.item_id,
+            },
+          },
+        });
+      } else {
+        // Không tìm thấy ResItem, thử tìm ResInventory (item_id có thể là ID của ResInventory)
+        userInventory = await this.prisma.resInventory.findUnique({
+          where: { id: dto.item_id },
+          include: { item: true },
+        });
+
+        if (userInventory) {
+          // Kiểm tra user có sở hữu inventory này không
+          if (userInventory.user_id !== dto.sender_id) {
+            throw new ForbiddenException('Bạn không sở hữu item này trong inventory');
+          }
+
+          // Lấy ResItem từ inventory
+          inventoryItem = userInventory.item;
+          actualItemId = userInventory.item_id;
+          this.logger.log(
+            `Found inventory by ID. Inventory ID: ${dto.item_id}, Item ID: ${actualItemId}`,
+          );
+        }
+      }
+
+      // Set actualItemId nếu chưa có
+      if (!actualItemId && inventoryItem) {
+        actualItemId = inventoryItem.id;
+      }
+
       if (!inventoryItem) {
-        throw new NotFoundException(`Inventory item with ID ${dto.item_id} not found`);
+        throw new NotFoundException(
+          `Inventory item with ID ${dto.item_id} not found. Vui lòng dùng item_id từ GET /gifts/inventory response.`,
+        );
+      }
+
+      if (!userInventory) {
+        throw new NotFoundException(
+          `Không tìm thấy item trong inventory của bạn. Item ID: ${actualItemId}`,
+        );
       }
 
       // Kiểm tra số lượng trong inventory có đủ không
-      const userInventory = await this.prisma.resInventory.findUnique({
-        where: {
-          user_id_item_id: {
-            user_id: dto.sender_id,
-            item_id: dto.item_id,
-          },
-        },
-      });
-
-      if (!userInventory || userInventory.quantity < quantity) {
+      if (userInventory.quantity < quantity) {
         throw new BadRequestException(
-          `Không đủ số lượng trong túi. Bạn có: ${userInventory?.quantity || 0}, Cần: ${quantity}`,
+          `Không đủ số lượng trong túi. Bạn có: ${userInventory.quantity}, Cần: ${quantity}`,
         );
       }
 
@@ -70,7 +123,7 @@ export class GiftCrudService {
       this.logger.log(
         `Found gift item from inventory: ${inventoryItem.name} -> gift_item_id: ${giftItem.id}`,
       );
-    } else {
+    } else if (dto.gift_item_id) {
       // Dùng gift_item_id trực tiếp từ catalog
       giftItem = await this.prisma.resGiftItem.findUnique({
         where: { id: dto.gift_item_id },
@@ -81,92 +134,111 @@ export class GiftCrudService {
       }
     }
 
-    // Tính tổng giá (price là Decimal trong Prisma)
-    const giftPrice = Number(giftItem.price);
-    const totalPrice = giftPrice * quantity;
+    // Nếu gửi từ inventory (có item_id), KHÔNG trừ Diamond (quà đã được tặng, miễn phí)
+    // Nếu mua mới (chỉ có gift_item_id), trừ Diamond
+    const isFromInventory = !!dto.item_id;
+    let diamondWallet = null;
+    let currentBalance = 0;
+    let totalPrice = 0;
 
-    this.logger.log(
-      `Gift price: ${giftPrice} Diamond, Quantity: ${quantity}, Total: ${totalPrice} Diamond`,
-    );
+    if (!isFromInventory) {
+      // Mua mới từ catalog - cần trừ Diamond
+      const giftPrice = Number(giftItem.price);
+      totalPrice = giftPrice * quantity;
 
-    // Lấy hoặc tạo Diamond wallet của sender
-    let diamondWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: dto.sender_id, currency: 'diamond' },
-    });
+      this.logger.log(
+        `Gift price: ${giftPrice} Diamond, Quantity: ${quantity}, Total: ${totalPrice} Diamond (Mua mới)`,
+      );
 
-    if (!diamondWallet) {
-      diamondWallet = await this.prisma.resWallet.create({
-        data: {
-          user_id: dto.sender_id,
-          currency: 'diamond',
-          balance: new Prisma.Decimal(0),
-        },
+      // Lấy hoặc tạo Diamond wallet của sender
+      diamondWallet = await this.prisma.resWallet.findFirst({
+        where: { user_id: dto.sender_id, currency: 'diamond' },
       });
+
+      if (!diamondWallet) {
+        diamondWallet = await this.prisma.resWallet.create({
+          data: {
+            user_id: dto.sender_id,
+            currency: 'diamond',
+            balance: new Prisma.Decimal(0),
+          },
+        });
+      }
+
+      currentBalance = Number(diamondWallet.balance);
+      this.logger.log(`Sender ${dto.sender_id} current Diamond balance: ${currentBalance}`);
+
+      // Kiểm tra số dư có đủ không
+      if (currentBalance < totalPrice) {
+        const insufficientAmount = totalPrice - currentBalance;
+        this.logger.warn(
+          `Insufficient balance for sender ${dto.sender_id}. Required: ${totalPrice}, Current: ${currentBalance}, Missing: ${insufficientAmount}`,
+        );
+        throw new BadRequestException(
+          `Số dư không đủ để gửi quà. Cần: ${totalPrice} Diamond, Hiện có: ${currentBalance} Diamond, Thiếu: ${insufficientAmount} Diamond`,
+        );
+      }
+    } else {
+      this.logger.log(`Gửi quà từ inventory - KHÔNG trừ Diamond (quà đã được tặng, miễn phí)`);
     }
 
-    const currentBalance = Number(diamondWallet.balance);
-    this.logger.log(`Sender ${dto.sender_id} current Diamond balance: ${currentBalance}`);
-
-    // Kiểm tra số dư có đủ không
-    if (currentBalance < totalPrice) {
-      const insufficientAmount = totalPrice - currentBalance;
-      this.logger.warn(
-        `Insufficient balance for sender ${dto.sender_id}. Required: ${totalPrice}, Current: ${currentBalance}, Missing: ${insufficientAmount}`,
-      );
-      throw new BadRequestException(
-        `Số dư không đủ để gửi quà. Cần: ${totalPrice} Diamond, Hiện có: ${currentBalance} Diamond, Thiếu: ${insufficientAmount} Diamond`,
-      );
-    }
-
-    // Số dư đủ, tiến hành trừ tiền và tạo gift trong transaction
+    // Tiến hành tạo gift trong transaction
     const transactionId = `GIFT${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     let gift;
 
     await this.prisma.$transaction(async (tx) => {
-      // Trừ tiền từ Diamond wallet của sender
-      const newBalance = currentBalance - totalPrice;
-      await tx.resWallet.update({
-        where: { id: diamondWallet.id },
-        data: { balance: new Prisma.Decimal(newBalance) },
-      });
+      // Nếu mua mới (không phải từ inventory), trừ Diamond
+      if (!isFromInventory && diamondWallet) {
+        const newBalance = currentBalance - totalPrice;
+        await tx.resWallet.update({
+          where: { id: diamondWallet.id },
+          data: { balance: new Prisma.Decimal(newBalance) },
+        });
 
-      // Tạo transaction record
-      await tx.resWalletTransaction.create({
-        data: {
-          wallet_id: diamondWallet.id,
-          user_id: dto.sender_id,
-          type: 'gift', // Dùng type 'gift' cho việc gửi quà
-          amount: new Prisma.Decimal(-totalPrice), // Negative vì trừ tiền
-          balance_before: diamondWallet.balance,
-          balance_after: new Prisma.Decimal(newBalance),
-          status: 'success',
-          reference_id: transactionId,
-        },
-      });
+        // Tạo transaction record
+        await tx.resWalletTransaction.create({
+          data: {
+            wallet_id: diamondWallet.id,
+            user_id: dto.sender_id,
+            type: 'gift', // Dùng type 'gift' cho việc gửi quà
+            amount: new Prisma.Decimal(-totalPrice), // Negative vì trừ tiền
+            balance_before: diamondWallet.balance,
+            balance_after: new Prisma.Decimal(newBalance),
+            status: 'success',
+            reference_id: transactionId,
+          },
+        });
+      }
 
       // Nếu gửi từ inventory, trừ quantity từ inventory của sender
       if (inventoryItem && dto.item_id) {
-        const userInventory = await tx.resInventory.findUnique({
+        // Tìm lại userInventory trong transaction (có thể dùng ID hoặc user_id_item_id)
+        let userInventoryToUpdate = await tx.resInventory.findFirst({
           where: {
-            user_id_item_id: {
-              user_id: dto.sender_id,
-              item_id: dto.item_id,
-            },
+            user_id: dto.sender_id,
+            item_id: actualItemId,
           },
         });
 
-        if (userInventory) {
-          const newQuantity = userInventory.quantity - quantity;
+        // Nếu không tìm thấy, thử tìm bằng ID (nếu dto.item_id là inventory ID)
+        if (!userInventoryToUpdate) {
+          userInventoryToUpdate = await tx.resInventory.findUnique({
+            where: { id: dto.item_id },
+          });
+        }
+
+        if (userInventoryToUpdate && userInventoryToUpdate.user_id === dto.sender_id) {
+          const newQuantity = userInventoryToUpdate.quantity - quantity;
           if (newQuantity > 0) {
             // Còn lại, giảm quantity
             await tx.resInventory.update({
-              where: { id: userInventory.id },
+              where: { id: userInventoryToUpdate.id },
               data: { quantity: newQuantity },
             });
           } else {
             // Hết, xóa khỏi inventory
             await tx.resInventory.delete({
-              where: { id: userInventory.id },
+              where: { id: userInventoryToUpdate.id },
             });
           }
           this.logger.log(
@@ -198,23 +270,33 @@ export class GiftCrudService {
     await this.cacheService.delPattern(`user:${dto.receiver_id}:gift-wall:*`);
     await this.cacheService.delPattern(`user:${dto.receiver_id}:gifts:*`);
 
-    // Invalidate cache của sender (quà đã tặng - để cập nhật total_diamond_value và wallet balance)
+    // Invalidate cache của sender
     await this.cacheService.del(`user:${dto.sender_id}:balance`);
-    await this.cacheService.del(`wallet:${dto.sender_id}:diamond:balance`);
-    await this.cacheService.del(`wallet:${dto.sender_id}:summary`);
-    await this.cacheService.delPattern(`wallet:${dto.sender_id}:*`);
     await this.cacheService.del(`user:${dto.sender_id}:gift-wall`);
     await this.cacheService.delPattern(`user:${dto.sender_id}:gift-wall:*`);
     await this.cacheService.delPattern(`user:${dto.sender_id}:gifts:*`);
 
+    // Nếu mua mới (không phải từ inventory), invalidate wallet cache
+    if (!isFromInventory) {
+      await this.cacheService.del(`wallet:${dto.sender_id}:diamond:balance`);
+      await this.cacheService.del(`wallet:${dto.sender_id}:summary`);
+      await this.cacheService.delPattern(`wallet:${dto.sender_id}:*`);
+    }
+
     // Nếu gửi từ inventory, invalidate inventory cache của sender
-    if (inventoryItem && dto.item_id) {
+    if (isFromInventory) {
       await this.cacheService.delPattern(`inventory:${dto.sender_id}:*`);
     }
 
-    this.logger.log(
-      `Gift sent successfully. Sender: ${dto.sender_id}, Receiver: ${dto.receiver_id}, Gift: ${giftItem.name}, Quantity: ${quantity}, Total price: ${totalPrice}, New sender balance: ${currentBalance - totalPrice}`,
-    );
+    if (isFromInventory) {
+      this.logger.log(
+        `Gift sent successfully from inventory (FREE). Sender: ${dto.sender_id}, Receiver: ${dto.receiver_id}, Gift: ${giftItem.name}, Quantity: ${quantity}`,
+      );
+    } else {
+      this.logger.log(
+        `Gift sent successfully (PAID). Sender: ${dto.sender_id}, Receiver: ${dto.receiver_id}, Gift: ${giftItem.name}, Quantity: ${quantity}, Total price: ${totalPrice}, New sender balance: ${currentBalance - totalPrice}`,
+      );
+    }
 
     return gift;
   }
@@ -488,11 +570,11 @@ export class GiftCrudService {
   ): Promise<void> {
     try {
       // Tìm hoặc tạo ResItem từ ResGiftItem
-      // Sử dụng gift_item_id làm mapping key (có thể dùng name hoặc tạo mapping table)
+      // Sử dụng name và type='gift' để match chính xác
       let item = await this.prisma.resItem.findFirst({
         where: {
           name: giftItem.name,
-          // Có thể thêm điều kiện khác để match chính xác hơn
+          type: 'gift', // Chỉ tìm ResItem có type='gift' để tránh nhầm lẫn
         },
       });
 

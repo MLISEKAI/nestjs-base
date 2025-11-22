@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Min, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, IsNotEmpty, ValidateIf } from 'class-validator';
 
 export class CreateGiftDto {
   @ApiProperty({ example: 'user-1', description: 'Người nhận quà (sender tự động từ JWT token)' })
@@ -10,15 +10,18 @@ export class CreateGiftDto {
   @ApiProperty({
     example: 'gift-item-1',
     description:
-      'ID món quà từ catalog (gift_item_id) hoặc ID item từ inventory (item_id). Nếu dùng item_id, hệ thống sẽ tự động tìm gift_item_id tương ứng.',
+      'ID món quà từ catalog. Bắt buộc nếu không có item_id. Nếu có item_id, có thể bỏ qua field này.',
+    required: false,
   })
+  @ValidateIf((o) => !o.item_id) // Chỉ validate nếu không có item_id
   @IsString()
-  gift_item_id: string;
+  @IsNotEmpty()
+  gift_item_id?: string;
 
   @ApiProperty({
     example: 'item-uuid',
     description:
-      'ID item từ inventory (optional). Nếu có, sẽ ưu tiên dùng item_id này và tìm gift_item_id tương ứng.',
+      'ID item từ inventory (optional). Nếu có, sẽ ưu tiên dùng item_id này và tìm gift_item_id tương ứng. Khi dùng item_id, không cần gift_item_id.',
     required: false,
   })
   @IsOptional()

@@ -217,8 +217,38 @@ export class GiftsController {
   @Post()
   @UseGuards(UserRateLimitGuard)
   @UserRateLimit({ limit: 10, ttl: 60000 }) // 10 requests per minute
-  @ApiOperation({ summary: 'Gửi quà tặng (sender tự động từ JWT token)' })
-  @ApiBody({ type: CreateGiftDto })
+  @ApiOperation({
+    summary: 'Gửi quà tặng (sender tự động từ JWT token)',
+    description:
+      'Có 2 cách gửi quà:\n' +
+      '1. Mua mới từ catalog: Chỉ cần gift_item_id (sẽ trừ Diamond)\n' +
+      '2. Gửi từ inventory: Chỉ cần item_id (KHÔNG trừ Diamond, quà đã được tặng)',
+  })
+  @ApiBody({
+    type: CreateGiftDto,
+    examples: {
+      'from-catalog': {
+        summary: 'Gửi quà từ catalog (mua mới)',
+        description: 'Mua quà mới và gửi ngay. Sẽ trừ Diamond từ wallet.',
+        value: {
+          receiver_id: 'user-receiver-uuid',
+          gift_item_id: 'gift-item-uuid',
+          quantity: 1,
+          message: 'Happy birthday!',
+        },
+      },
+      'from-inventory': {
+        summary: 'Gửi quà từ inventory (từ túi)',
+        description: 'Gửi quà đã có trong túi. KHÔNG trừ Diamond (quà đã được tặng, miễn phí).',
+        value: {
+          receiver_id: 'user-receiver-uuid',
+          item_id: 'item-uuid',
+          quantity: 1,
+          message: 'For you!',
+        },
+      },
+    },
+  })
   @ApiCreatedResponse({ description: 'Quà tặng được tạo thành công' })
   create(@Req() req: any, @Body() dto: CreateGiftDto) {
     // Lấy sender_id từ JWT token
