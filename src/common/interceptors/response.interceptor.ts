@@ -1,7 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Rsp, generateTraceId } from '../response';
+import { Rsp, generateTraceId } from '../utils';
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, Rsp<T>> {

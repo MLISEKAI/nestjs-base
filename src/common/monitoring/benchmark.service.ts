@@ -2,13 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { PerformanceService } from './performance.service';
-
-export interface BenchmarkResult {
-  name: string;
-  duration: number;
-  queries: number;
-  cached: boolean;
-}
+import { BenchmarkResult } from '../interfaces';
 
 @Injectable()
 export class BenchmarkService {

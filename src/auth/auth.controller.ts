@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Req, UseGuards, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import type { GoogleProfile } from './strategy/google.strategy';
+import type { GoogleProfile } from './interfaces';
 import {
   RegisterUserDto,
   LoginDto,

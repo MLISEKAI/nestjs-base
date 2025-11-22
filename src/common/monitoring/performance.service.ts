@@ -1,21 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-
-export interface QueryMetrics {
-  query: string;
-  duration: number;
-  timestamp: Date;
-  model?: string;
-  operation?: string;
-}
-
-export interface PerformanceMetrics {
-  totalQueries: number;
-  slowQueries: number;
-  averageQueryTime: number;
-  slowestQuery: QueryMetrics | null;
-  queriesByModel: Record<string, number>;
-}
+import { QueryMetrics, PerformanceMetrics } from '../interfaces';
 
 @Injectable()
 export class PerformanceService {

@@ -66,14 +66,14 @@ export class RechargeService {
 
     // Lấy hoặc tạo Diamond wallet
     let diamondWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: { in: ['gem', 'diamond'] } },
+      where: { user_id: userId, currency: 'diamond' },
     });
 
     if (!diamondWallet) {
       diamondWallet = await this.prisma.resWallet.create({
         data: {
           user_id: userId,
-          currency: 'gem',
+          currency: 'diamond',
           balance: new Prisma.Decimal(0),
         },
       });

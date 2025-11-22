@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
 import { UpdateUserDto } from '../dto/user-response';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+import { SearchUsersParams } from '../interfaces';
 
 @Injectable()
 export class UserProfileService {
@@ -83,10 +84,10 @@ export class UserProfileService {
     return { message: 'Profile updated successfully', user };
   }
 
-  async searchUsers(params: { search?: string; page?: number; limit?: number; sort?: string }) {
+  async searchUsers(params: SearchUsersParams) {
     // Xử lý search: trim và kiểm tra empty string
     const search = params?.search?.trim();
-    const where =
+    const where: any =
       search && search.length > 0
         ? {
             OR: [
@@ -95,6 +96,11 @@ export class UserProfileService {
             ],
           }
         : {};
+
+    // Loại bỏ user hiện tại khỏi kết quả nếu có authenticated
+    if (params?.excludeUserId) {
+      where.NOT = { id: params.excludeUserId };
+    }
 
     let orderBy: Record<string, 'asc' | 'desc'> = { created_at: 'asc' };
     if (params?.sort) {
@@ -106,10 +112,11 @@ export class UserProfileService {
     const page = params?.page && params.page > 0 ? params.page : 1;
     const skip = (page - 1) * take;
 
-    // Cache key với search term, page, limit, sort
+    // Cache key với search term, page, limit, sort, và excludeUserId (để cache riêng cho authenticated/unauthenticated)
     const searchKey = search || 'all';
     const sortKey = params?.sort || 'created_at:asc';
-    const cacheKey = `users:search:${searchKey}:page:${page}:limit:${take}:sort:${sortKey}`;
+    const excludeKey = params?.excludeUserId ? `:exclude:${params.excludeUserId}` : '';
+    const cacheKey = `users:search:${searchKey}:page:${page}:limit:${take}:sort:${sortKey}${excludeKey}`;
     const cacheTtl = 300; // 5 phút (search results thay đổi thường xuyên)
 
     return this.cacheService.getOrSet(

@@ -36,11 +36,12 @@ export class WalletSummaryService {
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
-        // Lấy Diamond wallet (currency = 'gem' hoặc 'diamond')
+        // Lấy Diamond wallet (currency = 'diamond')
+        // Đồng bộ currency: chỉ dùng 'diamond' cho Diamond và 'vex' cho VEX
         const diamondWallet = await this.prisma.resWallet.findFirst({
           where: {
             user_id: userId,
-            currency: { in: ['gem', 'diamond'] },
+            currency: 'diamond',
           },
         });
 
@@ -209,11 +210,12 @@ export class WalletSummaryService {
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
-        // Lấy Diamond wallet (currency = 'gem' hoặc 'diamond')
+        // Lấy Diamond wallet (currency = 'diamond')
+        // Đồng bộ currency: chỉ dùng 'diamond' cho Diamond và 'vex' cho VEX
         const diamondWallet = await this.prisma.resWallet.findFirst({
           where: {
             user_id: userId,
-            currency: { in: ['gem', 'diamond'] },
+            currency: 'diamond',
           },
         });
 

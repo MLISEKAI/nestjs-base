@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
-import { CreateGiftDto, UpdateGiftDto } from '../dto/gift.dto';
+import { CreateGiftDto } from '../dto/gift.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
@@ -13,6 +13,15 @@ export class GiftCrudService {
   ) {}
 
   async create(dto: CreateGiftDto & { sender_id: string }) {
+    // Kiểm tra gift item tồn tại
+    const giftItem = await this.prisma.resGiftItem.findUnique({
+      where: { id: dto.gift_item_id },
+    });
+
+    if (!giftItem) {
+      throw new NotFoundException(`Gift item with ID ${dto.gift_item_id} not found`);
+    }
+
     const gift = await this.prisma.resGift.create({
       data: {
         sender_id: dto.sender_id,
@@ -24,12 +33,35 @@ export class GiftCrudService {
     });
 
     // Invalidate cache khi có gift mới
+    // Invalidate cache của receiver (quà đã nhận)
     await this.cacheService.del(`user:${dto.receiver_id}:balance`);
     await this.cacheService.del(`user:${dto.receiver_id}:gift-wall`);
+    await this.cacheService.del(`user:${dto.receiver_id}:gifts:count`);
     await this.cacheService.delPattern(`user:${dto.receiver_id}:gift-wall:*`);
-    await this.cacheService.delPattern(`user:${dto.receiver_id}:gifts:*`); // GiftSummaryService cache
+    await this.cacheService.delPattern(`user:${dto.receiver_id}:gifts:*`);
+
+    // Invalidate cache của sender (quà đã tặng - để cập nhật total_diamond_value)
+    await this.cacheService.del(`user:${dto.sender_id}:balance`);
+    await this.cacheService.del(`user:${dto.sender_id}:gift-wall`);
+    await this.cacheService.delPattern(`user:${dto.sender_id}:gift-wall:*`);
+    await this.cacheService.delPattern(`user:${dto.sender_id}:gifts:*`);
 
     return gift;
+  }
+
+  async getCount(userId: string) {
+    const cacheKey = `user:${userId}:gifts:count`;
+    const cacheTtl = 60; // 1 phút
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        return this.prisma.resGift.count({
+          where: { receiver_id: userId },
+        });
+      },
+      cacheTtl,
+    );
   }
 
   async findAll(userId?: string, query?: BaseQueryDto) {
@@ -58,12 +90,16 @@ export class GiftCrudService {
 
   /**
    * Find one gift by ID
-   * @param id Gift ID
+   * @param id Gift ID (ID của ResGift record, không phải gift_item_id)
    * @param userId Optional: Check if user is sender or receiver (for authorization)
    */
   async findOne(id: string, userId?: string) {
     const gift = await this.prisma.resGift.findUnique({ where: { id } });
-    if (!gift) throw new NotFoundException('Gift not found');
+    if (!gift) {
+      throw new NotFoundException(
+        `Gift with ID ${id} not found. Note: This endpoint requires the gift ID (from POST /gifts response), not gift_item_id.`,
+      );
+    }
 
     // Authorization check: User chỉ có thể xem gift mà họ là sender hoặc receiver
     if (userId && gift.sender_id !== userId && gift.receiver_id !== userId) {
@@ -71,41 +107,6 @@ export class GiftCrudService {
     }
 
     return gift;
-  }
-
-  /**
-   * Update gift
-   * @param id Gift ID
-   * @param dto Update data
-   * @param userId Optional: Check if user is sender (only sender can update)
-   */
-  async update(id: string, dto: UpdateGiftDto, userId?: string) {
-    // Check if gift exists and user has permission
-    if (userId) {
-      const gift = await this.prisma.resGift.findUnique({ where: { id } });
-      if (!gift) throw new NotFoundException('Gift not found');
-
-      // Authorization: Chỉ sender mới có thể update gift
-      if (gift.sender_id !== userId) {
-        throw new ForbiddenException('You can only update gifts you sent');
-      }
-    }
-
-    try {
-      return await this.prisma.resGift.update({
-        where: { id },
-        data: {
-          ...(dto.gift_item_id && { gift_item_id: dto.gift_item_id }),
-          ...(dto.quantity !== undefined && { quantity: dto.quantity }),
-          ...(dto.message !== undefined && { message: dto.message }),
-        },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException('Gift not found');
-      }
-      throw error;
-    }
   }
 
   /**

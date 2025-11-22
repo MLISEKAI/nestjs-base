@@ -41,35 +41,12 @@ export class GiftsAdminController {
     private readonly inventoryService: InventoryService,
   ) {}
 
-  @Get('summary')
-  @ApiOperation({ summary: '[ADMIN] Xem gift summary của user bất kỳ' })
-  @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Số lượng mỗi trang (mặc định: 20)',
-  })
-  @ApiOkResponse({ description: 'Tổng quan quà tặng với pagination' })
-  getGiftsSummary(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.summaryService.getGiftsSummary(userId, query);
-  }
-
   @Get('top')
   @ApiOperation({ summary: '[ADMIN] Xem top gifts của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Danh sách top supporter' })
   getTopGifts(@Param('user_id') userId: string) {
     return this.summaryService.getTopSupporters(userId);
-  }
-
-  @Get('milestones')
-  @ApiOperation({ summary: '[ADMIN] Xem milestones của user bất kỳ' })
-  @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
-  @ApiOkResponse({ description: 'Danh sách mốc quà tặng' })
-  getMilestones(@Param('user_id') userId: string) {
-    return this.summaryService.getGiftMilestones(userId);
   }
 
   @Get('gift-wall')

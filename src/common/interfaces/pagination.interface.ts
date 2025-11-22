@@ -26,3 +26,21 @@ export interface IPaginationQuery {
   search?: string;
   sort?: string;
 }
+
+/**
+ * Cursor-based pagination parameters
+ */
+export interface CursorPaginationParams {
+  cursor?: string;
+  limit?: number;
+  orderBy?: 'asc' | 'desc';
+}
+
+/**
+ * Cursor-based pagination result
+ */
+export interface CursorPaginationResult<T> {
+  items: T[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}

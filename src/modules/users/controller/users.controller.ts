@@ -11,12 +11,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { OptionalAuthGuard } from '../../../auth/guards/optional-auth.guard';
 import { UserProfileService } from '../service/user-profile.service';
-import {
-  UserResponseDto,
-  UpdateUserDto,
-  UploadAvatarDto,
-  SearchUsersQueryDto,
-} from '../dto/user-response';
+import { UserResponseDto, UpdateUserDto, UploadAvatarDto, SearchUsersQueryDto } from '../dto';
 import { UserConnectionsService } from '../service/user-connections.service';
 import { UserLevelService } from '../service/user-level.service';
 import { UserBalanceDto } from '../dto/user-level.dto';
@@ -83,7 +78,11 @@ export class UserController {
   })
   async searchUsers(@Req() req, @Query() query: SearchUsersQueryDto) {
     const currentUserId = req?.user?.id ?? null;
-    const result = await this.profileService.searchUsers(query);
+    // Loại bỏ user hiện tại khỏi kết quả nếu có authenticated
+    const result = await this.profileService.searchUsers({
+      ...query,
+      excludeUserId: currentUserId,
+    });
     const usersWithStatus = await this.connectionsService.attachStatus(currentUserId, result.items);
     // ResponseInterceptor sẽ tự động wrap với format chuẩn
     return {

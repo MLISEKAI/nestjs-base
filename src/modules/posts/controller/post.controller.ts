@@ -9,7 +9,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
-import { CreatePostDto, UpdatePostDto } from '../dto/posts.dto';
+import { CreatePostDto, UpdatePostDto } from '../dto';
 import { PostService } from '../service/post.service';
 
 @ApiTags('Posts')

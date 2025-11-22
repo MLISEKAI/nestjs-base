@@ -53,7 +53,7 @@ export class VexBalanceResponseDto {
 
 // Diamond Balance Response
 export class DiamondBalanceResponseDto {
-  @ApiProperty({ example: 54292.79, description: 'Số dư Diamond' })
+  @ApiProperty({ example: 1500, description: 'Số dư Diamond' })
   diamond_balance: number;
 }
 
@@ -200,7 +200,11 @@ export class TransactionHistoryItemDto {
 
 // Convert VEX to Diamond
 export class ConvertVexToDiamondDto {
-  @ApiProperty({ example: 1000, description: 'Số VEX đổi' })
+  @ApiProperty({
+    example: 20,
+    description:
+      'Số VEX muốn chuyển đổi. Chỉ hỗ trợ các gói: 20, 50, 80, 120, 200, 420 VEX (mỗi gói có bonus khác nhau)',
+  })
   @IsNumber()
   @Type(() => Number)
   @Min(1)

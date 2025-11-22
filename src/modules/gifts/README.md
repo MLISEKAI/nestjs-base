@@ -482,7 +482,7 @@ GET /profile/:user_id/gifts/gift-wall
     "user_id": "123",
     "username": "Darlene Bears",
     "avatar_url": "/avatars/darlene.jpg",
-    "total_gifts": 112,
+    "total_diamond_value": 112,
     "xp_to_next_level": 200,
     "level": 34,
     "description": "Help me light up the Gift Wall."

@@ -5,29 +5,32 @@ import { ConvertVexToDiamondDto, ConvertVexToDiamondResponseDto } from '../dto/d
 
 @Injectable()
 export class ConvertService {
-  // Exchange rate: 1 VEX = 0.1 Diamond (có thể config trong env)
-  private readonly VEX_TO_DIAMOND_RATE = 0.1;
+  // VEX to Diamond conversion packages với bonus
+  // Theo ảnh: các gói cố định với base diamonds và bonus
+  private readonly VEX_CONVERSION_PACKAGES = [
+    { vexAmount: 20, baseDiamonds: 435, bonus: 115 }, // 20 VEX → 435 + 115 = 550 diamonds
+    { vexAmount: 50, baseDiamonds: 1230, bonus: 340 }, // 50 VEX → 1230 + 340 = 1570 diamonds
+    { vexAmount: 80, baseDiamonds: 3210, bonus: 860 }, // 80 VEX → 3210 + 860 = 4070 diamonds
+    { vexAmount: 120, baseDiamonds: 15380, bonus: 4620 }, // 120 VEX → 15380 + 4620 = 20000 diamonds
+    { vexAmount: 200, baseDiamonds: 36920, bonus: 11080 }, // 200 VEX → 36920 + 11080 = 48000 diamonds
+    { vexAmount: 420, baseDiamonds: 112300, bonus: 33700 }, // 420 VEX → 112300 + 33700 = 146000 diamonds
+  ];
 
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Calculate bonus diamonds based on VEX amount
-   * Bonus tiers:
-   * - 435 VEX: +20 bonus
-   * - 1230 VEX: +50 bonus
-   * - 3210 VEX: +80 bonus
-   * - 15380 VEX: +120 bonus
-   * - 36920 VEX: +200 bonus
-   * - 112300 VEX: +420 bonus
+   * Tìm gói conversion phù hợp dựa trên VEX amount
+   * Chỉ chấp nhận các gói cố định: 20, 50, 80, 120, 200, 420 VEX
    */
-  private calculateBonus(vexAmount: number): number {
-    if (vexAmount >= 112300) return 420;
-    if (vexAmount >= 36920) return 200;
-    if (vexAmount >= 15380) return 120;
-    if (vexAmount >= 3210) return 80;
-    if (vexAmount >= 1230) return 50;
-    if (vexAmount >= 435) return 20;
-    return 0;
+  private findConversionPackage(vexAmount: number): { baseDiamonds: number; bonus: number } | null {
+    // Tìm gói chính xác
+    const exactPackage = this.VEX_CONVERSION_PACKAGES.find((pkg) => pkg.vexAmount === vexAmount);
+    if (exactPackage) {
+      return { baseDiamonds: exactPackage.baseDiamonds, bonus: exactPackage.bonus };
+    }
+
+    // Không tìm thấy gói chính xác
+    return null;
   }
 
   /**
@@ -57,22 +60,29 @@ export class ConvertService {
       throw new BadRequestException('Insufficient VEX balance');
     }
 
-    // Tính số Diamond nhận được (base)
-    const baseDiamonds = Math.floor(dto.vexAmount * this.VEX_TO_DIAMOND_RATE);
-    // Tính bonus
-    const bonusDiamonds = this.calculateBonus(dto.vexAmount);
+    // Tìm gói conversion phù hợp
+    const conversionPackage = this.findConversionPackage(dto.vexAmount);
+    if (!conversionPackage) {
+      throw new BadRequestException(
+        `Invalid VEX amount: ${dto.vexAmount}. Chỉ hỗ trợ các gói: 20, 50, 80, 120, 200, 420 VEX.`,
+      );
+    }
+
+    // Tính số Diamond nhận được (base + bonus)
+    const baseDiamonds = conversionPackage.baseDiamonds;
+    const bonusDiamonds = conversionPackage.bonus;
     const totalDiamondsReceived = baseDiamonds + bonusDiamonds;
 
     // Lấy hoặc tạo Diamond wallet
     let diamondWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: { in: ['gem', 'diamond'] } },
+      where: { user_id: userId, currency: 'diamond' },
     });
 
     if (!diamondWallet) {
       diamondWallet = await this.prisma.resWallet.create({
         data: {
           user_id: userId,
-          currency: 'gem',
+          currency: 'diamond',
           balance: new Prisma.Decimal(0),
         },
       });

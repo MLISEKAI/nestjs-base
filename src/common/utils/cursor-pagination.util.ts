@@ -1,16 +1,5 @@
 import { Prisma } from '@prisma/client';
-
-export interface CursorPaginationParams {
-  cursor?: string;
-  limit?: number;
-  orderBy?: Prisma.SortOrder;
-}
-
-export interface CursorPaginationResult<T> {
-  items: T[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
+import { CursorPaginationParams, CursorPaginationResult } from '../interfaces';
 
 /**
  * Cursor-based pagination for better performance on large datasets

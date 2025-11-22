@@ -24,7 +24,12 @@ export class GiftsPublicController {
         user_id: { type: 'string', example: '123' },
         username: { type: 'string', example: 'Darlene Bears' },
         avatar_url: { type: 'string', example: '/avatars/darlene.jpg' },
-        total_gifts: { type: 'number', example: 112 },
+        total_diamond_value: {
+          type: 'number',
+          example: 112,
+          description:
+            'Tổng giá trị daimon (diamond value) của tất cả quà đã nhận = sum(price * quantity)',
+        },
         xp_to_next_level: { type: 'number', example: 200 },
         level: { type: 'number', example: 34 },
         description: { type: 'string', example: 'Help me light up the Gift Wall.' },
@@ -51,13 +56,11 @@ export class GiftsPublicController {
       items: {
         type: 'object',
         properties: {
-          milestone_id: { type: 'string', example: 'gift-item-1' },
+          id: { type: 'string', example: 'gift-item-1' },
           name: { type: 'string', example: 'Quà tặng 1' },
           icon_url: { type: 'string', example: '/images/gift_milestone_1.png' },
           required_count: { type: 'number', example: 10 },
           current_count: { type: 'number', example: 5 },
-          is_unlocked: { type: 'boolean', example: false },
-          progress: { type: 'number', example: 0.5 },
         },
       },
     },

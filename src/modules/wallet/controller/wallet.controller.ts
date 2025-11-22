@@ -92,7 +92,7 @@ export class WalletController {
   @ApiOperation({
     summary: 'Lấy thông tin ví của user hiện tại',
     description:
-      'Lấy danh sách tất cả các ví (wallet) của user hiện tại. Hỗ trợ pagination và filter theo currency (gem, diamond, vex).',
+      'Lấy danh sách tất cả các ví (wallet) của user hiện tại. Hỗ trợ pagination và filter theo currency (diamond, vex).',
   })
   @ApiOkResponse({
     description: 'Danh sách ví của user theo schema Prisma với pagination',
@@ -106,7 +106,7 @@ export class WalletController {
   @ApiOperation({
     summary: 'Tạo ví mới cho user hiện tại',
     description:
-      'Tạo một ví mới với currency được chỉ định (gem, diamond, vex). Nếu ví với currency đó đã tồn tại sẽ trả về lỗi.',
+      'Tạo một ví mới với currency được chỉ định (diamond, vex). Nếu ví với currency đó đã tồn tại sẽ trả về lỗi.',
   })
   @ApiBody({ type: CreateWalletDto })
   @ApiCreatedResponse({

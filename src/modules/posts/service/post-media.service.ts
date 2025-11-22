@@ -1,17 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
-
-export class CreatePostMediaDto {
-  media_url: string;
-  media_type: string; // image, video, audio, file
-  order?: number;
-}
-
-export class UpdatePostMediaDto {
-  media_url?: string;
-  order?: number;
-}
+import { CreatePostMediaDto, UpdatePostMediaDto } from '../dto/posts.dto';
 
 @Injectable()
 export class PostMediaService {

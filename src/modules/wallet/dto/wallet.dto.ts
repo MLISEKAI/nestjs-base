@@ -11,7 +11,10 @@ export class WalletDto {
 }
 
 export class CreateWalletDto {
-  @ApiProperty({ example: 'gem', description: 'Currency type (gem, gold, coin, etc.)' })
+  @ApiProperty({
+    example: 'diamond',
+    description: 'Currency type: chỉ hỗ trợ "diamond" (Diamond) hoặc "vex" (VEX)',
+  })
   @IsString()
   @IsOptional()
   currency?: string;
@@ -30,7 +33,12 @@ export class UpdateWalletDto {
   @IsNumber()
   balance?: number;
 
-  @ApiProperty({ example: 'gold', required: false })
+  @ApiProperty({
+    example: 'diamond',
+    required: false,
+    description:
+      'Currency type: chỉ hỗ trợ "diamond" (Diamond) hoặc "vex" (VEX). Nếu không có, sẽ tự động tìm wallet với currency tương ứng.',
+  })
   @IsOptional()
   @IsString()
   currency?: string;

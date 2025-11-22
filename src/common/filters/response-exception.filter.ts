@@ -1,5 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common';
-import { generateTraceId, Rsp } from '../response';
+import { generateTraceId, Rsp } from '../utils';
 
 @Catch()
 export class ResponseExceptionFilter implements ExceptionFilter {

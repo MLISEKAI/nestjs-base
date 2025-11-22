@@ -35,3 +35,30 @@ export class UpdatePostDto {
   @IsString()
   content?: string;
 }
+
+export class CreatePostMediaDto {
+  @ApiProperty({ example: 'https://example.com/image.jpg', description: 'URL của media' })
+  @IsString()
+  media_url: string;
+
+  @ApiProperty({ example: 'image', description: 'Loại media: image, video, audio, file' })
+  @IsString()
+  media_type: string;
+
+  @ApiProperty({ example: 1, description: 'Thứ tự hiển thị', required: false })
+  @IsOptional()
+  @IsNumber()
+  order?: number;
+}
+
+export class UpdatePostMediaDto {
+  @ApiProperty({ example: 'https://example.com/image.jpg', required: false })
+  @IsOptional()
+  @IsString()
+  media_url?: string;
+
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  @IsNumber()
+  order?: number;
+}

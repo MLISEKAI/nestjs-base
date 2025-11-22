@@ -6,7 +6,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRateLimitService, RateLimitConfig } from '../user-rate-limit.service';
+import { UserRateLimitService } from '../user-rate-limit.service';
+import { RateLimitConfig } from '../../interfaces';
 import { RATE_LIMIT_KEY, RATE_LIMIT_CONFIG } from '../decorators/user-rate-limit.decorator';
 
 @Injectable()

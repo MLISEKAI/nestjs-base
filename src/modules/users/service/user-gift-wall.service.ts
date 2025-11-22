@@ -34,21 +34,84 @@ export class UserGiftWallService {
           throw new NotFoundException('User not found');
         }
 
-        // Get total gifts received
-        const totalGifts = await this.prisma.resGift.count({
-          where: { receiver_id: userId },
+        // Get total daimon value (tổng giá trị daimon của tất cả quà đã TẶNG)
+        // Giá trị daimon = sum(price * quantity) cho mỗi gift mà user đã tặng
+        // total_diamond_value = tổng giá trị kim cương của tất cả quà đã TẶNG (sender)
+        const giftsSent = await this.prisma.resGift.findMany({
+          where: { sender_id: userId },
+          select: {
+            quantity: true,
+            giftItem: {
+              select: {
+                price: true,
+              },
+            },
+          },
         });
 
-        // Calculate level
-        const level = Math.floor(totalGifts / 10) + 1;
-        const current_xp = totalGifts % 10;
-        const xp_to_next_level = 10 - current_xp;
+        // Tính tổng giá trị daimon (kim cương) từ quà đã tặng
+        const totalDiamondValue = giftsSent.reduce((sum, gift) => {
+          // Kiểm tra giftItem tồn tại và có price
+          if (!gift.giftItem || !gift.giftItem.price) {
+            console.warn(`[GiftWall] Gift item missing or no price for userId: ${userId}`);
+            return sum;
+          }
+          const giftValue = Number(gift.giftItem.price) * gift.quantity;
+          return sum + giftValue;
+        }, 0);
+
+        // Debug logging (có thể xóa sau)
+        if (giftsSent.length > 0) {
+          console.log(
+            `[GiftWall] Found ${giftsSent.length} gifts sent by userId: ${userId}, totalDiamondValue: ${totalDiamondValue}`,
+          );
+        } else {
+          console.log(`[GiftWall] No gifts sent found for userId: ${userId}`);
+        }
+
+        // Calculate level với xp_to_next_level tăng gấp đôi mỗi level
+        // Level 1 → 2: cần 10 XP
+        // Level 2 → 3: cần 20 XP
+        // Level 3 → 4: cần 40 XP
+        // Level 4 → 5: cần 80 XP
+        // Level 5 → 6: cần 160 XP
+        // Level 6 → 7: cần 320 XP
+        // ...
+        // Tổng XP tích lũy để đạt level N = 10 * (2^(N-1) - 1)
+        // Level 1: 0 XP
+        // Level 2: 10 XP
+        // Level 3: 30 XP (10 + 20)
+        // Level 4: 70 XP (10 + 20 + 40)
+        // Level 5: 150 XP (10 + 20 + 40 + 80)
+        // Level 6: 310 XP (10 + 20 + 40 + 80 + 160)
+        // Level 7: 630 XP (10 + 20 + 40 + 80 + 160 + 320)
+
+        const BASE_XP = 10; // XP cần cho level 1 → 2
+        let level = 1;
+        let totalXpForLevel = 0;
+        let xpToNextLevel = BASE_XP;
+
+        // Tìm level hiện tại dựa trên totalDiamondValue
+        while (totalDiamondValue >= totalXpForLevel + xpToNextLevel) {
+          totalXpForLevel += xpToNextLevel;
+          level++;
+          xpToNextLevel = BASE_XP * Math.pow(2, level - 1);
+        }
+
+        // Tính phần dư XP trong level hiện tại
+        const current_xp = totalDiamondValue - totalXpForLevel;
+        // XP còn lại cần để lên level tiếp theo
+        const xp_to_next_level = xpToNextLevel - current_xp;
+
+        // total_diamond_value chỉ hiển thị phần dư (remainder) sau khi tính level
+        // Đây là giá trị kim cương còn lại trong level hiện tại
+        const total_diamond_value_remainder = current_xp;
 
         return {
           user_id: user.id,
           username: user.nickname,
           avatar_url: user.avatar || null,
-          total_gifts: totalGifts,
+          total_diamond_value: total_diamond_value_remainder,
           xp_to_next_level: xp_to_next_level,
           level: level,
           description: user.bio || 'Help me light up the Gift Wall.',
@@ -94,16 +157,13 @@ export class UserGiftWallService {
         const milestones = giftItems.map((item) => {
           const current_count = giftCounts.get(item.id) || 0;
           const required_count = 10; // Default milestone requirement
-          const is_unlocked = current_count >= required_count;
 
           return {
-            milestone_id: item.id,
+            id: item.id,
             name: item.name,
             icon_url: item.image_url || null,
             required_count: required_count,
             current_count: current_count,
-            is_unlocked: is_unlocked,
-            progress: current_count / required_count,
           };
         });
 
