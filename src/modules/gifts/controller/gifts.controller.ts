@@ -26,8 +26,16 @@ import { GiftCrudService } from '../service/gift-crud.service';
 import { GiftSummaryService } from '../service/gift-summary.service';
 import { UserGiftWallService } from '../../users/service/user-gift-wall.service';
 import { InventoryService } from '../../profile/inventory/service/inventory.service';
-import { CreateGiftDto, GiftSummaryResponseDto, TopSupporterDto } from '../dto/gift.dto';
+import { InventoryItemDto } from '../../profile/inventory/dto/inventory.dto';
+import {
+  CreateGiftDto,
+  GiftSummaryResponseDto,
+  TopSupporterDto,
+  PurchaseGiftDto,
+  PurchaseGiftResponseDto,
+} from '../dto/gift.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import { PaginatedResponseDto } from '../../../common/dto/base-response.dto';
 import { UserRateLimitGuard } from '../../../common/rate-limit/guards/user-rate-limit.guard';
 import {
   UserRateLimit,
@@ -184,29 +192,26 @@ export class GiftsController {
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Tìm kiếm theo tên vật phẩm',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sắp xếp (field:asc hoặc field:desc, ví dụ: name:asc)',
+  })
   @ApiOkResponse({
-    description: 'Danh sách vật phẩm trong inventory',
-    schema: {
-      type: 'object',
-      properties: {
-        items: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              item_id: { example: '101' },
-              name: { example: 'Rose' },
-              quantity: { example: 5 },
-            },
-          },
-        },
-        meta: { type: 'object' },
-      },
-    },
+    description: 'Danh sách vật phẩm trong inventory với pagination',
+    type: PaginatedResponseDto<InventoryItemDto>,
   })
   getInventory(@Req() req: any, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
-    return this.inventoryService.getInventory(userId, query);
+    // Chỉ hiển thị gift items trong gift inventory
+    return this.inventoryService.getInventory(userId, query, 'gift');
   }
 
   @Post()
@@ -220,6 +225,24 @@ export class GiftsController {
     const senderId = req.user.id;
     const giftDto = { ...dto, sender_id: senderId };
     return this.crudService.create(giftDto);
+  }
+
+  @Post('purchase')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Mua quà và bỏ vào túi',
+    description:
+      'Mua quà bằng Diamond và tự động thêm vào túi (inventory) của chính mình. Hệ thống sẽ trừ Diamond từ wallet và thêm gift vào inventory.',
+  })
+  @ApiBody({ type: PurchaseGiftDto })
+  @ApiOkResponse({
+    description: 'Mua quà thành công',
+    type: PurchaseGiftResponseDto,
+  })
+  async purchaseGift(@Req() req: any, @Body() dto: PurchaseGiftDto) {
+    const userId = req.user.id;
+    return this.crudService.purchaseGift(userId, dto.gift_item_id, dto.quantity ?? 1);
   }
 
   @Get()

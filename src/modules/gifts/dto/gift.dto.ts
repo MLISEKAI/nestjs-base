@@ -68,3 +68,36 @@ export class TopSupporterDto {
   @ApiProperty({ example: 500 })
   amount: number;
 }
+
+export class PurchaseGiftDto {
+  @ApiProperty({ example: 'gift-item-1', description: 'ID món quà muốn mua' })
+  @IsString()
+  @IsNotEmpty()
+  gift_item_id: string;
+
+  @ApiProperty({ example: 1, description: 'Số lượng muốn mua' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  quantity?: number;
+}
+
+export class PurchaseGiftResponseDto {
+  @ApiProperty({ example: 'gift-item-1' })
+  gift_item_id: string;
+
+  @ApiProperty({ example: 'Rose' })
+  gift_name: string;
+
+  @ApiProperty({ example: 1 })
+  quantity: number;
+
+  @ApiProperty({ example: 100 })
+  total_price: number;
+
+  @ApiProperty({ example: 500 })
+  remaining_balance: number;
+
+  @ApiProperty({ example: 'item-uuid' })
+  item_id: string;
+}

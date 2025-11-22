@@ -15,6 +15,13 @@ export class InventoryItemDto {
   @ApiProperty({ example: 'Rose', description: 'Tên của item' })
   name?: string;
 
+  @ApiProperty({
+    example: 'https://example.com/rose.png',
+    description: 'URL ảnh của item',
+    required: false,
+  })
+  image_url?: string | null;
+
   @IsOptional()
   @IsNumber()
   @ApiProperty({ example: 1 })

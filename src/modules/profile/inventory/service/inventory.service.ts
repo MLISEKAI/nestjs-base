@@ -8,14 +8,24 @@ import { buildPaginatedResponse } from '../../../../common/utils/pagination.util
 export class InventoryService {
   constructor(private prisma: PrismaService) {}
 
-  async getInventory(userId: string, query?: BaseQueryDto) {
+  async getInventory(userId: string, query?: BaseQueryDto, itemType?: string) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
+    // Build where clause
+    const where: any = { user_id: userId };
+
+    // Nếu có itemType, filter theo type của ResItem
+    if (itemType) {
+      where.item = {
+        type: itemType,
+      };
+    }
+
     const [items, total] = await Promise.all([
       this.prisma.resInventory.findMany({
-        where: { user_id: userId },
+        where,
         take,
         skip,
         // Note: ResInventory không có created_at field, dùng id để order
@@ -25,19 +35,22 @@ export class InventoryService {
             select: {
               id: true,
               name: true,
+              type: true,
+              image_url: true,
             },
           },
         },
       }),
-      this.prisma.resInventory.count({ where: { user_id: userId } }),
+      this.prisma.resInventory.count({ where }),
     ]);
 
-    // Map để format response với name từ ResItem
+    // Map để format response với name và image_url từ ResItem
     const formattedItems = items.map((inv) => ({
       id: inv.id,
       user_id: inv.user_id,
       item_id: inv.item_id,
       name: inv.item?.name || null,
+      image_url: inv.item?.image_url || null,
       quantity: inv.quantity,
     }));
 
