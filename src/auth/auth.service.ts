@@ -21,7 +21,7 @@ import { VerificationService } from './security/verification.service';
 import { TwoFactorService } from './security/two-factor.service';
 // import { AuthRateLimitService } from './security/auth-rate-limit.service';
 import { ConfigService } from '@nestjs/config';
-import { ResAssociate, ResUser } from '@prisma/client';
+import { ResAssociate, ResUser, Prisma } from '@prisma/client';
 import { EmailService } from '../common/services/email.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -84,6 +84,19 @@ export class AuthService {
             email: dto.email,
             phone_number: dto.phone_number,
           },
+        },
+        // Tự động tạo 2 ví (diamond và vex) khi đăng ký user
+        wallets: {
+          create: [
+            {
+              currency: 'diamond',
+              balance: new Prisma.Decimal(0),
+            },
+            {
+              currency: 'vex',
+              balance: new Prisma.Decimal(0),
+            },
+          ],
         },
       },
     });

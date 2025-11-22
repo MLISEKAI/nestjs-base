@@ -11,42 +11,42 @@ async function main() {
     {
       package_id: 1,
       diamonds: 100,
-      price: 10000, // 10,000 VND
+      price: 1.0, // $1.00 USD
       bonus: 'Bonus 10 đá quý',
       is_active: true,
     },
     {
       package_id: 2,
       diamonds: 500,
-      price: 45000, // 45,000 VND (giảm giá)
+      price: 4.5, // $4.50 USD (giảm giá)
       bonus: 'Bonus 50 đá quý',
       is_active: true,
     },
     {
       package_id: 3,
       diamonds: 1000,
-      price: 80000, // 80,000 VND (giảm giá)
+      price: 8.0, // $8.00 USD (giảm giá)
       bonus: 'Bonus 100 đá quý',
       is_active: true,
     },
     {
       package_id: 4,
       diamonds: 2000,
-      price: 150000, // 150,000 VND (giảm giá)
+      price: 15.0, // $15.00 USD (giảm giá)
       bonus: 'Bonus 200 đá quý',
       is_active: true,
     },
     {
       package_id: 5,
       diamonds: 5000,
-      price: 350000, // 350,000 VND (giảm giá)
+      price: 35.0, // $35.00 USD (giảm giá)
       bonus: 'Bonus 500 đá quý',
       is_active: true,
     },
     {
       package_id: 6,
       diamonds: 10000,
-      price: 650000, // 650,000 VND (giảm giá)
+      price: 65.0, // $65.00 USD (giảm giá)
       bonus: 'Bonus 1000 đá quý',
       is_active: true,
     },

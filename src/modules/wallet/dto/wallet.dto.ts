@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class WalletDto {
@@ -13,11 +13,12 @@ export class WalletDto {
 export class CreateWalletDto {
   @ApiProperty({
     example: 'diamond',
-    description: 'Currency type: chỉ hỗ trợ "diamond" (Diamond) hoặc "vex" (VEX)',
+    enum: ['diamond', 'vex'],
+    description: 'Currency type: "diamond" (Diamond) hoặc "vex" (VEX)',
   })
-  @IsString()
+  @IsEnum(['diamond', 'vex'])
   @IsOptional()
-  currency?: string;
+  currency?: 'diamond' | 'vex';
 
   @ApiProperty({ example: 0, required: false, description: 'Initial balance' })
   @IsOptional()

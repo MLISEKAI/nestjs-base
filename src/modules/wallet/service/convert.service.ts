@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { ConvertVexToDiamondDto, ConvertVexToDiamondResponseDto } from '../dto/diamond-wallet.dto';
+import {
+  ConvertVexToDiamondDto,
+  ConvertVexToDiamondResponseDto,
+  VexPackageDto,
+} from '../dto/diamond-wallet.dto';
 
 @Injectable()
 export class ConvertService {
@@ -17,6 +21,19 @@ export class ConvertService {
   ];
 
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Lấy danh sách các gói mua Diamond bằng VEX
+   */
+  getVexPackages(): VexPackageDto[] {
+    return this.VEX_CONVERSION_PACKAGES.map((pkg, index) => ({
+      packageId: index + 1,
+      vexAmount: pkg.vexAmount,
+      baseDiamonds: pkg.baseDiamonds,
+      bonusDiamonds: pkg.bonus,
+      totalDiamonds: pkg.baseDiamonds + pkg.bonus,
+    }));
+  }
 
   /**
    * Tìm gói conversion phù hợp dựa trên VEX amount

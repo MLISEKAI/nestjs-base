@@ -8,12 +8,14 @@ import {
   CheckoutRechargeDto,
   CheckoutRechargeResponseDto,
 } from '../dto/diamond-wallet.dto';
+import { PayPalService } from '../../payment/service/paypal.service';
 
 @Injectable()
 export class RechargeService {
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
+    private paypalService: PayPalService,
   ) {}
 
   /**
@@ -46,12 +48,15 @@ export class RechargeService {
   }
 
   /**
-   * Checkout recharge - Create transaction for diamond purchase
+   * Checkout recharge - Create transaction for diamond or VEX purchase
+   * @param currency - 'diamond' hoặc 'vex'. Mặc định: 'diamond'
    */
   async checkoutRecharge(
     userId: string,
     dto: CheckoutRechargeDto,
   ): Promise<CheckoutRechargeResponseDto> {
+    const currency = dto.currency || 'diamond'; // Mặc định là diamond
+
     // Query package từ DB
     const packageData = await this.prisma.resRechargePackage.findUnique({
       where: { package_id: dto.packageId },
@@ -64,46 +69,64 @@ export class RechargeService {
     // Tạo transaction
     const transactionId = `TX${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Lấy hoặc tạo Diamond wallet
-    let diamondWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: 'diamond' },
+    // Lấy hoặc tạo wallet theo currency
+    let wallet = await this.prisma.resWallet.findFirst({
+      where: { user_id: userId, currency },
     });
 
-    if (!diamondWallet) {
-      diamondWallet = await this.prisma.resWallet.create({
+    if (!wallet) {
+      wallet = await this.prisma.resWallet.create({
         data: {
           user_id: userId,
-          currency: 'diamond',
+          currency,
           balance: new Prisma.Decimal(0),
         },
       });
     }
 
+    // Tính số lượng currency nhận được
+    // Nếu mua VEX: 1 USD = 1 VEX (có thể config tỷ giá)
+    // Nếu mua Diamond: dùng diamonds từ package
+    const amountToAdd =
+      currency === 'vex'
+        ? Number(packageData.price) // 1 USD = 1 VEX (có thể config)
+        : packageData.diamonds;
+
     // Tạo transaction record
     await this.prisma.resWalletTransaction.create({
       data: {
-        wallet_id: diamondWallet.id,
+        wallet_id: wallet.id,
         user_id: userId,
         type: 'deposit',
-        amount: new Prisma.Decimal(packageData.diamonds),
-        balance_before: diamondWallet.balance,
+        amount: new Prisma.Decimal(amountToAdd),
+        balance_before: wallet.balance,
         status: 'pending',
         reference_id: transactionId,
       },
     });
 
-    // TODO: Tích hợp payment gateway thật (Stripe, PayPal, VNPay, etc.)
-    // Cần implement:
-    // - Tạo payment session với payment gateway
-    // - Lưu payment session ID vào transaction
-    // - Webhook handler để update transaction status khi payment thành công
+    // Tích hợp PayPal để tạo payment session
+    try {
+      // Price trong database đã là USD
+      const priceInUsd = Number(packageData.price);
 
-    return {
-      transactionId,
-      amount: Number(packageData.price),
-      status: 'pending',
-      // paymentUrl sẽ được tạo từ payment gateway integration
-      // paymentUrl: await this.paymentGateway.createCheckoutSession(transactionId, amount),
-    };
+      const { paymentUrl } = await this.paypalService.createOrder(transactionId, priceInUsd, 'USD');
+
+      return {
+        transactionId,
+        price: priceInUsd, // Giá tiền phải thanh toán (USD)
+        status: 'pending',
+        paymentUrl, // ✅ PayPal payment URL
+      };
+    } catch (error) {
+      // Nếu PayPal service chưa được config hoặc lỗi, vẫn trả về transactionId
+      // Frontend có thể xử lý fallback hoặc hiển thị error
+      return {
+        transactionId,
+        price: Number(packageData.price),
+        status: 'pending',
+        paymentUrl: undefined, // PayPal chưa được config hoặc có lỗi
+      };
+    }
   }
 }

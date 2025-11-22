@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
 import { Prisma } from '@prisma/client';
@@ -10,12 +10,16 @@ import {
   DepositInfoResponseDto,
   UpdateDepositNetworkDto,
 } from '../dto/diamond-wallet.dto';
+import { PayPalService } from '../../payment/service/paypal.service';
 
 @Injectable()
 export class DepositService {
+  private readonly logger = new Logger(DepositService.name);
+
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
+    private paypalService: PayPalService,
   ) {}
 
   /**
@@ -67,9 +71,14 @@ export class DepositService {
   }
 
   /**
-   * Withdraw VEX
+   * Withdraw VEX về PayPal
+   * VEX là tiền ảo nội bộ, rút về PayPal với tỷ giá 1 VEX = 1 USD
    */
   async withdrawVex(userId: string, dto: WithdrawVexDto): Promise<WithdrawVexResponseDto> {
+    this.logger.log(
+      `User ${userId} requesting VEX withdrawal: ${dto.amount} VEX to ${dto.paypalEmail}`,
+    );
+
     // Lấy hoặc tạo VEX wallet
     let vexWallet = await this.prisma.resWallet.findFirst({
       where: { user_id: userId, currency: 'vex' },
@@ -87,35 +96,81 @@ export class DepositService {
 
     const vexBalance = Number(vexWallet.balance);
     if (vexBalance < dto.amount) {
-      throw new BadRequestException('Insufficient VEX balance');
+      this.logger.warn(
+        `Insufficient VEX balance for user ${userId}. Required: ${dto.amount}, Current: ${vexBalance}`,
+      );
+      throw new BadRequestException(
+        `Số dư VEX không đủ. Cần: ${dto.amount} VEX, Hiện có: ${vexBalance} VEX`,
+      );
     }
 
     const withdrawalId = `WD${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Tạo withdrawal transaction
-    await this.prisma.resWalletTransaction.create({
-      data: {
-        wallet_id: vexWallet.id,
-        user_id: userId,
-        type: 'withdraw',
-        amount: new Prisma.Decimal(dto.amount),
-        balance_before: vexWallet.balance,
-        status: 'pending',
-        reference_id: withdrawalId,
-      },
-    });
+    // Convert VEX sang USD (1 VEX = 1 USD)
+    const amountInUsd = dto.amount;
 
-    // TODO: Gửi request đến blockchain service để process withdrawal
-    // Cần implement integration với blockchain service để thực hiện withdrawal thật
+    try {
+      // Tạo PayPal payout
+      const payoutResult = await this.paypalService.createPayout(
+        dto.paypalEmail,
+        amountInUsd,
+        'USD',
+        `VEX withdrawal - ${dto.amount} VEX`,
+      );
 
-    // Hiện tại chỉ tạo transaction với status pending
-    // Trong production, cần gọi blockchain service API để process withdrawal
+      // Trừ VEX từ wallet và tạo transaction record trong một transaction
+      await this.prisma.$transaction(async (tx) => {
+        // Trừ VEX từ wallet
+        const newBalance = vexBalance - dto.amount;
+        await tx.resWallet.update({
+          where: { id: vexWallet.id },
+          data: { balance: new Prisma.Decimal(newBalance) },
+        });
 
-    return {
-      withdrawalId,
-      status: 'pending',
-      message: 'Withdrawal request submitted. Please integrate with blockchain service to process.',
-    };
+        // Tạo withdrawal transaction
+        await tx.resWalletTransaction.create({
+          data: {
+            wallet_id: vexWallet.id,
+            user_id: userId,
+            type: 'withdraw',
+            amount: new Prisma.Decimal(-dto.amount), // Negative vì trừ tiền
+            balance_before: vexWallet.balance,
+            balance_after: new Prisma.Decimal(newBalance),
+            status: 'success',
+            reference_id: withdrawalId,
+          },
+        });
+      });
+
+      this.logger.log(
+        `VEX withdrawal successful for user ${userId}. Amount: ${dto.amount} VEX ($${amountInUsd} USD) to ${dto.paypalEmail}. Payout ID: ${payoutResult.payoutId}`,
+      );
+
+      return {
+        withdrawalId,
+        status: payoutResult.status,
+        message: `VEX withdrawal processed. $${amountInUsd} USD has been sent to ${dto.paypalEmail}`,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to process VEX withdrawal for user ${userId}`, error);
+
+      // Tạo transaction với status failed
+      await this.prisma.resWalletTransaction.create({
+        data: {
+          wallet_id: vexWallet.id,
+          user_id: userId,
+          type: 'withdraw',
+          amount: new Prisma.Decimal(-dto.amount),
+          balance_before: vexWallet.balance,
+          status: 'failed',
+          reference_id: withdrawalId,
+        },
+      });
+
+      throw new BadRequestException(
+        `Failed to process withdrawal: ${error.message || 'Unknown error'}`,
+      );
+    }
   }
 
   /**

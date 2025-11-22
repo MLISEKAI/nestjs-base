@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { CacheModule } from 'src/common/cache/cache.module';
+import { PaymentModule } from '../payment/payment.module';
 import { WalletController } from './controller/wallet.controller';
 import { WalletAdminController } from './controller/wallet-admin.controller';
 import { WalletService } from './service/wallet.service';
@@ -15,7 +16,7 @@ import { TransferService } from './service/transfer.service';
 import { PaymentMethodService } from './service/payment-method.service';
 
 @Module({
-  imports: [PrismaModule, CacheModule],
+  imports: [PrismaModule, CacheModule, PaymentModule],
   controllers: [WalletController, WalletAdminController],
   providers: [
     WalletService,

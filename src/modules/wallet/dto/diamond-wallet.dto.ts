@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsEnum, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, Min, IsEmail } from 'class-validator';
 import { Type } from 'class-transformer';
 
 // Wallet Summary
@@ -65,7 +65,7 @@ export class RechargePackageDto {
   @ApiProperty({ example: 100, description: 'Số đá quý' })
   diamonds: number;
 
-  @ApiProperty({ example: 10000, description: 'Giá tiền' })
+  @ApiProperty({ example: 1.0, description: 'Giá tiền (USD)' })
   price: number;
 
   @ApiPropertyOptional({ example: 'Bonus 10 đá quý' })
@@ -96,21 +96,36 @@ export class CheckoutRechargeDto {
   @IsNumber()
   @Type(() => Number)
   packageId: number;
+
+  @ApiPropertyOptional({
+    example: 'diamond',
+    enum: ['diamond', 'vex'],
+    description: 'Loại tiền tệ muốn mua: diamond (Kim Cương) hoặc vex (VEX). Mặc định: diamond',
+  })
+  @IsOptional()
+  @IsEnum(['diamond', 'vex'])
+  currency?: 'diamond' | 'vex';
 }
 
 export class CheckoutRechargeResponseDto {
-  @ApiProperty({ example: 'TX123456' })
+  @ApiProperty({ example: 'TX123456', description: 'ID giao dịch' })
   transactionId: string;
 
-  @ApiProperty({ example: 45000 })
-  amount: number;
+  @ApiProperty({
+    example: 1.0,
+    description: 'Giá tiền phải thanh toán (USD)',
+  })
+  price: number;
 
-  @ApiProperty({ example: 'pending', description: 'Trạng thái: pending, success, failed' })
+  @ApiProperty({
+    example: 'pending',
+    description: 'Trạng thái: pending, success, failed',
+  })
   status: string;
 
   @ApiPropertyOptional({
     example: 'https://payment.gateway/...',
-    description: 'URL thanh toán (sẽ có sau khi tích hợp payment gateway)',
+    description: 'URL thanh toán PayPal',
   })
   paymentUrl?: string;
 }
@@ -198,12 +213,30 @@ export class TransactionHistoryItemDto {
   live_stream_info?: string;
 }
 
-// Convert VEX to Diamond
+// VEX Package (Gói mua Diamond bằng VEX)
+export class VexPackageDto {
+  @ApiProperty({ example: 1, description: 'ID gói' })
+  packageId: number;
+
+  @ApiProperty({ example: 20, description: 'Số VEX cần thanh toán' })
+  vexAmount: number;
+
+  @ApiProperty({ example: 435, description: 'Số Diamond nhận được (base)' })
+  baseDiamonds: number;
+
+  @ApiProperty({ example: 115, description: 'Bonus Diamond' })
+  bonusDiamonds: number;
+
+  @ApiProperty({ example: 550, description: 'Tổng Diamond nhận được (base + bonus)' })
+  totalDiamonds: number;
+}
+
+// Mua Diamond bằng VEX
 export class ConvertVexToDiamondDto {
   @ApiProperty({
     example: 20,
     description:
-      'Số VEX muốn chuyển đổi. Chỉ hỗ trợ các gói: 20, 50, 80, 120, 200, 420 VEX (mỗi gói có bonus khác nhau)',
+      'Số VEX muốn dùng để mua Diamond. Chỉ hỗ trợ các gói: 20, 50, 80, 120, 200, 420 VEX (mỗi gói có bonus Diamond khác nhau)',
   })
   @IsNumber()
   @Type(() => Number)
@@ -314,20 +347,19 @@ export class CreateDepositResponseDto {
 
 // Withdraw VEX
 export class WithdrawVexDto {
-  @ApiProperty({ example: '0xdef456...', description: 'Địa chỉ nhận VEX' })
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'Email PayPal để nhận tiền (rút về PayPal)',
+  })
   @IsString()
-  address: string;
+  @IsEmail()
+  paypalEmail: string;
 
-  @ApiProperty({ example: 1000, description: 'Số VEX rút' })
+  @ApiProperty({ example: 1000, description: 'Số VEX rút (sẽ convert sang USD: 1 VEX = 1 USD)' })
   @IsNumber()
   @Type(() => Number)
   @Min(1)
   amount: number;
-
-  @ApiPropertyOptional({ example: 'Ethereum', description: 'Mạng: Ethereum, BSC, etc.' })
-  @IsOptional()
-  @IsString()
-  network?: string;
 }
 
 export class WithdrawVexResponseDto {

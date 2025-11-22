@@ -4,6 +4,8 @@ import { Prisma } from '@prisma/client';
 import { CacheService } from 'src/common/cache/cache.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
+import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
 @Injectable()
 export class WalletService {
@@ -12,7 +14,7 @@ export class WalletService {
     private cacheService: CacheService,
   ) {}
 
-  async getWallet(userId: string, query: BaseQueryDto) {
+  async getWallet(userId: string, query: BaseQueryDto): Promise<IPaginatedResponse<any>> {
     // Migrate tất cả wallets cũ với currency "gem" hoặc "gold" sang "diamond"
     const oldWallets = await this.prisma.resWallet.findMany({
       where: {
@@ -56,17 +58,65 @@ export class WalletService {
       await this.cacheService.delPattern(`wallet:${userId}:*`);
     }
 
-    // Tìm wallet với currency "diamond"
-    let diamondWallet = await this.prisma.resWallet.findFirst({
+    // Đảm bảo user có cả 2 ví (diamond và vex)
+    await this.ensureUserWallets(userId);
+
+    // Pagination
+    const take = query?.limit && query.limit > 0 ? query.limit : 20;
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const skip = (page - 1) * take;
+
+    // Build where clause
+    const where: Prisma.ResWalletWhereInput = {
+      user_id: userId,
+    };
+
+    // Filter by currency if search contains currency keyword
+    if (query.search) {
+      const searchLower = query.search.toLowerCase();
+      if (searchLower === 'diamond' || searchLower === 'vex') {
+        where.currency = searchLower;
+      }
+    }
+
+    // Build orderBy
+    let orderBy: Prisma.ResWalletOrderByWithRelationInput = { created_at: 'desc' };
+    if (query.sort) {
+      const [field, order] = query.sort.split(':');
+      if (field && (order === 'asc' || order === 'desc')) {
+        orderBy = { [field]: order } as Prisma.ResWalletOrderByWithRelationInput;
+      }
+    }
+
+    // Query wallets
+    const [wallets, total] = await Promise.all([
+      this.prisma.resWallet.findMany({
+        where,
+        take,
+        skip,
+        orderBy,
+      }),
+      this.prisma.resWallet.count({ where }),
+    ]);
+
+    return buildPaginatedResponse(wallets, total, page, take);
+  }
+
+  /**
+   * Đảm bảo user có cả 2 ví (diamond và vex)
+   * Tự động tạo nếu chưa có
+   */
+  async ensureUserWallets(userId: string): Promise<void> {
+    // Kiểm tra và tạo diamond wallet nếu chưa có
+    const diamondWallet = await this.prisma.resWallet.findFirst({
       where: {
         user_id: userId,
         currency: 'diamond',
       },
     });
 
-    // Nếu vẫn không có wallet, tạo wallet mặc định (diamond)
     if (!diamondWallet) {
-      diamondWallet = await this.prisma.resWallet.create({
+      await this.prisma.resWallet.create({
         data: {
           user_id: userId,
           currency: 'diamond',
@@ -75,24 +125,33 @@ export class WalletService {
       });
     }
 
-    return diamondWallet;
+    // Kiểm tra và tạo vex wallet nếu chưa có
+    const vexWallet = await this.prisma.resWallet.findFirst({
+      where: {
+        user_id: userId,
+        currency: 'vex',
+      },
+    });
+
+    if (!vexWallet) {
+      await this.prisma.resWallet.create({
+        data: {
+          user_id: userId,
+          currency: 'vex',
+          balance: new Prisma.Decimal(0),
+        },
+      });
+    }
   }
 
   async createWallet(userId: string, dto: CreateWalletDto) {
     const currency = dto.currency || 'diamond';
 
     // Validate currency: chỉ cho phép 'diamond' (Diamond) hoặc 'vex' (VEX)
-    // Nếu là 'gem' hoặc 'gold', tự động convert sang 'diamond'
-    let normalizedCurrency = currency;
-    if (currency === 'gem' || currency === 'gold') {
-      normalizedCurrency = 'diamond';
-    } else if (currency !== 'diamond' && currency !== 'vex') {
-      throw new BadRequestException(
-        `Invalid currency: ${currency}. Chỉ hỗ trợ 'diamond' (Diamond) hoặc 'vex' (VEX).`,
-      );
-    }
+    // CreateWalletDto đã validate enum, nên currency chỉ có thể là 'diamond' hoặc 'vex'
+    const normalizedCurrency = currency;
 
-    // Kiểm tra wallet với currency đã tồn tại chưa (tìm cả 'gem' và 'gold' nếu normalize sang 'diamond')
+    // Kiểm tra wallet với currency đã tồn tại chưa
     let exist = null;
     if (normalizedCurrency === 'diamond') {
       exist = await this.prisma.resWallet.findFirst({
