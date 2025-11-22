@@ -7,9 +7,23 @@ export class CreateGiftDto {
   @IsNotEmpty()
   receiver_id: string;
 
-  @ApiProperty({ example: 'gift-item-1', description: 'ID món quà' })
+  @ApiProperty({
+    example: 'gift-item-1',
+    description:
+      'ID món quà từ catalog (gift_item_id) hoặc ID item từ inventory (item_id). Nếu dùng item_id, hệ thống sẽ tự động tìm gift_item_id tương ứng.',
+  })
   @IsString()
   gift_item_id: string;
+
+  @ApiProperty({
+    example: 'item-uuid',
+    description:
+      'ID item từ inventory (optional). Nếu có, sẽ ưu tiên dùng item_id này và tìm gift_item_id tương ứng.',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  item_id?: string;
 
   @ApiProperty({ example: 1, description: 'Số lượng' })
   @IsOptional()
