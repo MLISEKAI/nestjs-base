@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
+import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
 @Injectable()
 export class GiftCatalogService {
@@ -9,54 +12,61 @@ export class GiftCatalogService {
     private cacheService: CacheService,
   ) {}
 
-  async getGiftItems(type?: string) {
-    const cacheKey = `gifts:items:${type || 'all'}`;
-    const cacheTtl = 1800; // 30 phút (items ít thay đổi)
+  async getGiftItems(type?: string, query?: BaseQueryDto): Promise<IPaginatedResponse<any>> {
+    // Pagination
+    const take = query?.limit && query.limit > 0 ? query.limit : 10;
+    const page = query?.page && query.page > 0 ? query.page : 1;
+    const skip = (page - 1) * take;
 
-    return this.cacheService.getOrSet(
-      cacheKey,
-      async () => {
-        const where: any = {};
+    const where: any = {};
 
-        if (type) {
-          where.type = type;
-        }
+    if (type) {
+      where.type = type;
+    }
 
-        const items = await this.prisma.resGiftItem.findMany({
-          where: Object.keys(where).length > 0 ? where : undefined,
-          select: {
-            id: true,
-            name: true,
-            image_url: true,
-            price: true,
-            type: true,
-            event_id: true,
-            event: {
-              select: {
-                end_time: true,
-              },
+    // Query với pagination
+    const [items, total] = await Promise.all([
+      this.prisma.resGiftItem.findMany({
+        where: Object.keys(where).length > 0 ? where : undefined,
+        skip,
+        take,
+        select: {
+          id: true,
+          name: true,
+          image_url: true,
+          price: true,
+          type: true,
+          event_id: true,
+          event: {
+            select: {
+              end_time: true,
             },
           },
-        });
+        },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.resGiftItem.count({
+        where: Object.keys(where).length > 0 ? where : undefined,
+      }),
+    ]);
 
-        // Format response để frontend dễ sử dụng
-        return items.map((item) => {
-          // is_event = true nếu có event_id
-          const isEvent = !!item.event_id;
+    // Format response để frontend dễ sử dụng
+    const formattedItems = items.map((item) => {
+      // is_event = true nếu có event_id
+      const isEvent = !!item.event_id;
 
-          return {
-            id: item.id, // UUID trực tiếp
-            name: item.name,
-            image_url: item.image_url,
-            price: Number(item.price), // Convert Decimal to number
-            type: item.type || 'normal',
-            is_event: isEvent,
-            event_end_date: item.event?.end_time ? item.event.end_time.toISOString() : null,
-          };
-        });
-      },
-      cacheTtl,
-    );
+      return {
+        id: item.id, // UUID trực tiếp
+        name: item.name,
+        image_url: item.image_url,
+        price: Number(item.price), // Convert Decimal to number
+        type: item.type || 'normal',
+        is_event: isEvent,
+        event_end_date: item.event?.end_time ? item.event.end_time.toISOString() : null,
+      };
+    });
+
+    return buildPaginatedResponse(formattedItems, total, page, take);
   }
 
   /**
