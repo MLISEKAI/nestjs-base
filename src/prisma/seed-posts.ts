@@ -450,6 +450,24 @@ const mockHotTopics = [
 async function main() {
   console.log('🌱 Starting Posts seed...');
 
+  // 0. Option to clear existing posts data
+  const shouldClearData = process.argv.includes('--clear');
+  if (shouldClearData) {
+    console.log('🧹 Clearing existing posts data...');
+    try {
+      await prisma.resPostShare.deleteMany({});
+      await prisma.resPostHashtag.deleteMany({});
+      await prisma.resComment.deleteMany({});
+      await prisma.resPostLike.deleteMany({});
+      await prisma.resPostMedia.deleteMany({});
+      await prisma.resPost.deleteMany({});
+      await prisma.resHashtag.deleteMany({});
+      console.log('✅ Cleared all existing posts data');
+    } catch (error) {
+      console.error('⚠️  Warning: Could not clear some data:', error);
+    }
+  }
+
   // 1. Get or create users for posts
   console.log('👥 Getting/Creating users for posts...');
   const existingUsers = await prisma.resUser.findMany({ take: 10 });

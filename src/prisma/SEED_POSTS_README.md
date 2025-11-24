@@ -41,36 +41,50 @@ Seed script sẽ tạo:
 
 ## 🚀 Cách chạy
 
-### Option 1: Dùng npm script
+### Option 1: Seed posts (giữ lại data cũ)
 
 ```bash
 npm run seed:posts
 ```
 
-### Option 2: Chạy trực tiếp với ts-node
+### Option 2: Xóa data cũ và seed lại (recommended)
 
 ```bash
-npx ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts
+npm run seed:posts:clear
 ```
 
-### Option 3: Dùng tsx (nếu đã cài)
+### Option 3: Chỉ xóa posts data (không seed)
 
 ```bash
-npx tsx src/prisma/seed-posts.ts
+npm run clear:posts
+```
+
+### Option 4: Chạy trực tiếp với ts-node
+
+```bash
+# Seed bình thường
+npx ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts
+
+# Xóa và seed lại
+npx ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts --clear
 ```
 
 ## ⚠️ Lưu ý
 
 1. **Cần có users**: Seed script sẽ sử dụng users có sẵn hoặc tạo mới nếu cần.
 
-2. **Idempotent**: Script có thể chạy nhiều lần an toàn:
-   - Hashtags: Kiểm tra theo tên, nếu đã có thì dùng lại
+2. **Xóa data cũ**:
+   - Dùng `npm run seed:posts:clear` để xóa toàn bộ posts data cũ và seed lại
+   - Dùng `npm run clear:posts` để chỉ xóa data (không seed)
    - Posts: Tạo mới mỗi lần (có thể tạo duplicate nếu chạy nhiều lần)
    - Media, likes, comments, shares: Tạo mới mỗi lần
 
 3. **Database connection**: Đảm bảo file `.env` có `DATABASE_URL` đúng.
 
 4. **Performance**: Script có thể mất vài phút để chạy vì tạo nhiều relationships (likes, comments, shares).
+
+5. **Clear Order**: Script xóa data theo đúng thứ tự foreign key constraints:
+   - Shares → Post Hashtags → Comments → Likes → Media → Posts → Hashtags
 
 ## 📊 Dữ liệu được tạo
 
@@ -126,7 +140,13 @@ Sau khi seed, bạn có thể test các API endpoints:
 
 ## 🔄 Reset Data
 
-Nếu muốn reset và seed lại:
+### Option 1: Xóa chỉ posts data và seed lại
+
+```bash
+npm run seed:posts:clear
+```
+
+### Option 2: Xóa toàn bộ database và seed lại (tất cả modules)
 
 ```bash
 npm run prisma:reset
@@ -134,3 +154,11 @@ npm run seed:posts
 ```
 
 ⚠️ **Cảnh báo**: `prisma:reset` sẽ xóa TẤT CẢ dữ liệu trong database!
+
+## 📝 Scripts Summary
+
+| Script                     | Mô tả                           |
+| -------------------------- | ------------------------------- |
+| `npm run seed:posts`       | Seed posts (giữ data cũ)        |
+| `npm run seed:posts:clear` | Xóa posts data cũ và seed lại   |
+| `npm run clear:posts`      | Chỉ xóa posts data (không seed) |

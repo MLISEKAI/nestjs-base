@@ -81,34 +81,6 @@ export class CommunityFeedService {
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
-        // Lấy hot topics
-        const hotTopics = await this.prisma.resHashtag.findMany({
-          take: 10,
-          orderBy: { post_count: 'desc' },
-          select: {
-            id: true,
-            name: true,
-            post_count: true,
-            cover_image: true,
-            view_count: true,
-          },
-        });
-
-        // Tính engagement score (dựa trên post_count và view_count)
-        const formattedHotTopics = hotTopics.map((h) => {
-          const engagementScore = Math.min(
-            100,
-            (h.post_count / 1000) * 10 + (h.view_count / 10000) * 5,
-          );
-          return {
-            id: h.id,
-            hashtag: `#${h.name}`,
-            post_count: h.post_count,
-            thumbnail_url: h.cover_image,
-            engagement_score: Math.round(engagementScore * 10) / 10,
-          };
-        });
-
         // Lấy posts (public only)
         const where: any = {
           privacy: 'public',
@@ -170,9 +142,8 @@ export class CommunityFeedService {
           id: post.id,
           user: {
             id: post.user.id,
-            username: post.user.nickname,
-            display_name: post.user.nickname,
-            avatar_url: post.user.avatar,
+            nickname: post.user.nickname,
+            avatar: post.user.avatar,
           },
           content: post.content,
           media: post.media.map((m) => ({
@@ -192,10 +163,7 @@ export class CommunityFeedService {
           privacy: post.privacy,
         }));
 
-        return {
-          hot_topics: formattedHotTopics,
-          ...buildPaginatedResponse(formattedPosts, total, page, take),
-        };
+        return buildPaginatedResponse(formattedPosts, total, page, take);
       },
       cacheTtl,
     );

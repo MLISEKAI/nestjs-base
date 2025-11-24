@@ -22,7 +22,9 @@
     "prisma:reset": "npx prisma migrate reset --schema=./src/prisma/schema.prisma",
     "seed:gifts": "ts-node -r tsconfig-paths/register src/prisma/seed-gifts.ts",
     "seed:wallet": "ts-node -r tsconfig-paths/register src/prisma/seed-wallet.ts",
-    "seed:posts": "ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts"
+    "seed:posts": "ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts",
+    "seed:posts:clear": "ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts --clear",
+    "clear:posts": "ts-node -r tsconfig-paths/register src/prisma/clear-posts.ts"
   },
   "engines": {
     "npm": ">=10.0.0",

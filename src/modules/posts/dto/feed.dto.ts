@@ -15,22 +15,19 @@ export class FeedUserDto {
   avatar?: string;
 }
 
-// User DTO for Community Feed (different format)
+// User DTO for Community Feed (same as FeedUserDto - kept for backward compatibility)
 export class CommunityUserDto {
   @ApiProperty({ example: 'uuid', description: 'User ID' })
   id: string;
 
-  @ApiProperty({ example: 'craig_curtis', description: 'Username' })
-  username: string;
-
-  @ApiProperty({ example: 'Craig Curtis', description: 'Display name' })
-  display_name: string;
+  @ApiProperty({ example: 'Craig Curtis', description: 'User nickname' })
+  nickname: string;
 
   @ApiPropertyOptional({
     example: 'https://cdn.example.com/avatars/...',
     description: 'Avatar URL',
   })
-  avatar_url?: string;
+  avatar?: string;
 }
 
 // Media DTO
@@ -191,9 +188,6 @@ export class FeedResponseDataDto {
 
 // Community Feed Response Data DTO
 export class CommunityFeedResponseDataDto {
-  @ApiProperty({ type: [HotTopicDto], description: 'Hot topics/hashtags' })
-  hot_topics: HotTopicDto[];
-
   @ApiProperty({ type: [CommunityFeedPostDto], description: 'List of posts' })
   items: CommunityFeedPostDto[];
 

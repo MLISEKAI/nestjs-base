@@ -52,11 +52,11 @@ export class CommunityFeedController {
   @Get()
   @UseGuards(AuthGuard('account-auth'))
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Lấy community feed với hot topics' })
+  @ApiOperation({ summary: 'Lấy community feed (public posts)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({
-    description: 'Community feed với hot topics và posts',
+    description: 'Community feed với danh sách public posts',
     type: CommunityFeedResponseDto,
   })
   getCommunityFeed(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
