@@ -109,7 +109,10 @@ export class UserController {
       ...query,
       excludeUserId: currentUserId,
     });
-    const usersWithStatus = await this.connectionsService.attachStatus(currentUserId, result.items);
+    // Convert readonly array to mutable array để tương thích với attachStatus signature
+    const usersWithStatus = await this.connectionsService.attachStatus(currentUserId, [
+      ...result.items,
+    ]);
     // ResponseInterceptor sẽ tự động wrap với format chuẩn
     return {
       items: usersWithStatus,

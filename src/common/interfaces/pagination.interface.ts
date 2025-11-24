@@ -32,7 +32,7 @@ export interface IPaginationMeta {
  */
 export interface IPaginatedResponse<T> {
   /** Mảng items trong trang hiện tại */
-  readonly items: readonly T[];
+  readonly items: T[];
   /** Pagination metadata */
   readonly meta: IPaginationMeta;
 }
@@ -86,7 +86,7 @@ export interface CursorPaginationParams {
  */
 export interface CursorPaginationResult<T> {
   /** Mảng items trong trang hiện tại */
-  readonly items: readonly T[];
+  readonly items: T[];
   /** Cursor cho trang tiếp theo (null nếu không còn) */
   readonly nextCursor: string | null;
   /** Có còn trang tiếp theo không */

@@ -19,6 +19,7 @@ import { UserConnectionDto } from '../dto/connection-user.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 // Import interfaces và types để type-check
 import type { PaginationMeta } from '../../../common/interfaces/prisma.interface';
+import type { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 import type { ResUser } from '@prisma/client';
 // Import NotificationService với forwardRef để tránh circular dependency
 import { NotificationService } from '../../notifications/service/notification.service';
@@ -578,7 +579,7 @@ export class UserConnectionsService {
     }
 
     // No search - use existing methods with pagination
-    let result: { items: UserConnectionDto[]; meta: any };
+    let result: IPaginatedResponse<UserConnectionDto>;
 
     if (type === 'followers') {
       result = await this.getFollowers(userId, page, limit);

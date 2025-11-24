@@ -4,8 +4,8 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { CloudinaryService } from './cloudinary.service';
 // Import interface cho image transformation options
 import { ImageTransformationOptions } from '../interfaces/image-transformation.interface';
-// Import music-metadata để extract duration từ audio files
-import { parseBuffer } from 'music-metadata';
+// music-metadata là ESM module, cần sử dụng dynamic import
+// Không import trực tiếp ở top-level để tránh lỗi CommonJS/ESM mismatch
 // Import fs/promises để đọc file từ disk khi Multer sử dụng diskStorage
 import { readFile } from 'fs/promises';
 
@@ -253,6 +253,9 @@ export class UploadService {
       }
 
       if (buffer) {
+        // Dynamic import music-metadata vì nó là ESM module
+        // Sử dụng dynamic import để tránh lỗi CommonJS/ESM mismatch
+        const { parseBuffer } = await import('music-metadata');
         const metadata = await parseBuffer(buffer);
         // duration được tính bằng seconds (metadata.format?.duration có thể là undefined hoặc 0)
         // Sử dụng optional chaining để tránh TypeError nếu metadata.format là undefined
