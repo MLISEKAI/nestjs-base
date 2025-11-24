@@ -61,13 +61,70 @@ export class GiftsPublicController {
     return this.giftWallService.getGiftWall(userId);
   }
 
+  /**
+   * Route cho trường hợp không có milestone_id (lấy tất cả milestones)
+   * Phải đặt TRƯỚC route có :milestone_id để NestJS match đúng
+   */
+  @Get('gift-wall/givers')
+  @ApiOperation({
+    summary: '[PUBLIC] Xem milestones của user (không cần đăng nhập) - Tất cả milestones',
+  })
+  @ApiParam({ name: 'user_id', description: 'ID của user' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách milestones với progress và pagination',
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'gift-item-1' },
+              name: { type: 'string', example: 'Quà tặng 1' },
+              image_url: { type: 'string', example: '/images/gift_milestone_1.png' },
+              required_count: { type: 'number', example: 10 },
+              current_count: { type: 'number', example: 5 },
+            },
+          },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            item_count: { type: 'number', example: 10 },
+            total_items: { type: 'number', example: 100 },
+            items_per_page: { type: 'number', example: 20 },
+            total_pages: { type: 'number', example: 5 },
+            current_page: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
+  })
+  getGiftWallMilestonesAll(@Param('user_id') userId: string, @Query() query?: BaseQueryDto) {
+    return this.giftWallService.getGiftWallMilestones(userId, undefined, query);
+  }
+
+  /**
+   * Route cho trường hợp có milestone_id (lấy milestone cụ thể)
+   * Phải đặt SAU route không có :milestone_id để NestJS match đúng
+   */
   @Get('gift-wall/:milestone_id/givers')
-  @ApiOperation({ summary: '[PUBLIC] Xem milestones của user (không cần đăng nhập)' })
+  @ApiOperation({
+    summary: '[PUBLIC] Xem milestones của user (không cần đăng nhập) - Milestone cụ thể',
+  })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiParam({
     name: 'milestone_id',
-    description: 'ID của milestone (optional)',
-    required: false,
+    description: 'ID của milestone (gift_item_id)',
+    required: true,
     type: String,
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
@@ -108,9 +165,9 @@ export class GiftsPublicController {
       },
     },
   })
-  getGiftWallMilestones(
+  getGiftWallMilestonesById(
     @Param('user_id') userId: string,
-    @Param('milestone_id') milestoneId?: string,
+    @Param('milestone_id') milestoneId: string,
     @Query() query?: BaseQueryDto,
   ) {
     return this.giftWallService.getGiftWallMilestones(userId, milestoneId, query);

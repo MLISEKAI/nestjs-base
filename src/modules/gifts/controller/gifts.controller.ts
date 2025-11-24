@@ -125,13 +125,13 @@ export class GiftsController {
     return this.giftWallService.getGiftWall(userId);
   }
 
-  @Get('gift-wall/:milestone_id/givers')
-  @ApiOperation({ summary: 'Lấy danh sách milestones với progress của user hiện tại' })
-  @ApiParam({
-    name: 'milestone_id',
-    description: 'ID của milestone (optional, nếu không có thì trả về tất cả)',
-    required: false,
-    type: String,
+  /**
+   * Route cho trường hợp không có milestone_id (lấy tất cả milestones)
+   * Phải đặt TRƯỚC route có :milestone_id để NestJS match đúng
+   */
+  @Get('gift-wall/givers')
+  @ApiOperation({
+    summary: 'Lấy danh sách milestones với progress của user hiện tại (tất cả milestones)',
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({
@@ -139,6 +139,24 @@ export class GiftsController {
     required: false,
     type: Number,
     description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search keyword',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort field and order (field:asc or field:desc)',
+  })
+  @ApiQuery({
+    name: 'since',
+    required: false,
+    type: String,
+    description: 'Timestamp for pull-to-refresh (only return posts created after this time)',
   })
   @ApiOkResponse({
     description: 'Danh sách milestones với progress và pagination',
@@ -171,9 +189,85 @@ export class GiftsController {
       },
     },
   })
-  getGiftWallMilestones(
+  getGiftWallMilestonesAll(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
+    const userId = req.user.id;
+    // Gọi service với milestoneId = undefined để lấy tất cả milestones
+    return this.giftWallService.getGiftWallMilestones(userId, undefined, query);
+  }
+
+  /**
+   * Route cho trường hợp có milestone_id (lấy milestone cụ thể)
+   * Phải đặt SAU route không có :milestone_id để NestJS match đúng
+   */
+  @Get('gift-wall/:milestone_id/givers')
+  @ApiOperation({
+    summary: 'Lấy danh sách milestones với progress của user hiện tại (milestone cụ thể)',
+  })
+  @ApiParam({
+    name: 'milestone_id',
+    description: 'ID của milestone (gift_item_id)',
+    required: true,
+    type: String,
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mỗi trang (mặc định: 20)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search keyword',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort field and order (field:asc or field:desc)',
+  })
+  @ApiQuery({
+    name: 'since',
+    required: false,
+    type: String,
+    description: 'Timestamp for pull-to-refresh (only return posts created after this time)',
+  })
+  @ApiOkResponse({
+    description: 'Danh sách milestones với progress và pagination',
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'gift-item-1' },
+              name: { type: 'string', example: 'Quà tặng 1' },
+              image_url: { type: 'string', example: '/images/gift_milestone_1.png' },
+              required_count: { type: 'number', example: 10 },
+              current_count: { type: 'number', example: 5 },
+            },
+          },
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            item_count: { type: 'number', example: 10 },
+            total_items: { type: 'number', example: 100 },
+            items_per_page: { type: 'number', example: 20 },
+            total_pages: { type: 'number', example: 5 },
+            current_page: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
+  })
+  getGiftWallMilestonesById(
     @Req() req: AuthenticatedRequest,
-    @Param('milestone_id') milestoneId?: string,
+    @Param('milestone_id') milestoneId: string,
     @Query() query?: BaseQueryDto,
   ) {
     const userId = req.user.id;
