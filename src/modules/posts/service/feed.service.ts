@@ -32,10 +32,7 @@ export class FeedService {
       user: {
         id: post.user?.id || post.user_id,
         nickname: post.user?.nickname || '',
-        username: post.user?.union_id,
-        display_name: post.user?.nickname,
         avatar: post.user?.avatar,
-        avatar_url: post.user?.avatar,
       },
       content: post.content,
       media: (post.media || []).map((media) => ({

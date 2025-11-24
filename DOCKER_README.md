@@ -7,6 +7,65 @@ Hướng dẫn chạy NestJS REST API với Docker.
 - Docker >= 20.10
 - Docker Compose >= 2.0
 
+## ⚠️ Troubleshooting
+
+### Lỗi `npm ci` failed khi build
+
+Nếu gặp lỗi:
+
+```
+failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1
+```
+
+**Nguyên nhân**: Docker đang cache layer cũ hoặc `package-lock.json` bị outdated.
+
+**Giải pháp**:
+
+**Option 1: Rebuild với script (Windows)**
+
+```powershell
+.\docker-rebuild.ps1
+```
+
+**Option 2: Rebuild với script (Linux/Mac)**
+
+```bash
+chmod +x docker-rebuild.sh
+./docker-rebuild.sh
+```
+
+**Option 3: Manual rebuild**
+
+```bash
+# Stop containers
+docker compose -f docker-compose.local.yml down
+
+# Remove images and cache
+docker compose -f docker-compose.local.yml down --rmi all
+docker builder prune -f
+
+# Rebuild without cache
+docker compose -f docker-compose.local.yml build --no-cache
+
+# Start
+docker compose -f docker-compose.local.yml up -d
+```
+
+**Option 4: Regenerate package-lock.json**
+
+```bash
+# Xóa node_modules và package-lock.json
+rm -rf node_modules package-lock.json
+
+# Reinstall
+npm install
+
+# Rebuild Docker
+docker compose -f docker-compose.local.yml up -d --build
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Production Mode

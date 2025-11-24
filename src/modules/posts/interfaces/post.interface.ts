@@ -50,10 +50,7 @@ export interface FormattedPost {
   user: {
     id: string;
     nickname: string;
-    username?: string;
-    display_name?: string;
     avatar?: string;
-    avatar_url?: string;
   };
   content: string;
   media: Array<{

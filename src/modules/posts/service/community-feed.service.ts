@@ -169,13 +169,22 @@ export class CommunityFeedService {
     );
   }
 
-  async getPosts(categoryId?: string, query?: BaseQueryDto, userId?: string) {
+  async getPosts(
+    categoryId?: string,
+    query?: BaseQueryDto & { nocache?: string },
+    userId?: string,
+  ) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
     const cacheKey = `community:posts:${categoryId || 'all'}:page:${page}:limit:${take}`;
     const cacheTtl = 60; // 1 phút
+
+    // Nếu có nocache parameter, xóa cache trước
+    if (query?.nocache === 'true' || query?.nocache === '1') {
+      await this.cacheService.del(cacheKey);
+    }
 
     return this.cacheService.getOrSet(
       cacheKey,
@@ -196,7 +205,7 @@ export class CommunityFeedService {
         const [posts, total] = await Promise.all([
           this.prisma.resPost.findMany({
             where,
-            take,
+            take: Math.min(take, 50),
             skip,
             orderBy: { created_at: 'desc' },
             include: {
@@ -251,9 +260,8 @@ export class CommunityFeedService {
           id: post.id,
           user: {
             id: post.user.id,
-            username: post.user.nickname,
-            display_name: post.user.nickname,
-            avatar_url: post.user.avatar,
+            nickname: post.user.nickname,
+            avatar: post.user.avatar,
           },
           content: post.content,
           media: post.media.map((m) => ({

@@ -68,10 +68,16 @@ export class CommunityFeedController {
   @ApiQuery({ name: 'categoryId', required: false, description: 'Lọc theo category ID' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({
+    name: 'nocache',
+    required: false,
+    type: String,
+    description: 'Bypass cache (set to "true" or "1" to refresh data)',
+  })
   @ApiOkResponse({ description: 'Danh sách posts với pagination' })
   getPosts(
     @Query('categoryId') categoryId?: string,
-    @Query() query?: BaseQueryDto,
+    @Query() query?: BaseQueryDto & { nocache?: string },
     @Req() req?: AuthenticatedRequest,
   ) {
     const userId = req?.user?.id;
