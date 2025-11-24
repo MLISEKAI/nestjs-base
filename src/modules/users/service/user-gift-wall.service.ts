@@ -146,11 +146,11 @@ export class UserGiftWallService {
   }
 
   /**
-   * Get gift wall milestones with progress per gift item
-   * Cached for 5 minutes
-   * @param userId - User ID
+   * Lấy danh sách milestones với progress của user
+   * @param userId - ID của user
    * @param milestoneId - Optional: ID của gift item (gift_item_id) để filter milestone cụ thể
    * @param query - Optional: Pagination query (page, limit)
+   * @returns Danh sách milestones với progress
    */
   async getGiftWallMilestones(
     userId: string,
@@ -201,10 +201,16 @@ export class UserGiftWallService {
           giftCounts.set(gift.gift_item_id, current + gift.quantity);
         });
 
-        // Get milestones for each gift item (default: 10 gifts needed to unlock)
+        // Get milestones for each gift item
+        // required_count có thể được lưu trong DB (ResGiftItem.required_count) hoặc dùng default = 10
         const milestones = giftItems.map((item) => {
           const current_count = giftCounts.get(item.id) || 0;
-          const required_count = 10; // Default milestone requirement
+          // TODO: Thêm field required_count vào ResGiftItem schema để config theo từng gift item
+          // Hiện tại dùng default = 10, nhưng có thể thay đổi theo logic:
+          // - Nếu current_count >= required_count: có thể tính milestone level tiếp theo
+          // - Ví dụ: level 1 = 10, level 2 = 50, level 3 = 100, ...
+          const DEFAULT_REQUIRED_COUNT = 10;
+          const required_count = DEFAULT_REQUIRED_COUNT;
 
           return {
             id: item.id,

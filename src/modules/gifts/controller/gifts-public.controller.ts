@@ -90,8 +90,18 @@ export class GiftsPublicController {
               id: { type: 'string', example: 'gift-item-1' },
               name: { type: 'string', example: 'Quà tặng 1' },
               image_url: { type: 'string', example: '/images/gift_milestone_1.png' },
-              required_count: { type: 'number', example: 10 },
-              current_count: { type: 'number', example: 5 },
+              required_count: {
+                type: 'number',
+                example: 10,
+                description:
+                  'Số lượng quà cần để unlock milestone này (mặc định = 10). Nếu current_count >= required_count, milestone đã được unlock. Ví dụ: nếu user đã nhận 100 quà và required_count = 10, thì milestone đã được unlock 10 lần (100/10 = 10).',
+              },
+              current_count: {
+                type: 'number',
+                example: 100,
+                description:
+                  'Số lượng quà user đã nhận được (tổng quantity từ res_gift). Ví dụ: nếu user đã nhận 100 quà Rose, thì current_count = 100. Progress = current_count / required_count.',
+              },
             },
           },
         },
@@ -147,8 +157,18 @@ export class GiftsPublicController {
               id: { type: 'string', example: 'gift-item-1' },
               name: { type: 'string', example: 'Quà tặng 1' },
               image_url: { type: 'string', example: '/images/gift_milestone_1.png' },
-              required_count: { type: 'number', example: 10 },
-              current_count: { type: 'number', example: 5 },
+              required_count: {
+                type: 'number',
+                example: 10,
+                description:
+                  'Số lượng quà cần để unlock milestone này (mặc định = 10). Nếu current_count >= required_count, milestone đã được unlock. Ví dụ: nếu user đã nhận 100 quà và required_count = 10, thì milestone đã được unlock 10 lần (100/10 = 10).',
+              },
+              current_count: {
+                type: 'number',
+                example: 100,
+                description:
+                  'Số lượng quà user đã nhận được (tổng quantity từ res_gift). Ví dụ: nếu user đã nhận 100 quà Rose, thì current_count = 100. Progress = current_count / required_count.',
+              },
             },
           },
         },
