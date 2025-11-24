@@ -32,6 +32,7 @@ import { ConvertService } from '../service/convert.service';
 import { DepositService } from '../service/deposit.service';
 import { IapService } from '../service/iap.service';
 import { TransferService } from '../service/transfer.service';
+import { PaymentMethodService } from '../service/payment-method.service';
 import {
   WalletSummaryResponseDto,
   RechargePackageDto,
@@ -57,6 +58,7 @@ import {
   UpdateDepositNetworkDto,
   VexBalanceResponseDto,
   DiamondBalanceResponseDto,
+  PaymentMethodDto,
 } from '../dto/diamond-wallet.dto';
 import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
@@ -81,6 +83,7 @@ export class WalletController {
     private readonly depositService: DepositService,
     private readonly iapService: IapService,
     private readonly transferService: TransferService,
+    private readonly paymentMethodService: PaymentMethodService,
   ) {}
 
   // ========== 1. CRUD Basic Wallet ==========
@@ -196,6 +199,20 @@ export class WalletController {
   })
   getRechargePackages(): Promise<RechargePackageDto[]> {
     return this.rechargeService.getRechargePackages();
+  }
+
+  @Get('payment-methods')
+  @ApiOperation({
+    summary: 'Lấy danh sách phương thức thanh toán',
+    description:
+      'Lấy danh sách các phương thức thanh toán đang active (PayPal, Visa, etc.). Frontend sử dụng để hiển thị cho user chọn phương thức thanh toán.',
+  })
+  @ApiOkResponse({
+    type: [PaymentMethodDto],
+    description: 'Danh sách các phương thức thanh toán đang active',
+  })
+  getPaymentMethods(): Promise<PaymentMethodDto[]> {
+    return this.paymentMethodService.getPaymentMethods();
   }
 
   @Post('recharge/checkout')

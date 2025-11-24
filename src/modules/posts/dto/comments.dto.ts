@@ -1,5 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, MinLength, MaxLength } from 'class-validator';
+
+export class CommentUserDto {
+  @ApiProperty({ example: 'user-1' })
+  id: string;
+
+  @ApiProperty({ example: 'john_doe' })
+  nickname: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
+  avatar?: string;
+}
 
 export class CommentDto {
   @ApiProperty({ example: 'comment-1' })
@@ -23,30 +34,30 @@ export class CommentDto {
   @ApiProperty({ example: '2025-11-12T00:00:00.000Z' })
   updated_at: Date;
 
-  @ApiPropertyOptional({ description: 'User info' })
-  user?: {
-    id: string;
-    nickname: string;
-    avatar?: string;
-  };
+  @ApiPropertyOptional({ type: CommentUserDto, description: 'User info' })
+  user?: CommentUserDto;
 
-  @ApiPropertyOptional({ description: 'Replies count' })
+  @ApiPropertyOptional({ example: 5, description: 'Replies count' })
   replies_count?: number;
 }
 
 export class CreateCommentDto {
   @ApiProperty({ example: 'Great post!', description: 'Comment content' })
   @IsString()
+  @MinLength(1, { message: 'Comment content cannot be empty' })
+  @MaxLength(1000, { message: 'Comment content cannot exceed 1000 characters' })
   content: string;
 
   @ApiPropertyOptional({ example: 'comment-2', description: 'Parent comment ID for replies' })
   @IsOptional()
-  @IsUUID()
+  @IsUUID('4', { message: 'Parent ID must be a valid UUID' })
   parent_id?: string;
 }
 
 export class UpdateCommentDto {
   @ApiProperty({ example: 'Updated comment', description: 'Comment content' })
   @IsString()
+  @MinLength(1, { message: 'Comment content cannot be empty' })
+  @MaxLength(1000, { message: 'Comment content cannot exceed 1000 characters' })
   content: string;
 }

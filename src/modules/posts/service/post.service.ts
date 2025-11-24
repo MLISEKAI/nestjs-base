@@ -29,6 +29,24 @@ export class PostService {
         const [posts, total] = await Promise.all([
           this.prisma.resPost.findMany({
             where: { user_id: userId },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  avatar: true,
+                },
+              },
+              media: {
+                orderBy: { order: 'asc' },
+              },
+              _count: {
+                select: {
+                  likes: true,
+                  comments: true,
+                },
+              },
+            },
             take,
             skip,
             orderBy: { created_at: 'desc' },
@@ -37,6 +55,46 @@ export class PostService {
         ]);
 
         return buildPaginatedResponse(posts, total, page, take);
+      },
+      cacheTtl,
+    );
+  }
+
+  async getPostById(postId: string) {
+    const cacheKey = `post:${postId}`;
+    const cacheTtl = 300; // 5 phút
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const post = await this.prisma.resPost.findUnique({
+          where: { id: postId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                nickname: true,
+                avatar: true,
+                union_id: true,
+              },
+            },
+            media: {
+              orderBy: { order: 'asc' },
+            },
+            _count: {
+              select: {
+                likes: true,
+                comments: true,
+              },
+            },
+          },
+        });
+
+        if (!post) {
+          throw new NotFoundException('Post not found');
+        }
+
+        return post;
       },
       cacheTtl,
     );

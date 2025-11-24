@@ -16,10 +16,26 @@ import { CommentService } from './service/comment.service';
 import { LikeController } from './controller/like.controller';
 import { LikeService } from './service/like.service';
 
+// Feed
+import { FeedService } from './service/feed.service';
+
+// Feed Controllers
+import { CommunityFeedController } from './controller/community-feed.controller';
+import { FriendsFeedController } from './controller/friends-feed.controller';
+import { LatestFeedController } from './controller/latest-feed.controller';
+
 @Module({
   imports: [PrismaModule, CacheModule, forwardRef(() => RealtimeModule)],
-  controllers: [PostController, CommentController, LikeController],
-  providers: [PostService, PostMediaService, CommentService, LikeService],
-  exports: [PostService, CommentService, LikeService],
+  controllers: [
+    PostController,
+    CommentController,
+    LikeController,
+    // Feed controllers
+    CommunityFeedController,
+    FriendsFeedController,
+    LatestFeedController,
+  ],
+  providers: [PostService, PostMediaService, CommentService, LikeService, FeedService],
+  exports: [PostService, CommentService, LikeService, FeedService],
 })
 export class PostsModule {}

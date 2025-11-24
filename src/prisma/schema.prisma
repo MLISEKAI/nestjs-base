@@ -48,7 +48,7 @@ model ResUser {
   followers    ResFollow[]    @relation("Followers")
   following    ResFollow[]    @relation("Following")
   blockedBy    ResBlock[]     @relation("BlockedBy")
-  blocking     ResBlock[]      @relation("Blocking")
+  blocking     ResBlock[]     @relation("Blocking")
   friendsA     ResFriend[]    @relation("FriendsA")
   friendsB     ResFriend[]    @relation("FriendsB")
   messagesSent ResMessage[]   @relation("MessagesSent")
@@ -56,45 +56,47 @@ model ResUser {
   giftsSent    ResGift[]      @relation("GiftsSent")
   giftsRecv    ResGift[]      @relation("GiftsRecv")
 
-  wallets          ResWallet[]
-  vipStatus        ResVipStatus?
-  depositAddress   ResDepositAddress?
-  storeItems ResStoreItem[]
-  tasks      ResTask[]
-  clans      ResUserClan[]
+  wallets        ResWallet[]
+  vipStatus      ResVipStatus?
+  depositAddress ResDepositAddress?
+  storeItems     ResStoreItem[]
+  tasks          ResTask[]
+  clans          ResUserClan[]
 
   loveSpace          ResLoveSpace?
   feedbacks          ResFeedback[]
-  location          ResLocation?
+  location           ResLocation?
   contributions      ResContribution?
   interests          ResInterest[]
   roomStatus         ResRoomStatus?
   post               ResPost[]
-  postComments       ResComment[]      @relation("CommentAuthor")
+  postComments       ResComment[]           @relation("CommentAuthor")
   postLikes          ResPostLike[]
+  postShares         ResPostShare[]
+  hashtagFollows     ResHashtagFollow[]
   stories            ResStory[]
   groupMembers       ResGroupMember[]
   groupMessages      ResGroupMessage[]
-  eventsCreated      ResEvent[]        @relation("EventCreator")
+  eventsCreated      ResEvent[]             @relation("EventCreator")
   eventParticipants  ResEventParticipant[]
   giftMilestones     ResGiftMilestone[]
   walletTransactions ResWalletTransaction[]
   inventories        ResInventory[]
 
-  supporters ResSupporter[] @relation("UserSupported")   // Người này được supporter
-  supporting ResSupporter[] @relation("UserSupporter")   // Người này đi supporter người khác
-  referralsAsReferrer  ResReferral[]    @relation("Referrer")
-  referralsAsReferred  ResReferral[]    @relation("Referred")
-  profileViewsAsViewer ResProfileView[] @relation("Viewer")
-  profileViewsAsTarget ResProfileView[] @relation("Target")
-  relationships        ResRelationship[] @relation("UserRelationships")
-  relationshipsRelated ResRelationship[] @relation("UserRelated")
+  supporters           ResSupporter[]        @relation("UserSupported") // Người này được supporter
+  supporting           ResSupporter[]        @relation("UserSupporter") // Người này đi supporter người khác
+  referralsAsReferrer  ResReferral[]         @relation("Referrer")
+  referralsAsReferred  ResReferral[]         @relation("Referred")
+  profileViewsAsViewer ResProfileView[]      @relation("Viewer")
+  profileViewsAsTarget ResProfileView[]      @relation("Target")
+  relationships        ResRelationship[]     @relation("UserRelationships")
+  relationshipsRelated ResRelationship[]     @relation("UserRelated")
   verificationCodes    ResVerificationCode[]
   refreshTokens        ResRefreshToken[]
   blacklistedTokens    ResTokenBlacklist[]
   twoFactor            ResTwoFactor?
-  notificationsSent    ResNotification[]    @relation("NotificationSender")
-  notificationsRecv    ResNotification[]    @relation("NotificationReceiver")
+  notificationsSent    ResNotification[]     @relation("NotificationSender")
+  notificationsRecv    ResNotification[]     @relation("NotificationReceiver")
 
   @@index([union_id, deleted_at])
   @@index([union_id])
@@ -110,14 +112,14 @@ model ResAssociate {
   is_deleted Boolean   @default(false)
 
   // Base
-  user_id      String
-  email        String?
-  phone_number String?
-  ref_id       String
-  hash         String?
-  provider     ProviderEnum
-  email_verified Boolean   @default(false)
-  phone_verified Boolean   @default(false)
+  user_id        String
+  email          String?
+  phone_number   String?
+  ref_id         String
+  hash           String?
+  provider       ProviderEnum
+  email_verified Boolean      @default(false)
+  phone_verified Boolean      @default(false)
 
   // Relation
   user ResUser @relation(fields: [user_id], references: [id])
@@ -177,8 +179,8 @@ model ResBlock {
   id         String   @id @default(uuid())
   created_at DateTime @default(now())
 
-  blocker_id  String // User who blocks
-  blocked_id  String // User who is blocked
+  blocker_id String // User who blocks
+  blocked_id String // User who is blocked
 
   blocker ResUser @relation("Blocking", fields: [blocker_id], references: [id], onDelete: Cascade)
   blocked ResUser @relation("BlockedBy", fields: [blocked_id], references: [id], onDelete: Cascade)
@@ -348,14 +350,14 @@ model ResWalletTransaction {
 
 // RECHARGE PACKAGE
 model ResRechargePackage {
-  id          String   @id @default(uuid())
-  package_id  Int      @unique
-  diamonds    Int
-  price       Decimal  @db.Decimal(12, 2)
-  bonus       String?
-  is_active   Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id         String   @id @default(uuid())
+  package_id Int      @unique
+  diamonds   Int
+  price      Decimal  @db.Decimal(12, 2)
+  bonus      String?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([package_id])
   @@index([is_active])
@@ -384,7 +386,7 @@ model ResPaymentMethod {
   id          String   @id @default(uuid())
   method_id   String   @unique
   name        String
-  type        String   // card, subscription, crypto
+  type        String // card, subscription, crypto
   masked_info String?
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
@@ -397,7 +399,7 @@ model ResPaymentMethod {
 
 // DEPOSIT ADDRESS
 model ResDepositAddress {
-  id             String   @id @default(uuid())
+  id              String   @id @default(uuid())
   user_id         String   @unique
   deposit_address String
   qr_code         String?
@@ -613,7 +615,7 @@ model ResInterest {
 
 // Supporter
 model ResSupporter {
-  id           String   @id @default(uuid())
+  id           String @id @default(uuid())
   user_id      String
   supporter_id String
   amount       Int
@@ -624,7 +626,7 @@ model ResSupporter {
 
 // Relationship
 model ResRelationship {
-  id              String  @id @default(uuid())
+  id              String @id @default(uuid())
   user_id         String
   related_user_id String
   type            String
@@ -645,20 +647,32 @@ model ResRoomStatus {
   @@map("res_room_status")
 }
 
+enum PostPrivacy {
+  public
+  private
+  friends
+}
+
 model ResPost {
-  id         String          @id @default(uuid())
-  user_id    String
-  content    String
-  created_at DateTime        @default(now())
+  id          String      @id @default(uuid())
+  user_id     String
+  content     String
+  privacy     PostPrivacy @default(public)
+  share_count Int         @default(0)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
 
-  user       ResUser         @relation(fields: [user_id], references: [id])
-  comments   ResComment[]
-  likes      ResPostLike[]
-  media      ResPostMedia[]
+  user     ResUser          @relation(fields: [user_id], references: [id])
+  comments ResComment[]
+  likes    ResPostLike[]
+  media    ResPostMedia[]
+  hashtags ResPostHashtag[]
+  shares   ResPostShare[]
 
-  @@map("res_post")
   @@index([user_id])
   @@index([created_at])
+  @@index([privacy])
+  @@map("res_post")
 }
 
 // POST COMMENT
@@ -667,13 +681,13 @@ model ResComment {
   post_id    String
   user_id    String
   content    String
-  parent_id  String?  // For nested comments/replies
+  parent_id  String? // For nested comments/replies
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  post   ResPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user   ResUser @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
-  parent ResComment? @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  post    ResPost      @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user    ResUser      @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
+  parent  ResComment?  @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
   replies ResComment[] @relation("CommentReplies")
 
   @@index([post_id])
@@ -702,12 +716,15 @@ model ResPostLike {
 
 // POST MEDIA ATTACHMENT
 model ResPostMedia {
-  id         String   @id @default(uuid())
-  post_id    String
-  media_url  String
-  media_type String   // image, video, audio, file
-  order      Int      @default(0)
-  created_at DateTime @default(now())
+  id            String   @id @default(uuid())
+  post_id       String
+  media_url     String
+  thumbnail_url String?
+  media_type    String // image, video, audio, file
+  width         Int?
+  height        Int?
+  order         Int      @default(0)
+  created_at    DateTime @default(now())
 
   post ResPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
 
@@ -716,13 +733,79 @@ model ResPostMedia {
   @@map("res_post_media")
 }
 
+// HASHTAG
+model ResHashtag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  post_count  Int      @default(0)
+  view_count  Int      @default(0)
+  cover_image String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  posts     ResPostHashtag[]
+  followers ResHashtagFollow[]
+
+  @@index([name])
+  @@index([post_count])
+  @@map("res_hashtag")
+}
+
+// POST HASHTAG (Many-to-Many)
+model ResPostHashtag {
+  id         String   @id @default(uuid())
+  post_id    String
+  hashtag_id String
+  created_at DateTime @default(now())
+
+  post    ResPost    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  hashtag ResHashtag @relation(fields: [hashtag_id], references: [id], onDelete: Cascade)
+
+  @@unique([post_id, hashtag_id])
+  @@index([post_id])
+  @@index([hashtag_id])
+  @@map("res_post_hashtag")
+}
+
+// HASHTAG FOLLOW
+model ResHashtagFollow {
+  id         String   @id @default(uuid())
+  user_id    String
+  hashtag_id String
+  created_at DateTime @default(now())
+
+  user    ResUser    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  hashtag ResHashtag @relation(fields: [hashtag_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, hashtag_id])
+  @@index([user_id])
+  @@index([hashtag_id])
+  @@map("res_hashtag_follow")
+}
+
+// POST SHARE (Track who shared)
+model ResPostShare {
+  id         String   @id @default(uuid())
+  post_id    String
+  user_id    String
+  created_at DateTime @default(now())
+
+  post ResPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user ResUser @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([post_id, user_id])
+  @@index([post_id])
+  @@index([user_id])
+  @@map("res_post_share")
+}
+
 // STORY/STATUS
 model ResStory {
   id         String   @id @default(uuid())
   user_id    String
   content    String?
   media_url  String?
-  media_type String?  // image, video
+  media_type String? // image, video
   expires_at DateTime // Stories expire after 24 hours
   created_at DateTime @default(now())
 
@@ -755,11 +838,11 @@ model ResGroup {
 
 // GROUP MEMBER
 model ResGroupMember {
-  id         String   @id @default(uuid())
-  group_id   String
-  user_id    String
-  role       String   @default("member") // admin, moderator, member
-  joined_at  DateTime @default(now())
+  id        String   @id @default(uuid())
+  group_id  String
+  user_id   String
+  role      String   @default("member") // admin, moderator, member
+  joined_at DateTime @default(now())
 
   group ResGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
   user  ResUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -789,19 +872,19 @@ model ResGroupMessage {
 
 // EVENT/CALENDAR
 model ResEvent {
-  id          String   @id @default(uuid())
-  created_by  String
-  title       String
-  description String?
-  location    String?
-  start_time  DateTime
-  end_time    DateTime?
-  is_public   Boolean  @default(false)
+  id               String    @id @default(uuid())
+  created_by       String
+  title            String
+  description      String?
+  location         String?
+  start_time       DateTime
+  end_time         DateTime?
+  is_public        Boolean   @default(false)
   max_participants Int?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
 
-  creator     ResUser              @relation("EventCreator", fields: [created_by], references: [id], onDelete: Cascade)
+  creator      ResUser               @relation("EventCreator", fields: [created_by], references: [id], onDelete: Cascade)
   participants ResEventParticipant[]
   giftItems    ResGiftItem[]
 
@@ -813,11 +896,11 @@ model ResEvent {
 
 // EVENT PARTICIPANT
 model ResEventParticipant {
-  id         String   @id @default(uuid())
-  event_id   String
-  user_id    String
-  status     String   @default("going") // going, maybe, not_going
-  joined_at  DateTime @default(now())
+  id        String   @id @default(uuid())
+  event_id  String
+  user_id   String
+  status    String   @default("going") // going, maybe, not_going
+  joined_at DateTime @default(now())
 
   event ResEvent @relation(fields: [event_id], references: [id], onDelete: Cascade)
   user  ResUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -843,16 +926,16 @@ model ResTokenBlacklist {
 }
 
 model ResVerificationCode {
-  id         String                 @id @default(uuid())
-  user_id    String?
-  target     String
-  type       VerificationCodeType
-  code       String
-  expires_at DateTime
+  id          String               @id @default(uuid())
+  user_id     String?
+  target      String
+  type        VerificationCodeType
+  code        String
+  expires_at  DateTime
   verified_at DateTime?
-  attempts   Int                    @default(0)
-  context    String?
-  created_at DateTime               @default(now())
+  attempts    Int                  @default(0)
+  context     String?
+  created_at  DateTime             @default(now())
 
   user ResUser? @relation(fields: [user_id], references: [id])
 
@@ -861,12 +944,12 @@ model ResVerificationCode {
 }
 
 model ResRefreshToken {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   user_id        String
   token_hash     String
   expires_at     DateTime
   revoked_at     DateTime?
-  created_at     DateTime @default(now())
+  created_at     DateTime  @default(now())
   created_by_ip  String?
   replaced_by_id String?
 
@@ -893,20 +976,20 @@ enum NotificationStatus {
 }
 
 model ResNotification {
-  id         String             @id @default(uuid())
-  created_at DateTime           @default(now())
-  updated_at DateTime           @updatedAt
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  user_id    String             // Người nhận notification
-  sender_id  String?            // Người gửi (null nếu là system notification)
-  type       NotificationType
-  status     NotificationStatus @default(UNREAD)
-  title      String
-  content    String
-  data       String?            // JSON data for additional info
-  link       String?            // Link to related content
+  user_id   String // Người nhận notification
+  sender_id String? // Người gửi (null nếu là system notification)
+  type      NotificationType
+  status    NotificationStatus @default(UNREAD)
+  title     String
+  content   String
+  data      String? // JSON data for additional info
+  link      String? // Link to related content
 
-  user   ResUser @relation("NotificationReceiver", fields: [user_id], references: [id], onDelete: Cascade)
+  user   ResUser  @relation("NotificationReceiver", fields: [user_id], references: [id], onDelete: Cascade)
   sender ResUser? @relation("NotificationSender", fields: [sender_id], references: [id], onDelete: SetNull)
 
   @@index([user_id, status])
@@ -916,14 +999,14 @@ model ResNotification {
 }
 
 model ResTwoFactor {
-  id           String   @id @default(uuid())
-  user_id      String   @unique
+  id           String    @id @default(uuid())
+  user_id      String    @unique
   secret       String
-  enabled      Boolean  @default(false)
+  enabled      Boolean   @default(false)
   verified_at  DateTime?
-  backup_codes String[] @default([])
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  backup_codes String[]  @default([])
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
 
   user ResUser @relation(fields: [user_id], references: [id])
 
