@@ -1,14 +1,24 @@
+// Import Injectable, exceptions và Logger từ NestJS
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from '../../prisma/prisma.service';
+// Import VerificationCodeType enum từ Prisma
 import { VerificationCodeType } from '@prisma/client';
+// Import crypto functions để hash codes và generate random codes
 import { createHash, randomInt, timingSafeEqual } from 'crypto';
 
+/**
+ * VerificationRequest - Interface cho verification code request
+ */
 interface VerificationRequest {
   userId?: string;
   target: string;
   context?: string;
 }
 
+/**
+ * VerificationResult - Interface cho verification code response
+ */
 interface VerificationResult {
   code: string;
   expiresAt: Date;
@@ -16,6 +26,24 @@ interface VerificationResult {
   type: VerificationCodeType;
 }
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * VerificationService - Service xử lý verification codes (email và phone)
+ *
+ * Chức năng chính:
+ * - Tạo verification codes cho email và phone
+ * - Verify verification codes
+ * - Track verification attempts (max 5 attempts)
+ * - Normalize email addresses
+ *
+ * Lưu ý:
+ * - Email codes có TTL 30 phút
+ * - Phone codes có TTL 5 phút
+ * - Codes được hash trước khi lưu vào database (SHA-256)
+ * - Sử dụng timing-safe comparison để prevent timing attacks
+ * - Max attempts: 5 lần, sau đó code bị lock
+ * - Codes chỉ được sử dụng một lần (verified_at được set sau khi verify)
+ */
 @Injectable()
 export class VerificationService {
   private readonly logger = new Logger(VerificationService.name);

@@ -1,6 +1,39 @@
+// Import ArgumentsHost, Catch, ExceptionFilter và HttpException từ NestJS
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common';
+// Import utility functions
 import { generateTraceId, Rsp } from '../utils';
 
+/**
+ * @Catch() - Catch tất cả exceptions (không có parameter = catch all)
+ * ResponseExceptionFilter - Global exception filter để format tất cả error responses
+ *
+ * Chức năng chính:
+ * - Catch tất cả exceptions và format với format chuẩn
+ * - Map HTTP status codes thành error codes
+ * - Generate traceId cho mỗi error response
+ *
+ * Error codes mapping:
+ * - 401 (login): code = 3
+ * - 401 (other): code = 401
+ * - 403: code = 403
+ * - 404: code = 404
+ * - 400: code = 2
+ * - 503: code = 503
+ * - Other: code = 2
+ *
+ * Format chuẩn:
+ * {
+ *   error: true,
+ *   code: error_code,
+ *   message: error_message,
+ *   data: null,
+ *   traceId: "trace-123456"
+ * }
+ *
+ * Lưu ý:
+ * - Được apply globally trong main.ts
+ * - Tự động format tất cả errors trước khi trả về client
+ */
 @Catch()
 export class ResponseExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {

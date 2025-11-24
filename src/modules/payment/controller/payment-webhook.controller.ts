@@ -1,3 +1,4 @@
+// Import các decorator và class từ NestJS để tạo controller
 import {
   Controller,
   Post,
@@ -9,26 +10,48 @@ import {
   Logger,
   BadRequestException,
 } from '@nestjs/common';
+// Import các decorator từ Swagger để tạo API documentation
 import { ApiTags, ApiOperation, ApiExcludeController } from '@nestjs/swagger';
+// Import Response type từ Express
 import type { Response } from 'express';
+// Import PayPalService để xử lý business logic
 import { PayPalService } from '../service/paypal.service';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import interfaces để type-check
 import type { PayPalWebhookHeaders, PayPalWebhookPayload } from '../interfaces/webhook.interface';
 
 /**
- * Payment Webhook Controller
- * Nhận webhook và callback từ Payment Gateway (PayPal, etc.)
+ * @ApiTags('Payment Webhook') - Nhóm các endpoints này trong Swagger UI với tag "Payment Webhook"
+ * @ApiExcludeController() - Ẩn controller này khỏi Swagger vì đây là internal endpoint
+ * @Controller('payment') - Định nghĩa base route là /payment
+ * PaymentWebhookController - Controller xử lý các HTTP requests từ Payment Gateway (webhooks và callbacks)
  *
- * Lưu ý: Controller này KHÔNG yêu cầu authentication vì webhook
- * được gọi trực tiếp từ Payment Gateway
+ * Chức năng chính:
+ * - Nhận PayPal webhook events (PAYMENT.CAPTURE.COMPLETED, PAYMENT.CAPTURE.DENIED, etc.)
+ * - Xử lý PayPal payment success callback
+ * - Xử lý PayPal payment cancel callback
+ * - Verify webhook signature để đảm bảo security
+ * - Update transaction status trong database
+ *
+ * Lưu ý:
+ * - Controller này KHÔNG yêu cầu authentication vì webhook được gọi trực tiếp từ Payment Gateway
+ * - Phải verify webhook signature để đảm bảo request đến từ PayPal
+ * - Internal endpoint (không expose trong Swagger)
  */
 @ApiTags('Payment Webhook')
 @ApiExcludeController() // Ẩn khỏi Swagger vì đây là internal endpoint
 @Controller('payment')
 export class PaymentWebhookController {
+  // Logger để log các events và errors
   private readonly logger = new Logger(PaymentWebhookController.name);
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PayPalService và PrismaService khi tạo instance của controller
+   */
   constructor(
     private readonly paypalService: PayPalService,
     private readonly prisma: PrismaService,

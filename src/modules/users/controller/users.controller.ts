@@ -1,5 +1,8 @@
+// Import các decorator và class từ NestJS để tạo controller
 import { Controller, Get, Param, Put, Body, Post, Query, Req, UseGuards } from '@nestjs/common';
+// Import interface để type-check request có user authenticated
 import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
+// Import các decorator từ Swagger để tạo API documentation
 import {
   ApiTags,
   ApiOperation,
@@ -9,20 +12,42 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+// Import AuthGuard từ Passport để xác thực JWT token
 import { AuthGuard } from '@nestjs/passport';
+// Import OptionalAuthGuard để cho phép optional authentication
 import { OptionalAuthGuard } from '../../../auth/guards/optional-auth.guard';
+// Import các services để xử lý business logic
 import { UserProfileService } from '../service/user-profile.service';
-import { UserResponseDto, UpdateUserDto, UploadAvatarDto, SearchUsersQueryDto } from '../dto';
 import { UserConnectionsService } from '../service/user-connections.service';
 import { UserLevelService } from '../service/user-level.service';
+// Import các DTO để validate và type-check dữ liệu
+import { UserResponseDto, UpdateUserDto, UploadAvatarDto, SearchUsersQueryDto } from '../dto';
 import { UserBalanceDto } from '../dto/user-level.dto';
 
 /**
- * User Controller - Một số endpoints cần auth, một số public
+ * @ApiTags('Users (User)') - Nhóm các endpoints này trong Swagger UI với tag "Users (User)"
+ * @Controller('users') - Định nghĩa base route là /users
+ * UserController - Controller xử lý các HTTP requests liên quan đến user operations
+ *
+ * Chức năng chính:
+ * - Tìm kiếm users (public hoặc optional auth)
+ * - Xem profile của user khác (public)
+ * - Update profile của chính mình (cần auth)
+ * - Upload avatar (cần auth)
+ * - Xem connections stats (cần auth)
+ * - Xem user level và balance (cần auth)
+ *
+ * Lưu ý:
+ * - Một số endpoints cần authentication, một số public
+ * - OptionalAuthGuard cho phép endpoint hoạt động với hoặc không có token
  */
 @ApiTags('Users (User)')
 @Controller('users')
 export class UserController {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các services khi tạo instance của controller
+   */
   constructor(
     private readonly profileService: UserProfileService,
     private readonly connectionsService: UserConnectionsService,

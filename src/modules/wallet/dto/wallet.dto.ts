@@ -1,7 +1,14 @@
+// Import decorators từ Swagger để tạo API documentation
 import { ApiProperty } from '@nestjs/swagger';
+// Import decorators từ class-validator để validate dữ liệu
 import { IsNumber, IsOptional, IsString, IsEnum } from 'class-validator';
+// Import decorators từ class-transformer để transform dữ liệu
 import { Type } from 'class-transformer';
 
+/**
+ * WalletDto - DTO cho wallet response
+ * Chứa balance và currency của wallet
+ */
 export class WalletDto {
   @ApiProperty({ example: 1000 })
   balance: number;
@@ -10,6 +17,10 @@ export class WalletDto {
   currency: string;
 }
 
+/**
+ * CreateWalletDto - DTO để tạo wallet mới
+ * Chứa currency (diamond hoặc vex) và balance (optional, mặc định: 0)
+ */
 export class CreateWalletDto {
   @ApiProperty({
     example: 'diamond',
@@ -27,6 +38,11 @@ export class CreateWalletDto {
   balance?: number;
 }
 
+/**
+ * UpdateWalletDto - DTO để update wallet
+ * Chứa balance và currency (optional)
+ * Nếu không có currency, sẽ tự động tìm wallet với currency tương ứng
+ */
 export class UpdateWalletDto {
   @ApiProperty({ example: 1500, required: false })
   @IsOptional()

@@ -1,4 +1,6 @@
+// Import các decorator và class từ NestJS để tạo controller
 import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+// Import các decorator từ Swagger để tạo API documentation
 import {
   ApiTags,
   ApiOperation,
@@ -8,21 +10,42 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+// Import AuthGuard từ Passport để xác thực JWT token
 import { AuthGuard } from '@nestjs/passport';
+// Import AdminGuard để kiểm tra quyền admin
 import { AdminGuard } from '../../../common/guards/admin.guard';
+// Import NotificationService để xử lý business logic
 import { NotificationService } from '../service/notification.service';
+// Import các DTO để validate và type-check dữ liệu
 import { CreateNotificationDto } from '../dto/notification.dto';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
 /**
- * Admin Notifications Controller - Chỉ admin mới truy cập được
- * Dùng để quản lý notifications của bất kỳ user nào
+ * @ApiTags('Notifications (Admin)') - Nhóm các endpoints này trong Swagger UI với tag "Notifications (Admin)"
+ * @UseGuards(AuthGuard('account-auth'), AdminGuard) - Yêu cầu authentication và admin role
+ * @ApiBearerAuth('JWT-auth') - Yêu cầu JWT token trong header
+ * @Controller('admin/users/:user_id/notifications') - Định nghĩa base route là /admin/users/:user_id/notifications
+ * NotificationAdminController - Controller xử lý các HTTP requests liên quan đến notifications management (admin only)
+ *
+ * Chức năng chính:
+ * - Xem danh sách notifications của bất kỳ user nào (admin only)
+ * - Tạo notification cho bất kỳ user nào (admin only)
+ * - Xóa notification của bất kỳ user nào (admin only)
+ *
+ * Lưu ý:
+ * - Chỉ admin mới có quyền truy cập các endpoints này
+ * - Có thể quản lý notifications của bất kỳ user nào (không chỉ của chính mình)
  */
 @ApiTags('Notifications (Admin)')
 @UseGuards(AuthGuard('account-auth'), AdminGuard)
 @ApiBearerAuth('JWT-auth')
 @Controller('admin/users/:user_id/notifications')
 export class NotificationAdminController {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject NotificationService khi tạo instance của controller
+   */
   constructor(private readonly notificationService: NotificationService) {}
 
   @Get()

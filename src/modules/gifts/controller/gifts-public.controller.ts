@@ -1,16 +1,37 @@
+// Import các decorator và class từ NestJS để tạo controller
 import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+// Import các decorator từ Swagger để tạo API documentation
 import { ApiTags, ApiOperation, ApiOkResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+// Import UserGiftWallService để xử lý business logic
 import { UserGiftWallService } from '../../users/service/user-gift-wall.service';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
 /**
- * Public Gifts Controller - Không cần authentication
- * Dùng để xem gift wall của user khác (public profile)
+ * @ApiTags('Gifts (Public)') - Nhóm các endpoints này trong Swagger UI với tag "Gifts (Public)"
+ * @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+ *   - transform: true - Tự động transform dữ liệu
+ *   - whitelist: true - Chỉ giữ lại các properties được định nghĩa trong DTO
+ * @Controller('public/users/:user_id/gifts') - Định nghĩa base route là /public/users/:user_id/gifts
+ * GiftsPublicController - Controller xử lý các HTTP requests liên quan đến gifts (public endpoints)
+ *
+ * Chức năng chính:
+ * - Xem gift wall của user khác (public profile)
+ * - Xem milestones của user (public)
+ * - Không cần authentication (public endpoints)
+ *
+ * Lưu ý:
+ * - Tất cả endpoints đều public (không cần đăng nhập)
+ * - Dùng để xem gift wall của user khác trong public profile
  */
 @ApiTags('Gifts (Public)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('public/users/:user_id/gifts')
 export class GiftsPublicController {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject UserGiftWallService khi tạo instance của controller
+   */
   constructor(private readonly giftWallService: UserGiftWallService) {}
 
   @Get('gift-wall')

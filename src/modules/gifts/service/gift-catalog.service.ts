@@ -1,23 +1,66 @@
+// Import Injectable để đánh dấu class là NestJS service
 import { Injectable } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import BaseQueryDto cho pagination và filtering
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+// Import utility function để build paginated response
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+// Import interface cho paginated response
 import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * GiftCatalogService - Service xử lý business logic cho gift catalog
+ *
+ * Chức năng chính:
+ * - Lấy danh sách gift items với pagination, filtering, và sorting
+ * - Lấy sample gift items (cho preview/overview)
+ * - Cache gift items để tối ưu performance
+ *
+ * Lưu ý:
+ * - Gift items có thể là normal hoặc event gifts
+ * - Event gifts có thời gian kết thúc (event_end_date)
+ */
 @Injectable()
 export class GiftCatalogService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
   ) {}
 
+  /**
+   * Lấy danh sách gift items với pagination, filtering, và sorting
+   *
+   * @param type - Filter theo gift type (optional)
+   * @param query - BaseQueryDto chứa pagination, search, sort parameters
+   * @returns IPaginatedResponse chứa danh sách gift items và pagination metadata
+   *
+   * Quy trình:
+   * 1. Parse pagination parameters (page, limit)
+   * 2. Build where clause (filter theo type và search)
+   * 3. Build orderBy clause (sort theo field và order)
+   * 4. Query database với pagination
+   * 5. Format response để frontend dễ sử dụng
+   * 6. Return paginated response
+   *
+   * Lưu ý:
+   * - ResGiftItem không có created_at field, chỉ sort được theo: id, name, price, type
+   * - Event gifts có event_end_date để hiển thị thời gian kết thúc event
+   */
   async getGiftItems(type?: string, query?: BaseQueryDto): Promise<IPaginatedResponse<any>> {
-    // Pagination
-    const take = query?.limit && query.limit > 0 ? query.limit : 10;
-    const page = query?.page && query.page > 0 ? query.page : 1;
-    const skip = (page - 1) * take;
+    // Parse pagination parameters
+    const take = query?.limit && query.limit > 0 ? query.limit : 10; // Default 10 items per page
+    const page = query?.page && query.page > 0 ? query.page : 1; // Default page 1
+    const skip = (page - 1) * take; // Calculate skip offset
 
     const where: Prisma.ResGiftItemWhereInput = {};
 
@@ -91,8 +134,22 @@ export class GiftCatalogService {
   }
 
   /**
-   * Get gift items mẫu cho phần tổng quan (chỉ lấy một số items để hiển thị)
-   * Dùng cho GET /gifts - chỉ cần id, name, image_url, lấy limit items đầu tiên
+   * Lấy gift items mẫu cho phần tổng quan (preview)
+   * Chỉ lấy một số items để hiển thị, không cần pagination
+   *
+   * @param limit - Số lượng items cần lấy (mặc định: 3)
+   * @param type - Filter theo gift type (optional)
+   * @returns Array of gift items (chỉ có id, name, image_url)
+   *
+   * Quy trình:
+   * 1. Check cache trước (TTL: 30 phút)
+   * 2. Nếu không có cache, query database
+   * 3. Cache kết quả và return
+   *
+   * Lưu ý:
+   * - Dùng cho GET /gifts - chỉ cần id, name, image_url
+   * - Cache key: `gifts:items:sample:{limit}:{type || 'all'}`
+   * - Cache TTL: 30 phút (1800 seconds)
    */
   async getGiftItemsSample(limit: number = 3, type?: string) {
     const cacheKey = `gifts:items:sample:${limit}:${type || 'all'}`;

@@ -1,3 +1,4 @@
+// Import các decorator và class từ NestJS để tạo controller
 import {
   Controller,
   Get,
@@ -8,6 +9,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
+// Import các decorator từ Swagger để tạo API documentation
 import {
   ApiTags,
   ApiOperation,
@@ -16,17 +18,37 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+// Import AuthGuard từ Passport để xác thực JWT token
 import { AuthGuard } from '@nestjs/passport';
+// Import AdminGuard để kiểm tra quyền admin
 import { AdminGuard } from '../../../common/guards/admin.guard';
+// Import các services để xử lý business logic
 import { GiftCrudService } from '../service/gift-crud.service';
 import { GiftSummaryService } from '../service/gift-summary.service';
 import { UserGiftWallService } from '../../users/service/user-gift-wall.service';
 import { InventoryService } from '../../profile/inventory/service/inventory.service';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
 /**
- * Admin Gifts Controller - Chỉ admin mới truy cập được
- * Dùng để quản lý gifts của bất kỳ user nào
+ * @ApiTags('Gifts (Admin)') - Nhóm các endpoints này trong Swagger UI với tag "Gifts (Admin)"
+ * @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+ *   - transform: true - Tự động transform dữ liệu
+ *   - whitelist: true - Chỉ giữ lại các properties được định nghĩa trong DTO
+ * @UseGuards(AuthGuard('account-auth'), AdminGuard) - Yêu cầu authentication và admin role
+ * @ApiBearerAuth('JWT-auth') - Yêu cầu JWT token trong header
+ * @Controller('admin/users/:user_id/gifts') - Định nghĩa base route là /admin/users/:user_id/gifts
+ * GiftsAdminController - Controller xử lý các HTTP requests liên quan đến gifts management (admin only)
+ *
+ * Chức năng chính:
+ * - Xem top gifts của bất kỳ user nào (admin only)
+ * - Xem gift wall của bất kỳ user nào (admin only)
+ * - Xem milestones của bất kỳ user nào (admin only)
+ * - Xem inventory của bất kỳ user nào (admin only)
+ *
+ * Lưu ý:
+ * - Chỉ admin mới có quyền truy cập các endpoints này
+ * - Có thể quản lý gifts của bất kỳ user nào (không chỉ của chính mình)
  */
 @ApiTags('Gifts (Admin)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -34,6 +56,10 @@ import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 @ApiBearerAuth('JWT-auth')
 @Controller('admin/users/:user_id/gifts')
 export class GiftsAdminController {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các services khi tạo instance của controller
+   */
   constructor(
     private readonly crudService: GiftCrudService,
     private readonly summaryService: GiftSummaryService,

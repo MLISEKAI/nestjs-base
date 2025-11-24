@@ -1,12 +1,36 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
+// Import các DTO để validate và type-check dữ liệu
 import { CreateInventoryItemDto, UpdateInventoryItemDto } from '../dto/inventory.dto';
+// Import utility function để build paginated response
 import { buildPaginatedResponse } from '../../../../common/utils/pagination.util';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * InventoryService - Service xử lý business logic cho inventory (kho đồ của user)
+ *
+ * Chức năng chính:
+ * - CRUD inventory items
+ * - Lấy danh sách inventory với pagination và filtering
+ * - Filter theo item type
+ * - Format response với name và image_url từ ResItem
+ *
+ * Lưu ý:
+ * - Inventory items được link với ResItem để lấy thông tin (name, image_url)
+ * - ResInventory không có created_at field, dùng id để order
+ */
 @Injectable()
 export class InventoryService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService khi tạo instance của service
+   */
   constructor(private prisma: PrismaService) {}
 
   async getInventory(userId: string, query?: BaseQueryDto, itemType?: string) {

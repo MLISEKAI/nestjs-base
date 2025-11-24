@@ -1,8 +1,24 @@
-import { Controller, Get, Query, UseGuards, Req, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Query,
+  Param,
+  UsePipes,
+  ValidationPipe,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiQuery,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { CommunityFeedService } from '../service/community-feed.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
-import { FeedService } from '../service/feed.service';
 import { CommunityFeedResponseDto } from '../dto/feed.dto';
 import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
@@ -10,29 +26,64 @@ import type { AuthenticatedRequest } from '../../../common/interfaces/request.in
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('community')
 export class CommunityFeedController {
-  constructor(private readonly feedService: FeedService) {}
+  constructor(private readonly communityFeedService: CommunityFeedService) {}
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Lấy danh sách chủ đề/hashtag (Hot Topic)' })
+  @ApiOkResponse({ description: 'Danh sách categories với số bài viết' })
+  getCategories() {
+    return this.communityFeedService.getCategories();
+  }
+
+  @Get('categories/:hashtag_id')
+  @ApiOperation({ summary: 'Lấy chi tiết 1 chủ đề' })
+  @ApiParam({
+    name: 'hashtag_id',
+    description:
+      'Hashtag ID (UUID) - ID của hashtag/chủ đề muốn xem chi tiết. Lấy từ danh sách categories hoặc từ response của các API khác.',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    type: String,
+  })
+  @ApiOkResponse({ description: 'Chi tiết category' })
+  getCategory(@Param('hashtag_id') hashtagId: string) {
+    return this.communityFeedService.getCategory(hashtagId);
+  }
 
   @Get()
   @UseGuards(AuthGuard('account-auth'))
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Lấy community feed với hot topics' })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (default: 0)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page (default: 20, max: 50)',
-  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({
     description: 'Community feed với hot topics và posts',
     type: CommunityFeedResponseDto,
   })
   getCommunityFeed(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
-    return this.feedService.getCommunityFeed(req.user.id, query);
+    return this.communityFeedService.getCommunityFeed(req.user.id, query);
+  }
+
+  @Get('posts')
+  @ApiOperation({ summary: 'Lấy danh sách bài viết theo chủ đề' })
+  @ApiQuery({ name: 'categoryId', required: false, description: 'Lọc theo category ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({ description: 'Danh sách posts với pagination' })
+  getPosts(
+    @Query('categoryId') categoryId?: string,
+    @Query() query?: BaseQueryDto,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    const userId = req?.user?.id;
+    return this.communityFeedService.getPosts(categoryId, query, userId);
+  }
+
+  @Get('posts/:posts_id')
+  @ApiOperation({ summary: 'Lấy chi tiết 1 bài viết' })
+  @ApiParam({ name: 'posts_id', description: 'Posts ID' })
+  @ApiOkResponse({ description: 'Chi tiết post' })
+  getPost(@Param('posts_id') postsId: string, @Req() req?: AuthenticatedRequest) {
+    const userId = req?.user?.id;
+    return this.communityFeedService.getPost(postsId, userId);
   }
 }

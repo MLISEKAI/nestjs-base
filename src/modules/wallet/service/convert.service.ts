@@ -1,16 +1,37 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import các DTO để validate và type-check dữ liệu
 import {
   ConvertVexToDiamondDto,
   ConvertVexToDiamondResponseDto,
   VexPackageDto,
 } from '../dto/diamond-wallet.dto';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * ConvertService - Service xử lý business logic cho chuyển đổi VEX sang Diamond
+ *
+ * Chức năng chính:
+ * - Lấy danh sách các gói chuyển đổi VEX sang Diamond
+ * - Chuyển đổi VEX sang Diamond với bonus
+ * - Validate số dư và gói conversion
+ *
+ * Lưu ý:
+ * - Chỉ chấp nhận các gói cố định: 20, 50, 80, 120, 200, 420 VEX
+ * - Mỗi gói có base diamonds và bonus diamonds
+ * - Tự động tạo wallet nếu chưa có
+ */
 @Injectable()
 export class ConvertService {
-  // VEX to Diamond conversion packages với bonus
-  // Theo ảnh: các gói cố định với base diamonds và bonus
+  /**
+   * VEX to Diamond conversion packages với bonus
+   * Các gói cố định với base diamonds và bonus
+   * Chỉ chấp nhận các gói này, không cho phép chuyển đổi số lượng tùy ý
+   */
   private readonly VEX_CONVERSION_PACKAGES = [
     { vexAmount: 20, baseDiamonds: 435, bonus: 115 }, // 20 VEX → 435 + 115 = 550 diamonds
     { vexAmount: 50, baseDiamonds: 1230, bonus: 340 }, // 50 VEX → 1230 + 340 = 1570 diamonds
@@ -20,10 +41,26 @@ export class ConvertService {
     { vexAmount: 420, baseDiamonds: 112300, bonus: 33700 }, // 420 VEX → 112300 + 33700 = 146000 diamonds
   ];
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService khi tạo instance của service
+   */
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Lấy danh sách các gói mua Diamond bằng VEX
+   * Lấy danh sách các gói chuyển đổi VEX sang Diamond
+   *
+   * @returns Array of VexPackageDto chứa thông tin các gói conversion
+   *
+   * Quy trình:
+   * 1. Map các gói conversion cố định thành VexPackageDto
+   * 2. Tính totalDiamonds = baseDiamonds + bonusDiamonds
+   * 3. Return danh sách packages
+   *
+   * Lưu ý:
+   * - Chỉ có 6 gói cố định: 20, 50, 80, 120, 200, 420 VEX
+   * - Mỗi gói có base diamonds và bonus diamonds
+   * - Package ID = index + 1 (1, 2, 3, 4, 5, 6)
    */
   getVexPackages(): VexPackageDto[] {
     return this.VEX_CONVERSION_PACKAGES.map((pkg, index) => ({
@@ -37,7 +74,19 @@ export class ConvertService {
 
   /**
    * Tìm gói conversion phù hợp dựa trên VEX amount
-   * Chỉ chấp nhận các gói cố định: 20, 50, 80, 120, 200, 420 VEX
+   *
+   * @param vexAmount - Số lượng VEX muốn chuyển đổi
+   * @returns Object chứa baseDiamonds và bonus, hoặc null nếu không tìm thấy
+   *
+   * Quy trình:
+   * 1. Tìm gói chính xác với vexAmount
+   * 2. Nếu tìm thấy, return baseDiamonds và bonus
+   * 3. Nếu không tìm thấy, return null
+   *
+   * Lưu ý:
+   * - Chỉ chấp nhận các gói cố định: 20, 50, 80, 120, 200, 420 VEX
+   * - Không cho phép chuyển đổi số lượng tùy ý
+   * - Private method, chỉ được gọi từ convertVexToDiamond
    */
   private findConversionPackage(vexAmount: number): { baseDiamonds: number; bonus: number } | null {
     // Tìm gói chính xác
@@ -51,7 +100,27 @@ export class ConvertService {
   }
 
   /**
-   * Convert VEX to Diamond
+   * Chuyển đổi VEX sang Diamond
+   *
+   * @param userId - User ID (từ JWT token)
+   * @param dto - ConvertVexToDiamondDto chứa vexAmount
+   * @returns ConvertVexToDiamondResponseDto chứa thông tin conversion
+   *
+   * Quy trình:
+   * 1. Lấy hoặc tạo VEX wallet
+   * 2. Kiểm tra số dư VEX có đủ không
+   * 3. Tìm gói conversion phù hợp (chỉ chấp nhận gói cố định)
+   * 4. Lấy hoặc tạo Diamond wallet
+   * 5. Trừ VEX từ VEX wallet
+   * 6. Cộng Diamond (base + bonus) vào Diamond wallet
+   * 7. Tạo transaction records cho cả VEX và Diamond
+   * 8. Return thông tin conversion
+   *
+   * Lưu ý:
+   * - Chỉ chấp nhận các gói cố định: 20, 50, 80, 120, 200, 420 VEX
+   * - Mỗi gói có base diamonds và bonus diamonds
+   * - Tự động tạo wallet nếu chưa có
+   * - Tạo transaction với type 'convert' cho cả VEX (trừ) và Diamond (cộng)
    */
   async convertVexToDiamond(
     userId: string,

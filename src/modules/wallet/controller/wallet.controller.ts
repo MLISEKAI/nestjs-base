@@ -1,29 +1,35 @@
+// Import các decorator và class từ NestJS để tạo controller
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  UseGuards,
-  Req,
+  Controller, // Decorator đánh dấu class là controller
+  Get, // Decorator cho HTTP GET method
+  Post, // Decorator cho HTTP POST method
+  Patch, // Decorator cho HTTP PATCH method
+  Body, // Decorator để lấy body từ request
+  Query, // Decorator để lấy query parameters từ URL
+  UsePipes, // Decorator để sử dụng pipe (validation, transformation)
+  ValidationPipe, // Pipe để validate và transform dữ liệu
+  UseGuards, // Decorator để sử dụng guard (authentication, authorization)
+  Req, // Decorator để lấy request object
 } from '@nestjs/common';
+// Import các decorator từ Swagger để tạo API documentation
 import {
-  ApiTags,
-  ApiOperation,
-  ApiBody,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBearerAuth,
-  ApiBadRequestResponse,
-  ApiUnauthorizedResponse,
-  ApiNotFoundResponse,
+  ApiTags, // Nhóm các endpoints trong Swagger UI
+  ApiOperation, // Mô tả operation
+  ApiBody, // Mô tả request body
+  ApiOkResponse, // Mô tả response thành công (200)
+  ApiCreatedResponse, // Mô tả response khi tạo thành công (201)
+  ApiBearerAuth, // Yêu cầu JWT token trong header
+  ApiBadRequestResponse, // Mô tả response lỗi 400
+  ApiUnauthorizedResponse, // Mô tả response lỗi 401
+  ApiNotFoundResponse, // Mô tả response lỗi 404
 } from '@nestjs/swagger';
+// Import AuthGuard từ Passport để xác thực JWT token
 import { AuthGuard } from '@nestjs/passport';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+// Import các services để xử lý business logic
 import { WalletService } from '../service/wallet.service';
+// Import interface để type-check request có user authenticated
 import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 import { WalletSummaryService } from '../service/wallet-summary.service';
 import { RechargeService } from '../service/recharge.service';
@@ -64,8 +70,29 @@ import {
 import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
 /**
- * User Wallet Controller - Yêu cầu authentication
- * User chỉ có thể xem/sửa wallet của chính mình
+ * @ApiTags('Wallet (User)') - Nhóm các endpoints này trong Swagger UI với tag "Wallet (User)"
+ * @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+ *   - transform: true - Tự động transform dữ liệu (ví dụ: string "123" -> number 123)
+ *   - whitelist: true - Chỉ giữ lại các properties được định nghĩa trong DTO, loại bỏ các properties khác
+ * @UseGuards(AuthGuard('account-auth')) - Yêu cầu authentication (JWT token)
+ * @ApiBearerAuth('JWT-auth') - Yêu cầu JWT token trong header (Authorization: Bearer <token>)
+ * @Controller('wallet') - Định nghĩa base route là /wallet
+ *
+ * WalletController - Controller xử lý các HTTP requests liên quan đến wallet của user
+ *
+ * Chức năng chính:
+ * - CRUD wallet (Diamond, VEX)
+ * - Nạp tiền (Recharge) qua PayPal
+ * - Mua Thẻ Tháng (Monthly Card subscription)
+ * - Chuyển đổi VEX sang Diamond
+ * - Chuyển VEX giữa các users
+ * - Deposit và Withdraw VEX
+ * - Lịch sử giao dịch
+ * - In-App Purchase (IAP) verification
+ *
+ * Lưu ý:
+ * - User chỉ có thể xem/sửa wallet của chính mình
+ * - Tất cả endpoints đều yêu cầu authentication
  */
 @ApiTags('Wallet (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -74,6 +101,10 @@ import { IPaginatedResponse } from '../../../common/interfaces/pagination.interf
 @ApiUnauthorizedResponse({ description: 'Unauthorized - Token không hợp lệ hoặc đã hết hạn' })
 @Controller('wallet')
 export class WalletController {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các services khi tạo instance của controller
+   */
   constructor(
     private readonly walletService: WalletService,
     private readonly walletSummaryService: WalletSummaryService,
@@ -136,7 +167,10 @@ export class WalletController {
     },
   })
   getWallet(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
+    // Lấy user_id từ JWT token (user đã được authenticate bởi AuthGuard)
+    // req.user được set bởi JWT strategy sau khi verify token thành công
     const userId = req.user.id;
+    // Gọi service để lấy danh sách wallets của user này với pagination
     return this.walletService.getWallet(userId, query);
   }
 

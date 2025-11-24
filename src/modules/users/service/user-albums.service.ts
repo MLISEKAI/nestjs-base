@@ -1,8 +1,28 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * UserAlbumsService - Service xử lý business logic cho albums (album ảnh của user)
+ *
+ * Chức năng chính:
+ * - Lấy danh sách albums của user
+ * - Lấy photos trong album
+ * - Thêm photo vào album
+ * - Xóa photo khỏi album
+ *
+ * Lưu ý:
+ * - User chỉ có thể quản lý albums của chính mình
+ * - Albums có thể chứa nhiều photos
+ */
 @Injectable()
 export class UserAlbumsService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService khi tạo instance của service
+   */
   constructor(private prisma: PrismaService) {}
 
   async getAlbums(userId: string) {

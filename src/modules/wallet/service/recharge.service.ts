@@ -1,17 +1,41 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import các DTO để validate và type-check dữ liệu
 import {
   RechargePackageDto,
   MonthlyCardDto,
   CheckoutRechargeDto,
   CheckoutRechargeResponseDto,
 } from '../dto/diamond-wallet.dto';
+// Import PayPalService để tích hợp thanh toán PayPal
 import { PayPalService } from '../../payment/service/paypal.service';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * RechargeService - Service xử lý business logic cho nạp tiền (recharge)
+ *
+ * Chức năng chính:
+ * - Lấy danh sách recharge packages (gói nạp tiền)
+ * - Xử lý checkout recharge (tạo transaction và PayPal payment)
+ * - Hỗ trợ nạp Diamond và VEX
+ *
+ * Lưu ý:
+ * - Recharge packages được cache 1 giờ (ít thay đổi)
+ * - Tích hợp PayPal để thanh toán
+ * - Tự động tạo wallet nếu chưa có
+ */
 @Injectable()
 export class RechargeService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các services khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
@@ -19,8 +43,20 @@ export class RechargeService {
   ) {}
 
   /**
-   * Get recharge packages from database
-   * Cached for 1 hour (packages ít thay đổi)
+   * Lấy danh sách recharge packages (gói nạp tiền)
+   *
+   * @returns Array of RechargePackageDto chứa thông tin các gói nạp tiền
+   *
+   * Quy trình:
+   * 1. Check cache trước (TTL: 1 giờ)
+   * 2. Nếu không có cache, query database
+   * 3. Filter chỉ lấy packages đang active
+   * 4. Cache kết quả và return
+   *
+   * Lưu ý:
+   * - Cache key: `wallet:recharge:packages`
+   * - Cache TTL: 1 giờ (3600 seconds) - packages ít thay đổi
+   * - Chỉ trả về packages có `is_active = true`
    */
   async getRechargePackages(): Promise<RechargePackageDto[]> {
     const cacheKey = 'wallet:recharge:packages';
@@ -48,8 +84,26 @@ export class RechargeService {
   }
 
   /**
-   * Checkout recharge - Create transaction for diamond or VEX purchase
-   * @param currency - 'diamond' hoặc 'vex'. Mặc định: 'diamond'
+   * Checkout recharge - Tạo transaction và PayPal payment cho việc nạp tiền
+   *
+   * @param userId - User ID (từ JWT token)
+   * @param dto - CheckoutRechargeDto chứa packageId và currency
+   * @returns CheckoutRechargeResponseDto chứa transactionId, price, paymentUrl
+   *
+   * Quy trình:
+   * 1. Validate package tồn tại và đang active
+   * 2. Tạo transaction ID unique
+   * 3. Lấy hoặc tạo wallet theo currency (diamond hoặc vex)
+   * 4. Tính số lượng currency nhận được (diamonds hoặc VEX)
+   * 5. Tạo transaction record với status 'pending'
+   * 6. Tích hợp PayPal để tạo payment session
+   * 7. Return transaction info và PayPal payment URL
+   *
+   * Lưu ý:
+   * - Currency mặc định: 'diamond'
+   * - Nếu mua VEX: 1 USD = 1 VEX (có thể config tỷ giá)
+   * - Nếu mua Diamond: dùng diamonds từ package
+   * - Transaction status ban đầu là 'pending', sẽ update thành 'completed' sau khi PayPal payment thành công
    */
   async checkoutRecharge(
     userId: string,

@@ -1,7 +1,12 @@
+// Import Injectable từ NestJS
 import { Injectable } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+// Import các DTO để validate và type-check dữ liệu
 import {
   TransactionHistoryItemDto,
   TransactionHistoryResponseDto,
@@ -13,21 +18,55 @@ import {
   RelatedUserDto,
   ExchangeDetailsDto,
 } from '../dto/diamond-wallet.dto';
+// Import interfaces để type-check
 import type {
   TransactionForDescription,
   GiftForDescription,
 } from '../interfaces/transaction.interface';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * TransactionService - Service xử lý business logic cho transaction history
+ *
+ * Chức năng chính:
+ * - Lấy lịch sử giao dịch với pagination
+ * - Format transaction data cho Flutter app
+ * - Cache transaction history để tối ưu performance
+ *
+ * Lưu ý:
+ * - Transaction history được cache 1 phút (thay đổi thường xuyên)
+ * - Format response tương thích với Flutter app
+ * - Hỗ trợ nhiều loại transactions: deposit, withdraw, transfer, convert, etc.
+ */
 @Injectable()
 export class TransactionService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
   ) {}
 
   /**
-   * Get transaction history with pagination (Flutter compatible format)
-   * Cached for 1 minute (transactions change frequently)
+   * Lấy lịch sử giao dịch với pagination (format tương thích Flutter)
+   *
+   * @param userId - User ID (từ JWT token)
+   * @param query - BaseQueryDto chứa pagination parameters
+   * @returns TransactionHistoryResponseDto chứa danh sách transactions và pagination metadata
+   *
+   * Quy trình:
+   * 1. Parse pagination parameters (page, limit)
+   * 2. Check cache trước (TTL: 1 phút)
+   * 3. Nếu không có cache, query database
+   * 4. Format transactions cho Flutter app
+   * 5. Cache kết quả và return
+   *
+   * Lưu ý:
+   * - Cache key: `wallet:{userId}:transactions:page:{page}:limit:{limit}`
+   * - Cache TTL: 1 phút (60 seconds) - transactions thay đổi thường xuyên
+   * - Format response tương thích với Flutter app
    */
   async getTransactionHistory(
     userId: string,
@@ -50,7 +89,23 @@ export class TransactionService {
   }
 
   /**
-   * Fetch transaction history from database (Flutter compatible format)
+   * Fetch transaction history từ database (format tương thích Flutter)
+   *
+   * @param userId - User ID
+   * @param take - Số lượng transactions cần lấy
+   * @param skip - Số lượng transactions cần bỏ qua (pagination offset)
+   * @param page - Trang hiện tại
+   * @returns TransactionHistoryResponseDto chứa danh sách transactions và pagination metadata
+   *
+   * Quy trình:
+   * 1. Lấy tất cả wallets của user
+   * 2. Query transactions từ tất cả wallets
+   * 3. Format transactions với thông tin chi tiết (currency, type, status, etc.)
+   * 4. Build paginated response
+   *
+   * Lưu ý:
+   * - Private method, chỉ được gọi từ getTransactionHistory
+   * - Format response tương thích với Flutter app
    */
   private async fetchTransactionHistory(
     userId: string,

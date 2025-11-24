@@ -1,6 +1,9 @@
+// Import Module decorator và forwardRef từ NestJS
 import { Module, forwardRef } from '@nestjs/common';
+// Import các modules khác để sử dụng
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { CacheModule } from 'src/common/cache/cache.module';
+// Import modules với forwardRef để tránh circular dependency
 import { RealtimeModule } from '../realtime/realtime.module';
 import { UsersModule } from '../users/users.module';
 
@@ -43,6 +46,28 @@ import { ReferralAdminController } from './referral/controller/referral-admin.co
 import { ReferralPublicController } from './referral/controller/referral-public.controller';
 import { ReferralService } from './referral/service/referral.service';
 
+/**
+ * @Module() - Đánh dấu class này là NestJS module
+ * ProfileModuleDb - Module xử lý profile operations
+ *
+ * Chức năng chính:
+ * - User profile management
+ * - Profile views tracking
+ * - Albums management
+ * - Inventory management
+ * - VIP system
+ * - Referral system
+ * - LoveSpace
+ *
+ * Dependencies:
+ * - PrismaModule: Database access
+ * - CacheModule: Caching
+ * - RealtimeModule: Real-time features (forwardRef để tránh circular dependency)
+ * - UsersModule: User operations (forwardRef để tránh circular dependency)
+ *
+ * Exports:
+ * - InventoryService: Để các modules khác sử dụng (ví dụ: GiftsModule)
+ */
 @Module({
   imports: [
     PrismaModule,

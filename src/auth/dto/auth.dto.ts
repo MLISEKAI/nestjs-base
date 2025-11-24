@@ -1,4 +1,6 @@
+// Import decorators từ Swagger để tạo API documentation
 import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
+// Import decorators từ class-validator để validate dữ liệu
 import {
   IsBoolean,
   IsEmail,
@@ -13,8 +15,19 @@ import {
   IsDateString,
   ValidateIf,
 } from 'class-validator';
+// Import enums từ Prisma
 import { UserBasicRole, ProviderEnum } from '@prisma/client';
 
+/**
+ * RegisterUserDto - DTO để đăng ký user mới
+ *
+ * Lưu ý:
+ * - email hoặc phone_number: Phải có ít nhất một trong hai
+ * - password: Bắt buộc, 8-20 ký tự, phải có uppercase, lowercase, number và special character
+ * - nickname: Bắt buộc
+ * - avatar, bio, gender, birthday: Optional
+ * - role: Optional, mặc định là 'user'
+ */
 export class RegisterUserDto {
   @ApiProperty({ description: 'User email address', example: 'user@example.com' })
   @IsOptional()
@@ -77,6 +90,13 @@ export class RegisterUserDto {
   role?: UserBasicRole = 'user';
 }
 
+/**
+ * LoginDto - DTO để đăng nhập
+ *
+ * Lưu ý:
+ * - ref_id: Bắt buộc, email hoặc phone number
+ * - password: Bắt buộc
+ */
 export class LoginDto {
   @ApiProperty({ description: 'Email or phone to login', example: 'user@example.com' })
   @IsNotEmpty()
@@ -89,6 +109,13 @@ export class LoginDto {
   password: string;
 }
 
+/**
+ * LoginOtpDto - DTO để đăng nhập bằng OTP
+ *
+ * Lưu ý:
+ * - phone: Bắt buộc, số điện thoại (E.164 format)
+ * - otp: Bắt buộc, mã OTP (mock: 123456)
+ */
 export class LoginOtpDto {
   @ApiProperty({ description: 'Phone number for OTP login', example: '+84912345678' })
   @IsString()
@@ -101,6 +128,14 @@ export class LoginOtpDto {
   otp: string;
 }
 
+/**
+ * LoginOAuthDto - DTO để đăng nhập bằng OAuth (Google, Facebook, hoặc Anonymous)
+ *
+ * Lưu ý:
+ * - provider: Bắt buộc, 'google', 'facebook', hoặc 'anonymous'
+ * - access_token: Bắt buộc cho Google/Facebook (client-side flow), server sẽ verify và lấy thông tin
+ * - provider_id, email, nickname: Chỉ cần cho anonymous, không gửi cho Google/Facebook
+ */
 export class LoginOAuthDto {
   @ApiProperty({
     description: 'Provider (google, facebook, hoặc anonymous)',
@@ -152,6 +187,14 @@ export class LoginOAuthDto {
   nickname?: string;
 }
 
+/**
+ * LinkProviderDto - DTO để link provider vào account hiện tại
+ *
+ * Lưu ý:
+ * - provider: Bắt buộc, 'google', 'facebook', 'phone', hoặc 'password'
+ * - ref_id: Bắt buộc, reference id cho provider (email, phone, etc.)
+ * - hash: Bắt buộc khi provider = 'password', bcrypt hash của password
+ */
 export class LinkProviderDto {
   @ApiProperty({
     description: 'Provider',
@@ -177,12 +220,26 @@ export class LinkProviderDto {
   hash?: string;
 }
 
+/**
+ * RequestEmailCodeDto - DTO để request email verification code
+ *
+ * Lưu ý:
+ * - email: Bắt buộc, email cần verify
+ */
 export class RequestEmailCodeDto {
   @ApiProperty({ description: 'Email to verify', example: 'user@example.com' })
   @IsEmail()
   email: string;
 }
 
+/**
+ * VerifyEmailCodeDto - DTO để verify email code
+ * Extends RequestEmailCodeDto với code field
+ *
+ * Lưu ý:
+ * - email: Bắt buộc (từ RequestEmailCodeDto)
+ * - code: Bắt buộc, verification code từ email
+ */
 export class VerifyEmailCodeDto extends RequestEmailCodeDto {
   @ApiProperty({ description: 'Verification code', example: '123456' })
   @IsString()
@@ -190,6 +247,12 @@ export class VerifyEmailCodeDto extends RequestEmailCodeDto {
   code: string;
 }
 
+/**
+ * RequestPhoneCodeDto - DTO để request phone verification code
+ *
+ * Lưu ý:
+ * - phone: Bắt buộc, số điện thoại (E.164 format)
+ */
 export class RequestPhoneCodeDto {
   @ApiProperty({ description: 'Phone number in E.164 format', example: '+84912345678' })
   @IsString()
@@ -197,6 +260,14 @@ export class RequestPhoneCodeDto {
   phone: string;
 }
 
+/**
+ * VerifyPhoneCodeDto - DTO để verify phone code
+ * Extends RequestPhoneCodeDto với code field
+ *
+ * Lưu ý:
+ * - phone: Bắt buộc (từ RequestPhoneCodeDto)
+ * - code: Bắt buộc, verification code từ SMS
+ */
 export class VerifyPhoneCodeDto extends RequestPhoneCodeDto {
   @ApiProperty({ description: 'Verification code', example: '123456' })
   @IsString()
@@ -204,6 +275,12 @@ export class VerifyPhoneCodeDto extends RequestPhoneCodeDto {
   code: string;
 }
 
+/**
+ * TwoFactorCodeDto - DTO để verify two-factor code
+ *
+ * Lưu ý:
+ * - code: Bắt buộc, two-factor authentication code (TOTP)
+ */
 export class TwoFactorCodeDto {
   @ApiProperty({ description: 'Two-factor authentication code', example: '123456' })
   @IsString()
@@ -211,6 +288,13 @@ export class TwoFactorCodeDto {
   code: string;
 }
 
+/**
+ * VerifyTwoFactorLoginDto - DTO để verify two-factor code khi login
+ *
+ * Lưu ý:
+ * - temp_token: Bắt buộc, temporary token từ login response (khi requires_2fa = true)
+ * - code: Bắt buộc, two-factor authentication code (TOTP)
+ */
 export class VerifyTwoFactorLoginDto {
   @ApiProperty({
     description: 'Temporary 2FA token returned from login',
@@ -226,6 +310,12 @@ export class VerifyTwoFactorLoginDto {
   code: string;
 }
 
+/**
+ * RefreshTokenDto - DTO để refresh access token
+ *
+ * Lưu ý:
+ * - refresh_token: Bắt buộc, refresh token để lấy access token mới
+ */
 export class RefreshTokenDto {
   @ApiProperty({ description: 'Refresh token', example: 'refresh-token-value' })
   @IsString()
@@ -233,6 +323,12 @@ export class RefreshTokenDto {
   refresh_token: string;
 }
 
+/**
+ * LogoutDto - DTO để logout
+ *
+ * Lưu ý:
+ * - refresh_token: Optional, nếu có sẽ revoke refresh token này, nếu không chỉ blacklist access token hiện tại
+ */
 export class LogoutDto {
   @ApiPropertyOptional({
     description:
@@ -244,6 +340,12 @@ export class LogoutDto {
   refresh_token?: string;
 }
 
+/**
+ * RequestPasswordResetDto - DTO để request password reset code
+ *
+ * Lưu ý:
+ * - email: Bắt buộc, email để reset password
+ */
 export class RequestPasswordResetDto {
   @ApiProperty({ description: 'Email để reset password', example: 'user@example.com' })
   @IsEmail()
@@ -251,6 +353,14 @@ export class RequestPasswordResetDto {
   email: string;
 }
 
+/**
+ * ResetPasswordDto - DTO để reset password
+ *
+ * Lưu ý:
+ * - email: Bắt buộc, email của account
+ * - code: Bắt buộc, verification code từ email
+ * - newPassword: Bắt buộc, password mới (8-20 ký tự, phải có uppercase, lowercase, number và special character)
+ */
 export class ResetPasswordDto {
   @ApiProperty({ description: 'Email', example: 'user@example.com' })
   @IsEmail()

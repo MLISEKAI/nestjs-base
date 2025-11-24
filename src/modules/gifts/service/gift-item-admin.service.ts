@@ -1,11 +1,33 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import các DTO để validate và type-check dữ liệu
 import { CreateGiftItemDto, UpdateGiftItemDto } from '../dto/gift-item-admin.dto';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * GiftItemAdminService - Service xử lý business logic cho admin operations của gift items
+ *
+ * Chức năng chính:
+ * - CRUD gift items (admin only)
+ * - Validate category và event
+ * - Invalidate cache sau khi thay đổi
+ *
+ * Lưu ý:
+ * - Chỉ admin mới có quyền sử dụng service này
+ * - Tất cả operations đều invalidate cache để đảm bảo dữ liệu mới nhất
+ */
 @Injectable()
 export class GiftItemAdminService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,

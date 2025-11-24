@@ -1,7 +1,20 @@
+// Import decorators từ Swagger để tạo API documentation
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
- * Standard API Response wrapper
+ * BaseResponseDto<T> - Standard API Response wrapper
+ * DTO này được dùng để wrap tất cả API responses với format chuẩn
+ *
+ * @template T - Type của data trong response
+ *
+ * Format chuẩn:
+ * {
+ *   error: false,
+ *   code: 0,
+ *   message: "Success",
+ *   data: T,
+ *   traceId: "trace-123456"
+ * }
  */
 export class BaseResponseDto<T> {
   @ApiProperty({ example: false, description: 'Error flag' })
@@ -27,7 +40,8 @@ export class BaseResponseDto<T> {
 }
 
 /**
- * Pagination metadata
+ * PaginationMetaDto - DTO cho pagination metadata
+ * Chứa thông tin về pagination: item_count, total_items, items_per_page, total_pages, current_page
  */
 export class PaginationMetaDto {
   @ApiProperty({ example: 10, description: 'Number of items in current page' })
@@ -47,7 +61,10 @@ export class PaginationMetaDto {
 }
 
 /**
- * Paginated response wrapper
+ * PaginatedResponseDto<T> - DTO cho paginated response
+ * Chứa items array và pagination metadata
+ *
+ * @template T - Type của items trong mảng
  */
 export class PaginatedResponseDto<T> {
   @ApiProperty({ description: 'Array of items', isArray: true })

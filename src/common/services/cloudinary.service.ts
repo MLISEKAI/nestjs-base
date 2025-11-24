@@ -1,14 +1,39 @@
+// Import Injectable, Logger và OnModuleInit từ NestJS
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+// Import ConfigService để đọc environment variables
 import { ConfigService } from '@nestjs/config';
+// Import Cloudinary SDK
 import { v2 as cloudinary } from 'cloudinary';
+// Import types từ Cloudinary
 import type { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+// Import interface để type-check
 import { ImageTransformationOptions } from '../interfaces/image-transformation.interface';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * CloudinaryService - Service xử lý upload files lên Cloudinary
+ *
+ * Chức năng chính:
+ * - Upload files (images, videos, raw files) lên Cloudinary
+ * - Apply image transformations (resize, crop, quality, format, etc.)
+ * - Tự động detect file type (image, video, raw)
+ *
+ * Lưu ý:
+ * - Cần config CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET trong .env
+ * - Hỗ trợ nhiều image transformations: resize, crop, quality, format, aspect ratio, radius, effects
+ * - Resource type: 'auto' (tự động detect image, video, raw)
+ */
 @Injectable()
 export class CloudinaryService implements OnModuleInit {
+  // Logger để log các events và errors
   private readonly logger = new Logger(CloudinaryService.name);
+  // Flag để check xem Cloudinary đã được config chưa
   private isConfigured = false;
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject ConfigService khi tạo instance của service
+   */
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {

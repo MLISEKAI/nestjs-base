@@ -1,10 +1,33 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import utility function để build paginated response
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * UserGiftWallService - Service xử lý business logic cho gift wall (tổng quan quà đã nhận)
+ *
+ * Chức năng chính:
+ * - Lấy gift wall overview (header info: total diamond value, level, XP, etc.)
+ * - Lấy milestones với progress (gift wall milestones)
+ * - Tính level và XP từ total diamond value
+ * - Cache gift wall data để tối ưu performance
+ *
+ * Lưu ý:
+ * - Gift wall được cache 5 phút
+ * - Level tính từ total diamond value (quà đã tặng)
+ * - XP to next level tăng gấp đôi mỗi level
+ */
 @Injectable()
 export class UserGiftWallService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,

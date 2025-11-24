@@ -1,13 +1,40 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import DTO để validate và type-check dữ liệu
 import { UpdateUserDto } from '../dto/user-response';
+// Import utility function để build paginated response
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+// Import interfaces để type-check
 import { SearchUsersParams } from '../interfaces';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * UserProfileService - Service xử lý business logic cho user profile
+ *
+ * Chức năng chính:
+ * - Tìm kiếm users (search by nickname hoặc ID)
+ * - Lấy thông tin user profile
+ * - Update user profile
+ * - Upload avatar
+ * - Cache user profile để tối ưu performance
+ *
+ * Lưu ý:
+ * - User profile được cache 30 phút
+ * - Không include albums trong findUser để tránh load quá nhiều data
+ * - Albums có endpoint riêng với pagination
+ */
 @Injectable()
 export class UserProfileService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,

@@ -1,6 +1,10 @@
+// Import Injectable, exceptions và Logger từ NestJS
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import các DTO để validate và type-check dữ liệu
 import {
   MonthlyCardDto,
   PurchaseSubscriptionDto,
@@ -8,14 +12,45 @@ import {
   SubscriptionDetailsResponseDto,
 } from '../dto/diamond-wallet.dto';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * SubscriptionService - Service xử lý business logic cho subscription (Monthly Card)
+ *
+ * Chức năng chính:
+ * - Lấy danh sách monthly cards (thẻ tháng)
+ * - Mua subscription (trừ Diamond, tạo subscription record)
+ * - Lấy chi tiết subscription (thông tin subscription hiện tại)
+ * - Xử lý daily rewards (diamonds hàng ngày)
+ *
+ * Lưu ý:
+ * - Monthly Card cho phép user nhận diamonds hàng ngày trong thời gian subscription
+ * - Phải trả bằng Diamond để mua subscription
+ * - Subscription có thời hạn (duration)
+ */
 @Injectable()
 export class SubscriptionService {
+  // Logger để log các events và errors
   private readonly logger = new Logger(SubscriptionService.name);
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService khi tạo instance của service
+   */
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Get monthly cards from database
+   * Lấy danh sách monthly cards (thẻ tháng)
+   *
+   * @returns Array of MonthlyCardDto chứa thông tin các monthly cards
+   *
+   * Quy trình:
+   * 1. Query database để lấy tất cả monthly cards đang active
+   * 2. Sort theo card_id (ascending)
+   * 3. Format response để frontend dễ sử dụng
+   *
+   * Lưu ý:
+   * - Chỉ trả về cards có `is_active = true`
+   * - Nếu chưa có data trong DB, trả về empty array
    */
   async getMonthlyCards(): Promise<MonthlyCardDto[]> {
     const cards = await this.prisma.resMonthlyCard.findMany({
@@ -35,8 +70,25 @@ export class SubscriptionService {
   }
 
   /**
-   * Purchase subscription (Monthly Card)
-   * Kiểm tra số dư và trừ tiền trước khi đăng ký
+   * Mua subscription (Monthly Card)
+   *
+   * @param userId - User ID (từ JWT token)
+   * @param dto - PurchaseSubscriptionDto chứa cardId
+   * @returns PurchaseSubscriptionResponseDto chứa thông tin subscription đã mua
+   *
+   * Quy trình:
+   * 1. Validate monthly card tồn tại và đang active
+   * 2. Kiểm tra user có đủ Diamond không
+   * 3. Kiểm tra user đã có subscription đang active chưa (không cho mua trùng)
+   * 4. Trừ Diamond từ wallet
+   * 5. Tạo subscription record với start_date và end_date
+   * 6. Tạo transaction record
+   * 7. Return thông tin subscription
+   *
+   * Lưu ý:
+   * - Phải trả bằng Diamond để mua subscription
+   * - Không cho phép mua subscription trùng (nếu đã có subscription active)
+   * - Subscription có thời hạn (duration), tính từ ngày mua
    */
   async purchaseSubscription(
     userId: string,

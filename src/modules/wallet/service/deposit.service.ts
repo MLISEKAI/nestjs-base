@@ -1,7 +1,12 @@
+// Import Injectable, exceptions và Logger từ NestJS
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import các DTO để validate và type-check dữ liệu
 import {
   CreateDepositDto,
   CreateDepositResponseDto,
@@ -10,12 +15,33 @@ import {
   DepositInfoResponseDto,
   UpdateDepositNetworkDto,
 } from '../dto/diamond-wallet.dto';
+// Import PayPalService để tích hợp thanh toán PayPal
 import { PayPalService } from '../../payment/service/paypal.service';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * DepositService - Service xử lý business logic cho deposit và withdraw
+ *
+ * Chức năng chính:
+ * - Tạo deposit address (blockchain wallet address)
+ * - Update deposit network
+ * - Withdraw VEX về PayPal
+ * - Lấy thông tin deposit
+ *
+ * Lưu ý:
+ * - Deposit address cần tích hợp với blockchain service (Infura, Alchemy, etc.)
+ * - Withdraw VEX về PayPal với tỷ giá 1 VEX = 1 USD
+ * - Hỗ trợ nhiều networks: Ethereum, BSC, Polygon, etc.
+ */
 @Injectable()
 export class DepositService {
+  // Logger để log các events và errors
   private readonly logger = new Logger(DepositService.name);
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các services khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
@@ -23,7 +49,23 @@ export class DepositService {
   ) {}
 
   /**
-   * Create deposit address (generate wallet address for VEX deposit)
+   * Tạo deposit address (generate blockchain wallet address cho VEX deposit)
+   *
+   * @param userId - User ID (từ JWT token)
+   * @param dto - CreateDepositDto chứa network (optional, mặc định: 'Ethereum')
+   * @returns CreateDepositResponseDto chứa deposit_address, qr_code, network
+   *
+   * Quy trình:
+   * 1. Kiểm tra đã có deposit address chưa
+   * 2. Nếu có và network giống nhau, trả về address hiện tại
+   * 3. Nếu network khác, cần generate address mới (chưa implement)
+   * 4. Nếu chưa có, cần tích hợp blockchain service để generate address
+   *
+   * Lưu ý:
+   * - Cần tích hợp với blockchain service (Infura, Alchemy, etc.) để generate address thật
+   * - Network mặc định: 'Ethereum'
+   * - QR code được generate tự động từ address
+   * - TODO: Implement blockchain service integration
    */
   async createDeposit(userId: string, dto?: CreateDepositDto): Promise<CreateDepositResponseDto> {
     const network = dto?.network || 'Ethereum';
@@ -56,7 +98,19 @@ export class DepositService {
   }
 
   /**
-   * Update deposit network
+   * Update deposit network (thay đổi blockchain network)
+   *
+   * @param userId - User ID (từ JWT token)
+   * @param dto - UpdateDepositNetworkDto chứa network mới
+   * @returns CreateDepositResponseDto chứa deposit_address, qr_code, network
+   *
+   * Quy trình:
+   * 1. Gọi createDeposit với network mới
+   * 2. Nếu network khác với network hiện tại, cần generate address mới
+   *
+   * Lưu ý:
+   * - Cần tích hợp blockchain service để generate address cho network mới
+   * - Hỗ trợ nhiều networks: Ethereum, BSC, Polygon, etc.
    */
   async updateDepositNetwork(
     userId: string,
@@ -72,7 +126,24 @@ export class DepositService {
 
   /**
    * Withdraw VEX về PayPal
-   * VEX là tiền ảo nội bộ, rút về PayPal với tỷ giá 1 VEX = 1 USD
+   *
+   * @param userId - User ID (từ JWT token)
+   * @param dto - WithdrawVexDto chứa amount và paypalEmail
+   * @returns WithdrawVexResponseDto chứa thông tin withdrawal
+   *
+   * Quy trình:
+   * 1. Validate số dư VEX có đủ không
+   * 2. Validate PayPal email hợp lệ
+   * 3. Kiểm tra daily withdrawal limit
+   * 4. Trừ VEX từ wallet
+   * 5. Tạo withdrawal transaction với status 'pending'
+   * 6. Tích hợp PayPal để xử lý payout
+   * 7. Update transaction status sau khi PayPal payout thành công
+   *
+   * Lưu ý:
+   * - VEX là tiền ảo nội bộ, rút về PayPal với tỷ giá 1 VEX = 1 USD
+   * - Daily withdrawal limit: 2000 VEX (có thể config)
+   * - Transaction status ban đầu là 'pending', sẽ update thành 'completed' sau khi PayPal payout thành công
    */
   async withdrawVex(userId: string, dto: WithdrawVexDto): Promise<WithdrawVexResponseDto> {
     this.logger.log(

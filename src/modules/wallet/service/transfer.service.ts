@@ -1,14 +1,56 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import các DTO để validate và type-check dữ liệu
 import { TransferVexDto, TransferVexResponseDto } from '../dto/diamond-wallet.dto';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * TransferService - Service xử lý business logic cho chuyển tiền (transfer)
+ *
+ * Chức năng chính:
+ * - Chuyển VEX từ user này sang user khác
+ * - Validate số dư và receiver
+ * - Tạo transaction records cho cả sender và receiver
+ *
+ * Lưu ý:
+ * - Chỉ hỗ trợ chuyển VEX, không hỗ trợ chuyển Diamond
+ * - Không cho phép chuyển cho chính mình
+ * - Phải có đủ số dư VEX để chuyển
+ */
 @Injectable()
 export class TransferService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService khi tạo instance của service
+   */
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Transfer VEX from one user to another
+   * Chuyển VEX từ user này sang user khác
+   *
+   * @param senderId - User ID của người gửi (từ JWT token)
+   * @param dto - TransferVexDto chứa receiver_id và amount
+   * @returns TransferVexResponseDto chứa thông tin transfer
+   *
+   * Quy trình:
+   * 1. Validate không cho phép chuyển cho chính mình
+   * 2. Validate receiver tồn tại
+   * 3. Lấy hoặc tạo VEX wallet của sender
+   * 4. Kiểm tra số dư VEX có đủ không
+   * 5. Lấy hoặc tạo VEX wallet của receiver
+   * 6. Trừ VEX từ sender wallet
+   * 7. Cộng VEX vào receiver wallet
+   * 8. Tạo transaction records cho cả sender và receiver
+   * 9. Return thông tin transfer
+   *
+   * Lưu ý:
+   * - Tự động tạo wallet nếu chưa có
+   * - Tạo transaction với type 'transfer' cho cả sender và receiver
+   * - Transaction của sender có amount âm, receiver có amount dương
    */
   async transferVex(senderId: string, dto: TransferVexDto): Promise<TransferVexResponseDto> {
     // Không cho phép chuyển cho chính mình

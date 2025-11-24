@@ -1,6 +1,22 @@
+// Import decorators từ Swagger để tạo API documentation
 import { ApiProperty, PartialType } from '@nestjs/swagger';
+// Import decorators từ class-validator để validate dữ liệu
 import { IsString, IsOptional, IsInt, Min, IsNotEmpty, ValidateIf } from 'class-validator';
 
+/**
+ * CreateGiftDto - DTO để tạo gift mới
+ *
+ * Lưu ý:
+ * - receiver_id: Bắt buộc, ID người nhận quà
+ * - gift_item_id: Bắt buộc nếu không có item_id (ID món quà từ catalog)
+ * - item_id: Optional, ID item từ inventory (nếu có sẽ ưu tiên dùng)
+ * - quantity: Optional, số lượng (mặc định: 1)
+ * - message: Optional, lời nhắn kèm quà
+ *
+ * Logic:
+ * - Nếu có item_id → dùng item_id, không cần gift_item_id
+ * - Nếu không có item_id → bắt buộc phải có gift_item_id
+ */
 export class CreateGiftDto {
   @ApiProperty({ example: 'user-1', description: 'Người nhận quà (sender tự động từ JWT token)' })
   @IsString()
@@ -39,8 +55,17 @@ export class CreateGiftDto {
   @IsString()
   message?: string;
 }
+/**
+ * UpdateGiftDto - DTO để update gift
+ * Extends PartialType(CreateGiftDto) → tất cả fields đều optional
+ * Cho phép update một phần thông tin của gift
+ */
 export class UpdateGiftDto extends PartialType(CreateGiftDto) {}
 
+/**
+ * GiftSummaryItemDto - DTO cho một gift item trong summary
+ * Dùng cho response của GET /gifts (gift summary)
+ */
 export class GiftSummaryItemDto {
   @ApiProperty({ example: 'gift-1' })
   id: string;
@@ -64,14 +89,22 @@ export class GiftSummaryItemDto {
   created_at: string;
 }
 
+/**
+ * GiftSummaryResponseDto - DTO cho response của GET /gifts
+ * Chứa tổng số gifts và danh sách gifts
+ */
 export class GiftSummaryResponseDto {
-  @ApiProperty({ example: 2 })
+  @ApiProperty({ example: 2, description: 'Tổng số gifts' })
   total: number;
 
-  @ApiProperty({ type: [GiftSummaryItemDto] })
+  @ApiProperty({ type: [GiftSummaryItemDto], description: 'Danh sách gifts' })
   gifts: GiftSummaryItemDto[];
 }
 
+/**
+ * TopSupporterDto - DTO cho top supporter (người tặng quà nhiều nhất)
+ * Dùng cho response của GET /gifts/top-supporters
+ */
 export class TopSupporterDto {
   @ApiProperty({ example: 'sup-1' })
   id: string;
@@ -86,19 +119,27 @@ export class TopSupporterDto {
   amount: number;
 }
 
+/**
+ * PurchaseGiftDto - DTO để mua gift từ catalog
+ * User mua gift bằng Diamond, gift sẽ được thêm vào inventory
+ */
 export class PurchaseGiftDto {
   @ApiProperty({ example: 'gift-item-1', description: 'ID món quà muốn mua' })
   @IsString()
   @IsNotEmpty()
   gift_item_id: string;
 
-  @ApiProperty({ example: 1, description: 'Số lượng muốn mua' })
+  @ApiProperty({ example: 1, description: 'Số lượng muốn mua (mặc định: 1)' })
   @IsOptional()
   @IsInt()
   @Min(1)
   quantity?: number;
 }
 
+/**
+ * PurchaseGiftResponseDto - DTO cho response sau khi mua gift thành công
+ * Chứa thông tin về gift đã mua, tổng giá, số dư còn lại, và item_id mới tạo
+ */
 export class PurchaseGiftResponseDto {
   @ApiProperty({ example: 'gift-item-1' })
   gift_item_id: string;

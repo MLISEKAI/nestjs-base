@@ -1,18 +1,52 @@
+// Import Injectable từ NestJS
 import { Injectable } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import DTO để validate và type-check dữ liệu
 import { PaymentMethodDto } from '../dto/diamond-wallet.dto';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * PaymentMethodService - Service xử lý business logic cho payment methods
+ *
+ * Chức năng chính:
+ * - Lấy danh sách payment methods (phương thức thanh toán)
+ * - Cache payment methods để tối ưu performance
+ *
+ * Lưu ý:
+ * - Payment methods được cache 1 giờ (ít thay đổi)
+ * - Chỉ trả về payment methods đang active
+ * - Hỗ trợ nhiều loại: PayPal, Credit Card, Bank Transfer, etc.
+ */
 @Injectable()
 export class PaymentMethodService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
   ) {}
 
   /**
-   * Get available payment methods from database
-   * Cached for 1 hour (payment methods ít thay đổi)
+   * Lấy danh sách payment methods (phương thức thanh toán)
+   *
+   * @returns Array of PaymentMethodDto chứa thông tin các payment methods
+   *
+   * Quy trình:
+   * 1. Check cache trước (TTL: 1 giờ)
+   * 2. Nếu không có cache, query database
+   * 3. Filter chỉ lấy payment methods đang active
+   * 4. Format response để frontend dễ sử dụng
+   * 5. Cache kết quả và return
+   *
+   * Lưu ý:
+   * - Cache key: `wallet:payment:methods`
+   * - Cache TTL: 1 giờ (3600 seconds) - payment methods ít thay đổi
+   * - Chỉ trả về payment methods có `is_active = true`
    */
   async getPaymentMethods(): Promise<PaymentMethodDto[]> {
     const cacheKey = 'wallet:payment:methods';

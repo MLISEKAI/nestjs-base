@@ -1,7 +1,12 @@
+// Import Injectable từ NestJS
 import { Injectable } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import các DTO để validate và type-check dữ liệu
 import {
   WalletSummaryResponseDto,
   VexBalanceResponseDto,
@@ -10,24 +15,68 @@ import {
   DailyLimitsDto,
 } from '../dto/diamond-wallet.dto';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * WalletSummaryService - Service xử lý business logic cho wallet summary và statistics
+ *
+ * Chức năng chính:
+ * - Lấy wallet summary (Diamond balance, VEX balance, Monthly card status)
+ * - Lấy VEX balance
+ * - Lấy Diamond balance
+ * - Lấy exchange rate (VEX to USD)
+ * - Lấy daily limits (deposit, withdraw, transfer)
+ *
+ * Lưu ý:
+ * - Wallet summary được cache 1 phút (balance thay đổi thường xuyên)
+ * - Exchange rate: 1 VEX = 0.01657 USD (có thể lấy từ config hoặc external API)
+ * - Daily limits có thể config theo user level
+ */
 @Injectable()
 export class WalletSummaryService {
-  // Exchange rate: 1 VEX = 0.01657 USD (có thể lấy từ config hoặc external API)
+  /**
+   * Exchange rate: 1 VEX = 0.01657 USD
+   * Có thể lấy từ config hoặc external API trong tương lai
+   */
   private readonly VEX_TO_USD_RATE = 0.01657;
 
-  // Daily limits (có thể lấy từ config hoặc user level)
+  /**
+   * Daily limits (có thể lấy từ config hoặc user level)
+   * - Deposit limit: 5000 VEX/ngày
+   * - Withdraw limit: 2000 VEX/ngày
+   * - Transfer limit: 1000 VEX/ngày
+   */
   private readonly DAILY_DEPOSIT_LIMIT = 5000.0;
   private readonly DAILY_WITHDRAW_LIMIT = 2000.0;
   private readonly DAILY_TRANSFER_LIMIT = 1000.0;
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
   ) {}
 
   /**
-   * Get wallet summary: Diamond balance, VEX balance, Monthly card status
-   * Cached for 1 minute (wallet balance thay đổi thường xuyên)
+   * Lấy wallet summary: Diamond balance, VEX balance, Monthly card status
+   *
+   * @param userId - User ID (từ JWT token)
+   * @returns WalletSummaryResponseDto chứa totalDiamondBalance, vexBalance, monthlyCardStatus
+   *
+   * Quy trình:
+   * 1. Check cache trước (TTL: 1 phút)
+   * 2. Nếu không có cache, query database
+   * 3. Lấy Diamond wallet (currency = 'diamond')
+   * 4. Lấy hoặc tạo VEX wallet (currency = 'vex')
+   * 5. Lấy subscription status (VIP status)
+   * 6. Cache kết quả và return
+   *
+   * Lưu ý:
+   * - Cache key: `wallet:{userId}:summary`
+   * - Cache TTL: 1 phút (60 seconds) - balance thay đổi thường xuyên
+   * - Tự động tạo VEX wallet nếu chưa có
+   * - Monthly card status dựa trên VIP status và expiry date
    */
   async getWalletSummary(userId: string): Promise<WalletSummaryResponseDto> {
     const cacheKey = `wallet:${userId}:summary`;

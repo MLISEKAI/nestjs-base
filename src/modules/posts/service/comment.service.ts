@@ -1,15 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
 import { CreateCommentDto, UpdateCommentDto } from '../dto/comments.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+import { NotificationService } from '../../notifications/service/notification.service';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class CommentService {
+  private readonly logger = new Logger(CommentService.name);
+
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService: NotificationService,
   ) {}
 
   async getComments(postId: string, query?: BaseQueryDto) {
@@ -108,35 +114,48 @@ export class CommentService {
     );
   }
 
+  /**
+   * Tạo comment mới cho một bài viết
+   * @param userId - ID của user đang comment
+   * @param postId - ID của bài viết được comment
+   * @param dto - DTO chứa nội dung comment và parent_id (nếu là reply)
+   * @returns Thông tin comment đã tạo
+   */
   async createComment(userId: string, postId: string, dto: CreateCommentDto) {
-    // Check if post exists
+    // Kiểm tra bài viết có tồn tại không
     const post = await this.prisma.resPost.findUnique({
-      where: { id: postId },
+      where: { id: postId }, // Tìm post theo ID
     });
 
+    // Nếu không tìm thấy post, throw exception
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    // If parent_id is provided, check if parent comment exists
+    // Nếu có parent_id (là reply comment), kiểm tra parent comment có tồn tại không
+    let parentComment = null;
     if (dto.parent_id) {
-      const parentComment = await this.prisma.resComment.findUnique({
+      // Tìm parent comment theo ID
+      parentComment = await this.prisma.resComment.findUnique({
         where: { id: dto.parent_id },
       });
 
+      // Nếu không tìm thấy parent comment, throw exception
       if (!parentComment) {
         throw new NotFoundException('Parent comment not found');
       }
     }
 
+    // Tạo comment mới trong database
     const comment = await this.prisma.resComment.create({
       data: {
-        post_id: postId,
-        user_id: userId,
-        content: dto.content,
-        parent_id: dto.parent_id || null,
+        post_id: postId, // ID của bài viết
+        user_id: userId, // ID của user đang comment
+        content: dto.content, // Nội dung comment
+        parent_id: dto.parent_id || null, // ID của comment cha (null nếu là top-level comment)
       },
       include: {
+        // Include thông tin user để trả về trong response
         user: {
           select: {
             id: true,
@@ -144,24 +163,86 @@ export class CommentService {
             avatar: true,
           },
         },
+        // Include _count để đếm số lượng replies của comment này
         _count: {
           select: {
-            replies: true,
+            replies: true, // Đếm số lượng comment con (replies)
           },
         },
       },
     });
 
-    // Invalidate cache
+    // Xóa cache liên quan đến comments của post này
+    // delPattern xóa tất cả cache key có pattern `post:${postId}:comments:*`
     await this.cacheService.delPattern(`post:${postId}:comments:*`);
+    // Nếu là reply, cũng xóa cache của parent comment
     if (dto.parent_id) {
       await this.cacheService.delPattern(`comment:${dto.parent_id}:replies:*`);
     }
 
+    // Tự động tạo notification cho các user liên quan
+    try {
+      // Lấy thông tin nickname của user đang comment để hiển thị trong notification
+      const sender = await this.prisma.resUser.findUnique({
+        where: { id: userId },
+        select: { nickname: true }, // Chỉ lấy nickname để tối ưu
+      });
+
+      // Nếu là reply (có parent_id), gửi notification cho người comment cha
+      // Ví dụ: User A comment, User B reply => User A nhận notification
+      if (dto.parent_id && parentComment) {
+        // Chỉ gửi nếu người reply không phải là người comment cha (tránh tự thông báo cho mình)
+        if (parentComment.user_id !== userId) {
+          await this.notificationService.createNotification({
+            user_id: parentComment.user_id, // Người comment cha nhận notification
+            sender_id: userId, // Người reply (user đang thực hiện hành động)
+            type: NotificationType.COMMENT, // Loại notification là COMMENT
+            title: 'New Reply', // Tiêu đề
+            content: sender?.nickname
+              ? `${sender.nickname} replied to your comment` // Nếu có nickname
+              : 'Someone replied to your comment', // Không có thì dùng "Someone"
+            link: `/posts/${postId}/comments/${comment.id}`, // Link đến comment
+            data: JSON.stringify({
+              post_id: postId,
+              comment_id: comment.id,
+              parent_id: dto.parent_id,
+            }), // Dữ liệu bổ sung
+          });
+        }
+      }
+
+      // Gửi notification cho chủ bài viết (nếu không phải chủ bài viết tự comment)
+      // Điều kiện:
+      // 1. post.user_id !== userId: Chủ bài viết không phải là người comment
+      // 2. (!dto.parent_id || parentComment.user_id !== post.user_id):
+      //    - Nếu là top-level comment (không có parent_id) => gửi cho chủ bài viết
+      //    - Nếu là reply nhưng người comment cha không phải chủ bài viết => gửi cho chủ bài viết
+      //    (Nếu người comment cha là chủ bài viết thì đã gửi notification ở trên rồi, không cần gửi lại)
+      if (post.user_id !== userId && (!dto.parent_id || parentComment.user_id !== post.user_id)) {
+        await this.notificationService.createNotification({
+          user_id: post.user_id, // Chủ bài viết nhận notification
+          sender_id: userId, // Người comment (user đang thực hiện hành động)
+          type: NotificationType.COMMENT, // Loại notification là COMMENT
+          title: 'New Comment', // Tiêu đề
+          content: sender?.nickname
+            ? `${sender.nickname} commented on your post` // Nếu có nickname
+            : 'Someone commented on your post', // Không có thì dùng "Someone"
+          link: `/posts/${postId}/comments/${comment.id}`, // Link đến comment
+          data: JSON.stringify({ post_id: postId, comment_id: comment.id }), // Dữ liệu bổ sung
+        });
+      }
+    } catch (error) {
+      // Log error nhưng không fail comment action
+      // Nếu tạo notification fail, comment vẫn thành công (graceful degradation)
+      this.logger.error(`Failed to create notification for comment: ${error.message}`);
+    }
+
+    // Trả về thông tin comment đã tạo
+    // Loại bỏ _count khỏi response và thay bằng replies_count để response sạch hơn
     return {
-      ...comment,
-      replies_count: comment._count.replies,
-      _count: undefined,
+      ...comment, // Spread tất cả properties của comment
+      replies_count: comment._count.replies, // Thêm replies_count từ _count
+      _count: undefined, // Xóa _count khỏi response
     };
   }
 

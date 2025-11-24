@@ -1,32 +1,38 @@
+// Import các decorator và class từ NestJS để tạo controller
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  UseGuards,
-  Req,
+  Controller, // Decorator đánh dấu class là controller
+  Get, // Decorator cho HTTP GET method
+  Post, // Decorator cho HTTP POST method
+  Delete, // Decorator cho HTTP DELETE method
+  Param, // Decorator để lấy parameter từ URL
+  Body, // Decorator để lấy body từ request
+  Query, // Decorator để lấy query parameters từ URL
+  UsePipes, // Decorator để sử dụng pipe (validation, transformation)
+  ValidationPipe, // Pipe để validate và transform dữ liệu
+  UseGuards, // Decorator để sử dụng guard (authentication, authorization)
+  Req, // Decorator để lấy request object
 } from '@nestjs/common';
+// Import các decorator từ Swagger để tạo API documentation
 import {
-  ApiTags,
-  ApiOperation,
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBody,
-  ApiQuery,
-  ApiParam,
-  ApiBearerAuth,
+  ApiTags, // Nhóm các endpoints trong Swagger UI
+  ApiOperation, // Mô tả operation
+  ApiOkResponse, // Mô tả response thành công (200)
+  ApiCreatedResponse, // Mô tả response khi tạo thành công (201)
+  ApiBody, // Mô tả request body
+  ApiQuery, // Mô tả query parameter
+  ApiParam, // Mô tả path parameter
+  ApiBearerAuth, // Yêu cầu JWT token trong header
 } from '@nestjs/swagger';
+// Import AuthGuard từ Passport để xác thực JWT token
 import { AuthGuard } from '@nestjs/passport';
+// Import interface để type-check request có user authenticated
 import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
+// Import các services để xử lý business logic
 import { GiftCrudService } from '../service/gift-crud.service';
 import { GiftSummaryService } from '../service/gift-summary.service';
 import { UserGiftWallService } from '../../users/service/user-gift-wall.service';
 import { InventoryService } from '../../profile/inventory/service/inventory.service';
+// Import các DTO để validate và type-check dữ liệu
 import { InventoryItemDto } from '../../profile/inventory/dto/inventory.dto';
 import {
   CreateGiftDto,
@@ -35,8 +41,10 @@ import {
   PurchaseGiftDto,
   PurchaseGiftResponseDto,
 } from '../dto/gift.dto';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { PaginatedResponseDto } from '../../../common/dto/base-response.dto';
+// Import rate limiting guards và decorators
 import { UserRateLimitGuard } from '../../../common/rate-limit/guards/user-rate-limit.guard';
 import {
   UserRateLimit,
@@ -44,8 +52,26 @@ import {
 } from '../../../common/rate-limit/decorators/user-rate-limit.decorator';
 
 /**
- * User Gifts Controller - Yêu cầu authentication
- * User chỉ có thể xem/sửa gifts của chính mình
+ * @ApiTags('Gifts (User)') - Nhóm các endpoints này trong Swagger UI với tag "Gifts (User)"
+ * @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+ *   - transform: true - Tự động transform dữ liệu
+ *   - whitelist: true - Chỉ giữ lại các properties được định nghĩa trong DTO
+ * @UseGuards(AuthGuard('account-auth')) - Yêu cầu authentication (JWT token)
+ * @ApiBearerAuth('JWT-auth') - Yêu cầu JWT token trong header
+ * @Controller('gifts') - Định nghĩa base route là /gifts
+ *
+ * GiftsController - Controller xử lý các HTTP requests liên quan đến gifts của user
+ *
+ * Chức năng chính:
+ * - Xem top supporters (người tặng quà nhiều nhất)
+ * - Xem Gift Wall (tổng quan quà tặng đã nhận)
+ * - Mua quà tặng cho user khác
+ * - Xem inventory (kho quà đã mua)
+ * - Xem lịch sử giao dịch quà
+ *
+ * Lưu ý:
+ * - User chỉ có thể xem/sửa gifts của chính mình
+ * - Tất cả endpoints đều yêu cầu authentication
  */
 @ApiTags('Gifts (User)')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -53,6 +79,10 @@ import {
 @ApiBearerAuth('JWT-auth')
 @Controller('gifts')
 export class GiftsController {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các services khi tạo instance của controller
+   */
   constructor(
     private readonly crudService: GiftCrudService,
     private readonly summaryService: GiftSummaryService,

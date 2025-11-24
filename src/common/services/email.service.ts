@@ -1,17 +1,38 @@
+// Import Injectable và Logger từ NestJS
 import { Injectable, Logger } from '@nestjs/common';
+// Import ConfigService để đọc environment variables
 import { ConfigService } from '@nestjs/config';
 
 /**
+ * @Injectable() - Đánh dấu class này là NestJS service
  * EmailService - Service để gửi email
- * Hỗ trợ nhiều provider: SMTP, SendGrid, AWS SES, etc.
+ *
+ * Chức năng chính:
+ * - Gửi email verification code
+ * - Gửi password reset code
+ * - Gửi email generic
+ * - Hỗ trợ nhiều provider: SMTP, SendGrid, AWS SES, etc.
+ *
+ * Lưu ý:
+ * - Trong development mode, chỉ log email ra console (không gửi thật)
+ * - Trong production mode, gửi email thật qua provider được config
+ * - Cần config EMAIL_PROVIDER, SMTP_HOST, SMTP_PORT, etc. trong .env
  */
 @Injectable()
 export class EmailService {
+  // Logger để log các events và errors
   private readonly logger = new Logger(EmailService.name);
+  // Flag để check xem đang ở production mode không
   private readonly isProduction: boolean;
+  // Email provider được sử dụng (smtp, sendgrid, ses, console)
   private readonly emailProvider: string;
+  // SMTP config (host, port, secure, auth)
   private readonly smtpConfig: any;
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject ConfigService khi tạo instance của service
+   */
   constructor(private readonly configService: ConfigService) {
     this.isProduction =
       (this.configService.get<string>('NODE_ENV') ?? process.env.NODE_ENV ?? 'development') ===

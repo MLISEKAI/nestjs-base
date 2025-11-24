@@ -1,3 +1,4 @@
+// Import Injectable, exceptions và Logger từ NestJS
 import {
   Injectable,
   NotFoundException,
@@ -5,30 +6,80 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import các DTO để validate và type-check dữ liệu
 import { CreateGiftDto, PurchaseGiftResponseDto } from '../dto/gift.dto';
+// Import utility function để build paginated response
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+// Import Prisma types để type-check
 import { Prisma } from '@prisma/client';
+// Import interface để type-check
 import type { GiftItemForInventory } from '../interfaces/gift.interface';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * GiftCrudService - Service xử lý business logic cho CRUD operations của gifts
+ *
+ * Chức năng chính:
+ * - Tạo gift (gửi quà cho user khác)
+ * - Mua gift từ catalog (bằng Diamond)
+ * - Xem danh sách gifts đã gửi/nhận
+ * - Xử lý inventory items (gửi quà từ inventory)
+ *
+ * Lưu ý:
+ * - User không thể gửi quà cho chính mình
+ * - Có thể gửi quà từ catalog hoặc từ inventory
+ * - Khi mua gift, sẽ trừ Diamond và thêm vào inventory
+ */
 @Injectable()
 export class GiftCrudService {
+  // Logger để log các events và errors
   private readonly logger = new Logger(GiftCrudService.name);
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
   ) {}
 
+  /**
+   * Tạo gift (gửi quà cho user khác)
+   *
+   * @param dto - CreateGiftDto với sender_id (từ JWT token)
+   * @returns Thông tin gift đã tạo
+   *
+   * Quy trình:
+   * 1. Validate không cho phép gửi quà cho chính mình
+   * 2. Validate phải có gift_item_id hoặc item_id
+   * 3. Nếu có item_id: tìm ResItem hoặc ResInventory, validate ownership
+   * 4. Nếu có gift_item_id: lấy thông tin từ catalog
+   * 5. Kiểm tra inventory có đủ số lượng không (nếu gửi từ inventory)
+   * 6. Tạo gift record trong database
+   * 7. Trừ số lượng trong inventory (nếu gửi từ inventory)
+   * 8. Cập nhật gift wall và top supporters
+   * 9. Invalidate cache
+   *
+   * Lưu ý:
+   * - User không thể gửi quà cho chính mình
+   * - Có thể gửi từ catalog (gift_item_id) hoặc từ inventory (item_id)
+   * - Nếu gửi từ inventory, phải kiểm tra ownership và số lượng
+   * - Quantity mặc định: 1
+   */
   async create(dto: CreateGiftDto & { sender_id: string }) {
     const quantity = dto.quantity ?? 1;
     this.logger.log(
       `User ${dto.sender_id} attempting to send gift ${dto.gift_item_id}${dto.item_id ? ` (from inventory item_id: ${dto.item_id})` : ''} x${quantity} to ${dto.receiver_id}`,
     );
 
-    // Kiểm tra không cho phép gửi quà cho chính mình
+    // Validate: Không cho phép gửi quà cho chính mình
     if (dto.sender_id === dto.receiver_id) {
       throw new BadRequestException('Bạn không thể gửi quà cho chính mình');
     }

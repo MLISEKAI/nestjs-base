@@ -1,15 +1,40 @@
+// Import Injectable, OnModuleInit và Logger từ NestJS
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+// Import ConfigService để đọc environment variables
 import { ConfigService } from '@nestjs/config';
+// Import Firebase Admin SDK
 import * as admin from 'firebase-admin';
+// Import file system utilities
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * FirebaseService - Service xử lý Firebase operations (Firebase Storage, etc.)
+ *
+ * Chức năng chính:
+ * - Initialize Firebase Admin SDK
+ * - Upload files lên Firebase Storage
+ * - Quản lý Firebase Storage bucket
+ *
+ * Lưu ý:
+ * - Cần config FIREBASE_SERVICE_ACCOUNT_PATH hoặc FIREBASE_SERVICE_ACCOUNT_BASE64 trong .env
+ * - Có thể dùng FIREBASE_PROJECT_ID và FIREBASE_STORAGE_BUCKET
+ * - Service account có thể load từ file path hoặc base64 string
+ */
 @Injectable()
 export class FirebaseService implements OnModuleInit {
+  // Logger để log các events và errors
   private readonly logger = new Logger(FirebaseService.name);
+  // Firebase Storage bucket instance
   private bucket: any = null;
+  // Firebase project ID
   private projectId: string | null = null;
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject ConfigService khi tạo instance của service
+   */
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {

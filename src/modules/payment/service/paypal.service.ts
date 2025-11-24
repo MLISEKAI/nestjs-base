@@ -1,21 +1,35 @@
+// Import Injectable, Logger và exceptions từ NestJS
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+// Import ConfigService để đọc environment variables
 import { ConfigService } from '@nestjs/config';
+// Import HttpService để gọi PayPal API
 import { HttpService } from '@nestjs/axios';
+// Import firstValueFrom để convert Observable thành Promise
 import { firstValueFrom } from 'rxjs';
+// Import interfaces để type-check
 import type { PayPalWebhookHeaders, PayPalWebhookPayload } from '../interfaces/webhook.interface';
 
+/**
+ * PayPalAccessToken - Interface cho PayPal access token response
+ */
 interface PayPalAccessToken {
   access_token: string;
   token_type: string;
   expires_in: number;
 }
 
+/**
+ * PayPalOrder - Interface cho PayPal order
+ */
 interface PayPalOrder {
   id: string;
   status: string;
   links: Array<{ href: string; rel: string; method: string }>;
 }
 
+/**
+ * PayPalOrderResponse - Interface cho PayPal order response
+ */
 interface PayPalOrderResponse {
   id: string;
   status: string;
@@ -35,6 +49,9 @@ interface PayPalOrderResponse {
   }>;
 }
 
+/**
+ * PayPalCaptureResponse - Interface cho PayPal capture response
+ */
 interface PayPalCaptureResponse {
   id: string;
   status: string;
@@ -53,16 +70,42 @@ interface PayPalCaptureResponse {
   }>;
 }
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * PayPalService - Service xử lý business logic cho PayPal integration
+ *
+ * Chức năng chính:
+ * - Tạo PayPal order (payment session)
+ * - Capture PayPal payment
+ * - Verify PayPal webhook
+ * - Xử lý PayPal access token (OAuth)
+ *
+ * Lưu ý:
+ * - Hỗ trợ cả sandbox và production mode
+ * - Tự động refresh access token khi hết hạn
+ * - Cần config PAYPAL_CLIENT_ID và PAYPAL_CLIENT_SECRET trong .env
+ */
 @Injectable()
 export class PayPalService {
+  // Logger để log các events và errors
   private readonly logger = new Logger(PayPalService.name);
+  // PayPal API base URL (sandbox hoặc production)
   private readonly baseUrl: string;
+  // PayPal client ID từ environment variables
   private readonly clientId: string;
+  // PayPal client secret từ environment variables
   private readonly clientSecret: string;
+  // Flag để check xem đang dùng sandbox hay production
   private readonly isSandbox: boolean;
+  // Cached access token để tránh request lại mỗi lần
   private accessToken: string | null = null;
+  // Timestamp khi token hết hạn
   private tokenExpiresAt: number = 0;
 
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject ConfigService và HttpService khi tạo instance của service
+   */
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,

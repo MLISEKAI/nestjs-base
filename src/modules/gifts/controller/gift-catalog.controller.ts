@@ -1,13 +1,34 @@
+// Import các decorator và class từ NestJS để tạo controller
 import { Controller, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+// Import các decorator từ Swagger để tạo API documentation
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+// Import GiftCatalogService để xử lý business logic
 import { GiftCatalogService } from '../service/gift-catalog.service';
+// Import DTO để validate và type-check dữ liệu
 import { GiftItemsQueryDto } from '../dto/gift-items-query.dto';
+// Import interface để type-check
 import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
+/**
+ * @ApiTags('Gift Catalog') - Nhóm các endpoints này trong Swagger UI với tag "Gift Catalog"
+ * @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+ *   - transform: true - Tự động transform dữ liệu
+ *   - whitelist: true - Chỉ giữ lại các properties được định nghĩa trong DTO
+ * @Controller('gifts') - Định nghĩa base route là /gifts
+ * GiftCatalogController - Controller xử lý các HTTP requests liên quan đến gift catalog
+ *
+ * Chức năng chính:
+ * - Lấy danh sách gift items với pagination, filtering, và sorting
+ * - Public endpoint (không cần authentication)
+ */
 @ApiTags('Gift Catalog')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('gifts')
 export class GiftCatalogController {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject GiftCatalogService khi tạo instance của controller
+   */
   constructor(private readonly catalogService: GiftCatalogService) {}
 
   @Get('items')

@@ -1,77 +1,69 @@
+// Import các exception từ NestJS
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// Import PrismaService để tương tác với database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import Prisma types
 import { Prisma } from '@prisma/client';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+// Import các DTO để validate và type-check dữ liệu
 import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
+// Import utility để build paginated response
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+// Import interface cho paginated response
 import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * WalletService - Service xử lý business logic cho wallet operations
+ *
+ * Chức năng chính:
+ * - CRUD wallet (Diamond, VEX)
+ * - Đảm bảo user có đủ 2 ví (diamond và vex)
+ * - Migrate wallets cũ (gem, gold) sang diamond
+ * - Cache wallet data để tối ưu performance
+ */
 @Injectable()
 export class WalletService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các dependencies khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
   ) {}
 
+  /**
+   * Lấy danh sách wallets của user với pagination
+   *
+   * @param userId - User ID
+   * @param query - BaseQueryDto cho pagination và filtering
+   * @returns Paginated response chứa danh sách wallets
+   *
+   * Quy trình:
+   * 1. Đảm bảo user có đủ 2 ví (diamond và vex)
+   * 2. Query wallets với pagination và filtering
+   * 3. Trả về paginated response
+   */
   async getWallet(userId: string, query: BaseQueryDto): Promise<IPaginatedResponse<any>> {
-    // Migrate tất cả wallets cũ với currency "gem" hoặc "gold" sang "diamond"
-    const oldWallets = await this.prisma.resWallet.findMany({
-      where: {
-        user_id: userId,
-        currency: { in: ['gem', 'gold'] },
-      },
-    });
-
-    // Migrate tất cả wallets cũ sang "diamond"
-    if (oldWallets.length > 0) {
-      // Nếu có nhiều wallets cũ, merge balance vào wallet đầu tiên và xóa các wallet còn lại
-      if (oldWallets.length > 1) {
-        const totalBalance = oldWallets.reduce((sum, wallet) => sum + Number(wallet.balance), 0);
-
-        // Update wallet đầu tiên
-        await this.prisma.resWallet.update({
-          where: { id: oldWallets[0].id },
-          data: {
-            currency: 'diamond',
-            balance: new Prisma.Decimal(totalBalance),
-          },
-        });
-
-        // Xóa các wallet còn lại
-        const idsToDelete = oldWallets.slice(1).map((w) => w.id);
-        await this.prisma.resWallet.deleteMany({
-          where: { id: { in: idsToDelete } },
-        });
-      } else {
-        // Chỉ có 1 wallet cũ, migrate trực tiếp
-        await this.prisma.resWallet.update({
-          where: { id: oldWallets[0].id },
-          data: {
-            currency: 'diamond',
-          },
-        });
-      }
-
-      // Invalidate cache
-      await this.cacheService.del(`wallet:${userId}:summary`);
-      await this.cacheService.delPattern(`wallet:${userId}:*`);
-    }
-
     // Đảm bảo user có cả 2 ví (diamond và vex)
+    // Nếu thiếu, sẽ tự động tạo mới
     await this.ensureUserWallets(userId);
 
-    // Pagination
+    // Pagination: lấy limit và page từ query, default limit = 20, page = 1
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    // Build where clause
+    // Build where clause: filter theo user_id
     const where: Prisma.ResWalletWhereInput = {
       user_id: userId,
     };
 
-    // Filter by currency if search contains currency keyword
+    // Filter by currency nếu search chứa từ khóa currency (diamond hoặc vex)
     if (query.search) {
       const searchLower = query.search.toLowerCase();
       if (searchLower === 'diamond' || searchLower === 'vex') {
@@ -79,16 +71,18 @@ export class WalletService {
       }
     }
 
-    // Build orderBy
+    // Build orderBy: mặc định sắp xếp theo created_at desc (mới nhất trước)
     let orderBy: Prisma.ResWalletOrderByWithRelationInput = { created_at: 'desc' };
     if (query.sort) {
+      // Parse sort string: "field:asc" hoặc "field:desc"
       const [field, order] = query.sort.split(':');
       if (field && (order === 'asc' || order === 'desc')) {
         orderBy = { [field]: order } as Prisma.ResWalletOrderByWithRelationInput;
       }
     }
 
-    // Query wallets
+    // Query wallets với pagination và count total
+    // Sử dụng Promise.all để query song song, tối ưu performance
     const [wallets, total] = await Promise.all([
       this.prisma.resWallet.findMany({
         where,
@@ -99,12 +93,24 @@ export class WalletService {
       this.prisma.resWallet.count({ where }),
     ]);
 
+    // Trả về paginated response với format chuẩn
     return buildPaginatedResponse(wallets, total, page, take);
   }
 
   /**
    * Đảm bảo user có cả 2 ví (diamond và vex)
    * Tự động tạo nếu chưa có
+   *
+   * @param userId - User ID
+   *
+   * Quy trình:
+   * 1. Kiểm tra diamond wallet, tạo nếu chưa có
+   * 2. Kiểm tra vex wallet, tạo nếu chưa có
+   *
+   * Lưu ý:
+   * - Mỗi user phải có đủ 2 ví: diamond và vex
+   * - Balance mặc định = 0 khi tạo mới
+   * - Method này được gọi tự động trong getWallet() để đảm bảo data consistency
    */
   async ensureUserWallets(userId: string): Promise<void> {
     // Kiểm tra và tạo diamond wallet nếu chưa có
@@ -116,6 +122,7 @@ export class WalletService {
     });
 
     if (!diamondWallet) {
+      // Tạo diamond wallet mới với balance = 0
       await this.prisma.resWallet.create({
         data: {
           user_id: userId,
@@ -134,6 +141,7 @@ export class WalletService {
     });
 
     if (!vexWallet) {
+      // Tạo vex wallet mới với balance = 0
       await this.prisma.resWallet.create({
         data: {
           user_id: userId,

@@ -1,18 +1,61 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+// Import Injectable, exceptions, Inject, forwardRef và Logger từ NestJS
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Inject,
+  forwardRef,
+  Logger,
+} from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
+// Import UserProfileService để xử lý user profile
 import { UserProfileService } from './user-profile.service';
+// Import DTO để validate và type-check dữ liệu
 import { UserConnectionDto } from '../dto/connection-user.dto';
+// Import utility function để build paginated response
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+// Import interfaces và types để type-check
 import type { PaginationMeta } from '../../../common/interfaces/prisma.interface';
 import type { ResUser } from '@prisma/client';
+// Import NotificationService với forwardRef để tránh circular dependency
+import { NotificationService } from '../../notifications/service/notification.service';
+import { NotificationType } from '@prisma/client';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * UserConnectionsService - Service xử lý business logic cho user connections (follow, unfollow, friends)
+ *
+ * Chức năng chính:
+ * - Follow/unfollow users
+ * - Lấy danh sách followers, following, friends
+ * - Lấy connection stats (followers count, following count, friends count, posts count)
+ * - Xử lý mutual follow (friends)
+ * - Tạo notifications khi follow
+ *
+ * Lưu ý:
+ * - Sử dụng forwardRef với NotificationService để tránh circular dependency
+ * - Cache stats để tối ưu performance
+ * - Tự động tạo friend relationship khi mutual follow
+ */
 @Injectable()
 export class UserConnectionsService {
+  // Logger để log các events và errors
+  private readonly logger = new Logger(UserConnectionsService.name);
+
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject các services khi tạo instance của service
+   * @Inject(forwardRef(() => NotificationService)) - Dùng forwardRef để tránh circular dependency
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
     private profile: UserProfileService,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService: NotificationService,
   ) {}
 
   async getStats(userId: string) {
@@ -40,23 +83,34 @@ export class UserConnectionsService {
     );
   }
 
+  /**
+   * Follow một user
+   * @param userId - ID của user đang follow (follower)
+   * @param targetId - ID của user được follow (following)
+   * @param currentUser - Optional: user object từ req.user để tránh query lại database
+   * @returns Thông tin follow relationship đã tạo/cập nhật
+   */
   async followUser(
     userId: string,
     targetId: string,
     currentUser?: any, // Optional: user object từ req.user để tránh query lại
   ) {
+    // Kiểm tra: không cho phép follow chính mình
     if (userId === targetId) {
       throw new BadRequestException('Cannot follow yourself');
     }
 
-    // Tối ưu: Nếu đã có currentUser từ req.user, không cần query lại
+    // Tối ưu: Nếu đã có currentUser từ req.user, không cần query lại database
+    // Chỉ dùng currentUser nếu ID khớp với userId
     const user = currentUser && currentUser.id === userId ? currentUser : null;
+    // Tìm thông tin user được follow (target)
     const target = await this.profile.findUser(targetId);
 
+    // Nếu không tìm thấy target user, throw exception
     if (!target) {
       throw new NotFoundException('Target user not found');
     }
-    // Nếu không có user và không phải từ req.user, query để verify
+    // Nếu không có user và không phải từ req.user, query để verify user tồn tại
     if (!user) {
       const userCheck = await this.profile.findUser(userId);
       if (!userCheck) {
@@ -65,11 +119,21 @@ export class UserConnectionsService {
     }
 
     // Tạo hoặc cập nhật follow relationship
+    // upsert: nếu đã tồn tại thì update, chưa có thì create
+    // follower_id_following_id là composite unique key (mỗi user chỉ có thể follow 1 lần)
     const follow = await this.prisma.resFollow.upsert({
-      where: { follower_id_following_id: { follower_id: userId, following_id: targetId } },
-      create: { follower_id: userId, following_id: targetId },
-      update: {},
+      where: {
+        // Tìm follow relationship theo composite key
+        follower_id_following_id: { follower_id: userId, following_id: targetId },
+      },
+      create: {
+        // Nếu chưa có thì tạo mới
+        follower_id: userId, // User đang follow
+        following_id: targetId, // User được follow
+      },
+      update: {}, // Nếu đã có thì không update gì (giữ nguyên)
       include: {
+        // Include thông tin user được follow để trả về trong response
         following: {
           select: {
             id: true,
@@ -80,35 +144,77 @@ export class UserConnectionsService {
       },
     });
 
+    // Kiểm tra reverse follow (target có follow lại user không)
+    // Nếu có reverse follow thì họ là bạn bè (friends)
     const reverse = await this.prisma.resFollow.findUnique({
-      where: { follower_id_following_id: { follower_id: targetId, following_id: userId } },
+      where: {
+        follower_id_following_id: { follower_id: targetId, following_id: userId },
+      },
     });
 
+    // Kiểm tra và tạo friend relationship nếu cả 2 đều follow nhau
     let isFriend = false;
     if (reverse) {
+      // Nếu có reverse follow, kiểm tra đã có friend relationship chưa
       const existingFriend = await this.prisma.resFriend.findFirst({
         where: {
           OR: [
+            // Friend relationship có thể lưu theo 2 chiều (user_a_id, user_b_id)
             { user_a_id: userId, user_b_id: targetId },
             { user_a_id: targetId, user_b_id: userId },
           ],
         },
       });
+      // Nếu chưa có friend relationship thì tạo mới
       if (!existingFriend) {
-        await this.prisma.resFriend.create({ data: { user_a_id: userId, user_b_id: targetId } });
+        await this.prisma.resFriend.create({
+          data: { user_a_id: userId, user_b_id: targetId },
+        });
         isFriend = true;
       } else {
+        // Đã có rồi thì set isFriend = true
         isFriend = true;
       }
     }
 
+    // Xóa cache khi follow để đảm bảo dữ liệu mới nhất
+    // Xóa cache stats của cả 2 user (follower và following)
+    await this.cacheService.del(`connections:${userId}:stats`);
+    await this.cacheService.del(`connections:${targetId}:stats`);
+
+    // Tự động tạo notification cho user được follow
+    try {
+      // Lấy thông tin nickname của user đang follow để hiển thị trong notification
+      const sender = await this.prisma.resUser.findUnique({
+        where: { id: userId },
+        select: { nickname: true }, // Chỉ lấy nickname để tối ưu
+      });
+
+      // Tạo notification cho user được follow
+      await this.notificationService.createNotification({
+        user_id: targetId, // User được follow nhận notification
+        sender_id: userId, // Người follow (user đang thực hiện hành động)
+        type: NotificationType.FOLLOW, // Loại notification là FOLLOW
+        title: 'New Follower', // Tiêu đề
+        content: sender?.nickname
+          ? `${sender.nickname} started following you` // Nếu có nickname
+          : 'Someone started following you', // Không có thì dùng "Someone"
+        link: `/users/${userId}`, // Link đến profile của người follow
+        data: JSON.stringify({ follower_id: userId }), // Dữ liệu bổ sung
+      });
+    } catch (error) {
+      // Log error nhưng không fail follow action
+      // Nếu tạo notification fail, follow vẫn thành công (graceful degradation)
+      this.logger.error(`Failed to create notification for follow: ${error.message}`);
+    }
+
     // Trả về dữ liệu thực tế thay vì chỉ message
     return {
-      follower_id: follow.follower_id,
-      following_id: follow.following_id,
-      following: follow.following,
-      is_friend: isFriend,
-      created_at: follow.created_at,
+      follower_id: follow.follower_id, // ID của user đang follow
+      following_id: follow.following_id, // ID của user được follow
+      following: follow.following, // Thông tin user được follow (nickname, avatar, etc.)
+      is_friend: isFriend, // Có phải bạn bè không (cả 2 đều follow nhau)
+      created_at: follow.created_at, // Thời gian tạo follow relationship
     };
   }
 

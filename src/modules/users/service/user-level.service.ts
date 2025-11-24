@@ -1,9 +1,31 @@
+// Import Injectable từ NestJS
 import { Injectable } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from 'src/prisma/prisma.service';
+// Import CacheService để cache data
 import { CacheService } from 'src/common/cache/cache.service';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * UserLevelService - Service xử lý business logic cho user level và balance
+ *
+ * Chức năng chính:
+ * - Tính user level dựa trên tổng số quà đã nhận
+ * - Tính XP và XP to next level
+ * - Cache user balance để tối ưu performance
+ *
+ * Lưu ý:
+ * - User balance được cache 5 phút (level thay đổi khi nhận gift)
+ * - Level formula: level = Math.floor(totalGifts / 10) + 1
+ * - XP = totalGifts % 10
+ * - XP to next level = 10 - XP
+ */
 @Injectable()
 export class UserLevelService {
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject PrismaService và CacheService khi tạo instance của service
+   */
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,

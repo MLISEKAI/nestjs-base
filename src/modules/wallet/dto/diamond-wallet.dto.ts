@@ -1,8 +1,14 @@
+// Import decorators từ Swagger để tạo API documentation
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+// Import decorators từ class-validator để validate dữ liệu
 import { IsString, IsNumber, IsOptional, IsEnum, Min, IsEmail } from 'class-validator';
+// Import decorators từ class-transformer để transform dữ liệu
 import { Type } from 'class-transformer';
 
-// Wallet Summary
+/**
+ * WalletSummaryResponseDto - DTO cho response của GET /wallet/summary
+ * Chứa tổng quan wallet: Diamond balance, VEX balance, Monthly card status
+ */
 export class WalletSummaryResponseDto {
   @ApiProperty({ example: 1200, description: 'Tổng số đá quý' })
   totalDiamondBalance: number;
@@ -17,7 +23,10 @@ export class WalletSummaryResponseDto {
   monthlyCardStatus: string;
 }
 
-// VEX Balance Response
+/**
+ * ExchangeRateDto - DTO cho exchange rate (tỷ giá)
+ * Chứa tỷ giá VEX to USD và thời gian cập nhật
+ */
 export class ExchangeRateDto {
   @ApiProperty({ example: 0.01657, description: 'Tỷ giá VEX to USD' })
   vex_to_usd: number;
@@ -26,6 +35,10 @@ export class ExchangeRateDto {
   last_updated: string;
 }
 
+/**
+ * DailyLimitsDto - DTO cho daily limits (giới hạn giao dịch trong ngày)
+ * Chứa số tiền còn lại có thể deposit, withdraw, transfer trong ngày
+ */
 export class DailyLimitsDto {
   @ApiProperty({ example: 4500.0, description: 'Số tiền còn lại có thể nạp trong ngày' })
   deposit_remaining: number;
@@ -37,6 +50,10 @@ export class DailyLimitsDto {
   transfer_remaining: number;
 }
 
+/**
+ * VexBalanceResponseDto - DTO cho response của GET /wallet/vex
+ * Chứa VEX balance, VEX balance quy đổi sang USD, exchange rate, và daily limits
+ */
 export class VexBalanceResponseDto {
   @ApiProperty({ example: 54292.79, description: 'Số dư VEX' })
   vex_balance: number;
@@ -51,13 +68,19 @@ export class VexBalanceResponseDto {
   daily_limits: DailyLimitsDto;
 }
 
-// Diamond Balance Response
+/**
+ * DiamondBalanceResponseDto - DTO cho response của GET /wallet/diamond
+ * Chứa Diamond balance
+ */
 export class DiamondBalanceResponseDto {
   @ApiProperty({ example: 1500, description: 'Số dư Diamond' })
   diamond_balance: number;
 }
 
-// Recharge Packages
+/**
+ * RechargePackageDto - DTO cho recharge package (gói nạp tiền)
+ * Chứa thông tin gói nạp tiền: packageId, diamonds, price, bonus
+ */
 export class RechargePackageDto {
   @ApiProperty({ example: 1 })
   packageId: number;
@@ -72,7 +95,10 @@ export class RechargePackageDto {
   bonus?: string;
 }
 
-// Monthly Cards
+/**
+ * MonthlyCardDto - DTO cho monthly card (thẻ tháng)
+ * Chứa thông tin thẻ tháng: cardId, price, diamondsDaily, name, duration
+ */
 export class MonthlyCardDto {
   @ApiProperty({ example: 1 })
   cardId: number;
@@ -90,7 +116,10 @@ export class MonthlyCardDto {
   duration?: number;
 }
 
-// Checkout Recharge
+/**
+ * CheckoutRechargeDto - DTO để checkout recharge (nạp tiền)
+ * Chứa packageId và currency (diamond hoặc vex)
+ */
 export class CheckoutRechargeDto {
   @ApiProperty({ example: 1, description: 'ID gói' })
   @IsNumber()
@@ -107,6 +136,10 @@ export class CheckoutRechargeDto {
   currency?: 'diamond' | 'vex';
 }
 
+/**
+ * CheckoutRechargeResponseDto - DTO cho response sau khi checkout recharge
+ * Chứa transactionId, price, status, và paymentUrl (PayPal)
+ */
 export class CheckoutRechargeResponseDto {
   @ApiProperty({ example: 'TX123456', description: 'ID giao dịch' })
   transactionId: string;
@@ -130,7 +163,10 @@ export class CheckoutRechargeResponseDto {
   paymentUrl?: string;
 }
 
-// Purchase Subscription
+/**
+ * PurchaseSubscriptionDto - DTO để mua subscription (Monthly Card)
+ * Chứa cardId (ID của monthly card muốn mua)
+ */
 export class PurchaseSubscriptionDto {
   @ApiProperty({ example: 1, description: 'ID thẻ tháng' })
   @IsNumber()
@@ -138,6 +174,10 @@ export class PurchaseSubscriptionDto {
   cardId: number;
 }
 
+/**
+ * PurchaseSubscriptionResponseDto - DTO cho response sau khi mua subscription
+ * Chứa subscriptionId, status, startDate, nextRenewal
+ */
 export class PurchaseSubscriptionResponseDto {
   @ApiProperty({ example: 'SUB123', description: 'ID đăng ký' })
   subscriptionId: string;
@@ -152,7 +192,10 @@ export class PurchaseSubscriptionResponseDto {
   nextRenewal: string;
 }
 
-// Subscription Details
+/**
+ * SubscriptionDetailsResponseDto - DTO cho response của GET /wallet/subscription
+ * Chứa thông tin chi tiết subscription: subscriptionId, status, nextRenewal, username
+ */
 export class SubscriptionDetailsResponseDto {
   @ApiProperty({ example: 'SUB123', description: 'ID đăng ký' })
   subscriptionId: string;
@@ -167,7 +210,10 @@ export class SubscriptionDetailsResponseDto {
   username: string;
 }
 
-// Transaction History - Flutter Model Compatible
+/**
+ * TransactionType - Enum cho các loại transaction
+ * Flutter Model Compatible - tương thích với Flutter app
+ */
 export enum TransactionType {
   deposit = 'deposit',
   withdrawal = 'withdrawal',
@@ -178,6 +224,10 @@ export enum TransactionType {
   reward = 'reward',
 }
 
+/**
+ * TransactionStatus - Enum cho trạng thái transaction
+ * Flutter Model Compatible - tương thích với Flutter app
+ */
 export enum TransactionStatus {
   completed = 'completed',
   pending = 'pending',
@@ -185,12 +235,19 @@ export enum TransactionStatus {
   cancelled = 'cancelled',
 }
 
+/**
+ * CurrencyType - Enum cho loại currency
+ * Flutter Model Compatible - tương thích với Flutter app
+ */
 export enum CurrencyType {
   Diamonds = 'Diamonds',
   VEX = 'VEX',
 }
 
-// Nested Models
+/**
+ * TransactionItemDto - DTO cho item trong transaction
+ * Dùng cho gift transactions, chứa thông tin item (name, quantity, icon, value)
+ */
 export class TransactionItemDto {
   @ApiProperty({ example: 'Ice Cream Cone', description: 'Tên item' })
   name: string;
@@ -205,6 +262,10 @@ export class TransactionItemDto {
   value?: number;
 }
 
+/**
+ * RelatedUserDto - DTO cho user liên quan đến transaction
+ * Dùng cho transfer, gift transactions, chứa thông tin user (id, username, displayName, avatar, isVerified)
+ */
 export class RelatedUserDto {
   @ApiProperty({ example: 'user-uuid', description: 'User ID' })
   id: string;
@@ -222,6 +283,10 @@ export class RelatedUserDto {
   isVerified?: boolean;
 }
 
+/**
+ * ExchangeDetailsDto - DTO cho chi tiết exchange (chuyển đổi currency)
+ * Chứa thông tin: fromCurrency, fromAmount, toCurrency, toAmount, rate
+ */
 export class ExchangeDetailsDto {
   @ApiProperty({ enum: CurrencyType, example: CurrencyType.VEX, description: 'From currency' })
   fromCurrency: CurrencyType;
@@ -239,7 +304,11 @@ export class ExchangeDetailsDto {
   rate: number;
 }
 
-// Main Transaction Model
+/**
+ * TransactionModelDto - DTO cho transaction model (Flutter compatible)
+ * Chứa đầy đủ thông tin transaction: id, type, status, currency, amount, description, etc.
+ * Format tương thích với Flutter app
+ */
 export class TransactionModelDto {
   @ApiProperty({ example: 'TX001', description: 'ID giao dịch' })
   id: string;
@@ -283,7 +352,11 @@ export class TransactionModelDto {
   status: TransactionStatus;
 }
 
-// Transaction History Response (Flutter compatible)
+/**
+ * TransactionHistoryResponseDto - DTO cho response của GET /wallet/transactions
+ * Flutter compatible - format tương thích với Flutter app
+ * Chứa danh sách transactions và pagination metadata
+ */
 export class TransactionHistoryResponseDto {
   @ApiProperty({ type: [TransactionModelDto], description: 'Danh sách giao dịch' })
   data: TransactionModelDto[];
@@ -296,7 +369,11 @@ export class TransactionHistoryResponseDto {
   };
 }
 
-// Legacy DTO (deprecated - keep for backward compatibility)
+/**
+ * TransactionHistoryItemDto - Legacy DTO (deprecated)
+ * Giữ lại để backward compatibility
+ * Nên sử dụng TransactionModelDto thay thế
+ */
 export class TransactionHistoryItemDto {
   @ApiProperty({ example: 'TX001', description: 'ID giao dịch' })
   id: string;
@@ -342,7 +419,10 @@ export class TransactionHistoryItemDto {
   live_stream_info?: string;
 }
 
-// VEX Package (Gói mua Diamond bằng VEX)
+/**
+ * VexPackageDto - DTO cho VEX package (gói mua Diamond bằng VEX)
+ * Chứa thông tin gói: packageId, vexAmount, baseDiamonds, bonusDiamonds, totalDiamonds
+ */
 export class VexPackageDto {
   @ApiProperty({ example: 1, description: 'ID gói' })
   packageId: number;
@@ -360,7 +440,10 @@ export class VexPackageDto {
   totalDiamonds: number;
 }
 
-// Mua Diamond bằng VEX
+/**
+ * ConvertVexToDiamondDto - DTO để chuyển đổi VEX sang Diamond
+ * Chứa vexAmount (chỉ hỗ trợ các gói cố định: 20, 50, 80, 120, 200, 420 VEX)
+ */
 export class ConvertVexToDiamondDto {
   @ApiProperty({
     example: 20,
@@ -373,6 +456,10 @@ export class ConvertVexToDiamondDto {
   vexAmount: number;
 }
 
+/**
+ * ConvertVexToDiamondResponseDto - DTO cho response sau khi chuyển đổi VEX sang Diamond
+ * Chứa diamondsReceived, bonusDiamonds, totalDiamondsReceived, newDiamondBalance, newVexBalance
+ */
 export class ConvertVexToDiamondResponseDto {
   @ApiProperty({ example: 100, description: 'Đá quý nhận được (base)' })
   diamondsReceived: number;
@@ -390,7 +477,10 @@ export class ConvertVexToDiamondResponseDto {
   newVexBalance: number;
 }
 
-// Transfer VEX
+/**
+ * TransferVexDto - DTO để chuyển VEX từ user này sang user khác
+ * Chứa receiver_id, amount, và note (optional)
+ */
 export class TransferVexDto {
   @ApiProperty({ example: 'user-receiver-id', description: 'ID người nhận' })
   @IsString()
@@ -408,6 +498,10 @@ export class TransferVexDto {
   note?: string;
 }
 
+/**
+ * TransferVexResponseDto - DTO cho response sau khi chuyển VEX
+ * Chứa transferId, status, newSenderBalance, newReceiverBalance
+ */
 export class TransferVexResponseDto {
   @ApiProperty({ example: 'TRF123', description: 'ID giao dịch chuyển' })
   transferId: string;
@@ -422,7 +516,10 @@ export class TransferVexResponseDto {
   newReceiverBalance: number;
 }
 
-// Update Deposit Network
+/**
+ * UpdateDepositNetworkDto - DTO để update deposit network
+ * Chứa network (Ethereum, Polygon, BSC, Arbitrum)
+ */
 export class UpdateDepositNetworkDto {
   @ApiProperty({
     example: 'Polygon',
@@ -433,7 +530,10 @@ export class UpdateDepositNetworkDto {
   network: string;
 }
 
-// Payment Methods
+/**
+ * PaymentMethodDto - DTO cho payment method (phương thức thanh toán)
+ * Chứa id, name, type, masked_info, is_active
+ */
 export class PaymentMethodDto {
   @ApiProperty({ example: 'visa', description: 'ID phương thức thanh toán' })
   id: string;
@@ -451,7 +551,10 @@ export class PaymentMethodDto {
   is_active?: boolean;
 }
 
-// Create Deposit
+/**
+ * CreateDepositDto - DTO để tạo deposit address
+ * Chứa network (optional, mặc định: Ethereum)
+ */
 export class CreateDepositDto {
   @ApiPropertyOptional({
     example: 'Polygon',
@@ -463,6 +566,10 @@ export class CreateDepositDto {
   network?: string;
 }
 
+/**
+ * CreateDepositResponseDto - DTO cho response sau khi tạo deposit address
+ * Chứa deposit_address, qr_code, network
+ */
 export class CreateDepositResponseDto {
   @ApiProperty({ example: '0xabc123...', description: 'Địa chỉ nạp VEX' })
   deposit_address: string;
@@ -474,7 +581,10 @@ export class CreateDepositResponseDto {
   network: string;
 }
 
-// Withdraw VEX
+/**
+ * WithdrawVexDto - DTO để withdraw VEX về PayPal
+ * Chứa amount và paypalEmail
+ */
 export class WithdrawVexDto {
   @ApiProperty({
     example: 'user@example.com',
@@ -491,6 +601,10 @@ export class WithdrawVexDto {
   amount: number;
 }
 
+/**
+ * WithdrawVexResponseDto - DTO cho response sau khi withdraw VEX
+ * Chứa withdrawalId, status, message (optional)
+ */
 export class WithdrawVexResponseDto {
   @ApiProperty({ example: 'WD123', description: 'ID rút VEX' })
   withdrawalId: string;
@@ -502,7 +616,10 @@ export class WithdrawVexResponseDto {
   message?: string;
 }
 
-// Deposit Info
+/**
+ * DepositInfoResponseDto - DTO cho response của GET /wallet/deposit/info
+ * Chứa deposit_address, qr_code, network
+ */
 export class DepositInfoResponseDto {
   @ApiProperty({ example: '0xabc123...', description: 'Địa chỉ nạp VEX' })
   deposit_address: string;
@@ -514,7 +631,10 @@ export class DepositInfoResponseDto {
   network: string;
 }
 
-// IAP Verify Receipt
+/**
+ * IapVerifyReceiptDto - DTO để verify IAP receipt (iOS/Android)
+ * Chứa receipt, platform (ios/android), và productId (optional)
+ */
 export class IapVerifyReceiptDto {
   @ApiProperty({
     example: 'base64-encoded-receipt',
@@ -533,6 +653,10 @@ export class IapVerifyReceiptDto {
   productId?: string;
 }
 
+/**
+ * IapVerifyReceiptResponseDto - DTO cho response sau khi verify IAP receipt
+ * Chứa status, diamondsAdded, newBalance
+ */
 export class IapVerifyReceiptResponseDto {
   @ApiProperty({ example: 'success', description: 'Trạng thái: success, failed' })
   status: string;

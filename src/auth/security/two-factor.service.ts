@@ -1,10 +1,32 @@
+// Import Injectable và exceptions từ NestJS
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+// Import PrismaService để query database
 import { PrismaService } from '../../prisma/prisma.service';
+// Import ConfigService để đọc environment variables
 import { ConfigService } from '@nestjs/config';
+// Import Prisma types
 import { ResTwoFactor, ResUser } from '@prisma/client';
+// Import authenticator từ otplib để generate và verify TOTP codes
 import { authenticator } from 'otplib';
+// Import crypto functions để hash backup codes
 import { createHash, randomBytes } from 'crypto';
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * TwoFactorService - Service xử lý two-factor authentication (2FA)
+ *
+ * Chức năng chính:
+ * - Generate TOTP secret và QR code URL
+ * - Enable/disable 2FA
+ * - Verify 2FA codes (TOTP hoặc backup codes)
+ * - Generate và manage backup codes
+ *
+ * Lưu ý:
+ * - Sử dụng TOTP (Time-based One-Time Password) với otplib
+ * - Backup codes được hash trước khi lưu vào database
+ * - Backup codes được consume sau khi sử dụng (one-time use)
+ * - TOTP codes có window tolerance (mặc định của otplib)
+ */
 @Injectable()
 export class TwoFactorService {
   private readonly issuer: string;

@@ -1,10 +1,19 @@
+// Import Injectable và exceptions từ NestJS
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+// Import JwtService để sign và verify JWT tokens
 import { JwtService } from '@nestjs/jwt';
+// Import ConfigService để đọc environment variables
 import { ConfigService } from '@nestjs/config';
+// Import PrismaService để query database
 import { PrismaService } from '../../prisma/prisma.service';
+// Import Prisma types
 import { ResRefreshToken, ResUser, UserBasicRole } from '@prisma/client';
+// Import crypto functions để hash tokens và generate random values
 import { createHash, randomBytes, randomUUID } from 'crypto';
 
+/**
+ * AccessTokenPayload - Interface cho access token response
+ */
 interface AccessTokenPayload {
   token: string;
   expiresIn: number;
@@ -12,17 +21,42 @@ interface AccessTokenPayload {
   jti: string;
 }
 
+/**
+ * SessionTokens - Interface cho session tokens (access + refresh)
+ */
 interface SessionTokens {
   accessToken: string;
   refreshToken: string;
   expiresAt: Date;
 }
 
+/**
+ * TwoFactorTokenPayload - Interface cho two-factor token response
+ */
 interface TwoFactorTokenPayload {
   token: string;
   expiresIn: number;
 }
 
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * TokenService - Service xử lý JWT tokens và refresh tokens
+ *
+ * Chức năng chính:
+ * - Tạo access tokens và refresh tokens
+ * - Rotate refresh tokens
+ * - Revoke refresh tokens
+ * - Blacklist access tokens (logout)
+ * - Verify two-factor tokens
+ * - Generate two-factor tokens
+ *
+ * Lưu ý:
+ * - Access tokens có JTI (JWT ID) để blacklist khi logout
+ * - Refresh tokens được hash và lưu trong database
+ * - Refresh tokens có TTL 30 ngày (mặc định)
+ * - Access tokens có TTL từ config (mặc định 1 giờ)
+ * - Two-factor tokens có TTL 5 phút
+ */
 @Injectable()
 export class TokenService {
   private readonly jwtSecret: string;
