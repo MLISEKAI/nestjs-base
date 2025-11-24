@@ -4,6 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { FeedService } from '../service/feed.service';
 import { FeedResponseDto } from '../dto/feed.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 @ApiTags('Friends Feed')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -37,7 +38,7 @@ export class FriendsFeedController {
     description: 'Danh sách posts từ friends với pagination',
     type: FeedResponseDto,
   })
-  getFeed(@Req() req: any, @Query() query?: BaseQueryDto & { since?: string }) {
+  getFeed(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto & { since?: string }) {
     return this.feedService.getFriendsFeed(req.user.id, query);
   }
 }

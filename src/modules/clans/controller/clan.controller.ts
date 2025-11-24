@@ -32,6 +32,7 @@ import {
   ClanBasicDto,
 } from '../dto/clan.dto';
 import { ClanService } from '../service/clan.service';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 /**
  * User Clans Controller - Yêu cầu authentication
@@ -59,7 +60,7 @@ export class ClanController {
     type: UserClanDto,
     isArray: true,
   })
-  getClans(@Req() req: any, @Query() query: BaseQueryDto) {
+  getClans(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.clans.getClans(userId, query);
   }
@@ -71,7 +72,7 @@ export class ClanController {
     description: 'Clan được tạo',
     type: ClanDetailDto,
   })
-  createClan(@Req() req: any, @Body() dto: CreateClanDto) {
+  createClan(@Req() req: AuthenticatedRequest, @Body() dto: CreateClanDto) {
     const userId = req.user.id;
     return this.clans.createClan(userId, dto);
   }
@@ -87,7 +88,7 @@ export class ClanController {
     description: 'Kết quả khi user tham gia clan',
     type: UserClanDto,
   })
-  joinClan(@Req() req: any, @Param('clan_id') clanId: string) {
+  joinClan(@Req() req: AuthenticatedRequest, @Param('clan_id') clanId: string) {
     const userId = req.user.id;
     return this.clans.joinClan(userId, clanId);
   }
@@ -103,7 +104,7 @@ export class ClanController {
     description: 'Kết quả rời clan',
     schema: { type: 'object', properties: { message: { example: 'Left clan' } } },
   })
-  leaveClan(@Req() req: any, @Param('clan_id') clanId: string) {
+  leaveClan(@Req() req: AuthenticatedRequest, @Param('clan_id') clanId: string) {
     const userId = req.user.id;
     return this.clans.leaveClan(userId, clanId);
   }
@@ -134,7 +135,7 @@ export class ClanController {
     type: UserClanDto,
   })
   updateClanRole(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('clan_id') clanId: string,
     @Body() dto: UpdateClanRankDto,
   ) {
@@ -148,7 +149,7 @@ export class ClanController {
     description: 'Thông tin clan mà user đang tham gia',
     type: UserClanDto,
   })
-  getClanInfo(@Req() req: any) {
+  getClanInfo(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.clans.getClanInfo(userId);
   }

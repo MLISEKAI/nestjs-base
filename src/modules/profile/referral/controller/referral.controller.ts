@@ -10,13 +10,10 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ReferralService } from '../service/referral.service';
+import type { AuthenticatedRequest } from '../../../../common/interfaces/request.interface';
 
 /**
  * User Referrals Controller - Yêu cầu authentication
@@ -32,21 +29,21 @@ export class ReferralController {
 
   @Get()
   @ApiOperation({ summary: 'Danh sách referral của user' })
-  getReferrals(@Req() req: any) {
+  getReferrals(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.referral.getReferrals(userId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Thêm referral cho user hiện tại' })
-  addReferral(@Req() req: any, @Body('referred_id') referredId: string) {
+  addReferral(@Req() req: AuthenticatedRequest, @Body('referred_id') referredId: string) {
     const userId = req.user.id;
     return this.referral.addReferral(userId, referredId);
   }
 
   @Delete(':referred_id')
   @ApiOperation({ summary: 'Xóa referral của user hiện tại' })
-  removeReferral(@Req() req: any, @Param('referred_id') referredId: string) {
+  removeReferral(@Req() req: AuthenticatedRequest, @Param('referred_id') referredId: string) {
     const userId = req.user.id;
     return this.referral.removeReferral(userId, referredId);
   }

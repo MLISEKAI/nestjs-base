@@ -11,6 +11,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProfileViewsServiceDb } from './profile-views.service';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 /**
  * User Profile Views Controller - Yêu cầu authentication
@@ -42,7 +43,7 @@ export class ProfileViewsControllerDb {
       },
     },
   })
-  logProfileView(@Req() req: any, @Param('target_user_id') targetId: string) {
+  logProfileView(@Req() req: AuthenticatedRequest, @Param('target_user_id') targetId: string) {
     const viewerId = req.user.id;
     return this.profileViewsService.logProfileView(targetId, viewerId);
   }
@@ -63,7 +64,7 @@ export class ProfileViewsControllerDb {
       },
     },
   })
-  getLastView(@Req() req: any, @Param('target_user_id') targetId: string) {
+  getLastView(@Req() req: AuthenticatedRequest, @Param('target_user_id') targetId: string) {
     const viewerId = req.user.id;
     return this.profileViewsService.getLastView(targetId, viewerId);
   }
@@ -105,7 +106,7 @@ export class ProfileViewsControllerDb {
       ],
     },
   })
-  getProfileViews(@Req() req: any, @Query('full') full?: string) {
+  getProfileViews(@Req() req: AuthenticatedRequest, @Query('full') full?: string) {
     const userId = req.user.id;
     return this.profileViewsService.getProfileViews(userId, full === 'true');
   }
@@ -130,7 +131,7 @@ export class ProfileViewsControllerDb {
       },
     },
   })
-  getUserFeatures(@Req() req: any) {
+  getUserFeatures(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     const features = {
       profile_view_full: false,

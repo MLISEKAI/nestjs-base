@@ -35,10 +35,21 @@ export class PostService {
                   id: true,
                   nickname: true,
                   avatar: true,
+                  union_id: true,
                 },
               },
               media: {
                 orderBy: { order: 'asc' },
+              },
+              hashtags: {
+                include: {
+                  hashtag: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
               },
               _count: {
                 select: {
@@ -54,7 +65,27 @@ export class PostService {
           this.prisma.resPost.count({ where: { user_id: userId } }),
         ]);
 
-        return buildPaginatedResponse(posts, total, page, take);
+        // Format posts để match với PostDto
+        const formattedPosts = posts.map((post) => ({
+          ...post,
+          media: (post.media || []).map((m) => ({
+            id: m.id,
+            media_url: m.media_url,
+            thumbnail_url: m.thumbnail_url,
+            media_type: m.media_type,
+            width: m.width,
+            height: m.height,
+            order: m.order,
+          })),
+          hashtags: (post.hashtags || []).map((ph) => ({
+            id: ph.hashtag.id,
+            name: ph.hashtag.name,
+          })),
+          like_count: post._count?.likes || 0,
+          comment_count: post._count?.comments || 0,
+        }));
+
+        return buildPaginatedResponse(formattedPosts, total, page, take);
       },
       cacheTtl,
     );
@@ -81,6 +112,16 @@ export class PostService {
             media: {
               orderBy: { order: 'asc' },
             },
+            hashtags: {
+              include: {
+                hashtag: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
             _count: {
               select: {
                 likes: true,
@@ -94,35 +135,127 @@ export class PostService {
           throw new NotFoundException('Post not found');
         }
 
-        return post;
+        // Format post để match với PostDto
+        return {
+          ...post,
+          media: (post.media || []).map((m) => ({
+            id: m.id,
+            media_url: m.media_url,
+            thumbnail_url: m.thumbnail_url,
+            media_type: m.media_type,
+            width: m.width,
+            height: m.height,
+            order: m.order,
+          })),
+          hashtags: (post.hashtags || []).map((ph) => ({
+            id: ph.hashtag.id,
+            name: ph.hashtag.name,
+          })),
+          like_count: post._count?.likes || 0,
+          comment_count: post._count?.comments || 0,
+        };
       },
       cacheTtl,
     );
   }
 
   async createPost(userId: string, dto: CreatePostDto) {
-    const post = await this.prisma.resPost.create({
-      data: { user_id: userId, content: dto.content },
-      include: {
-        user: {
-          select: {
-            id: true,
-            nickname: true,
-            avatar: true,
+    // Tạo post với media và hashtags
+    const post = await this.prisma.$transaction(async (tx) => {
+      // Tạo post
+      const newPost = await tx.resPost.create({
+        data: {
+          user_id: userId,
+          content: dto.content || '',
+          privacy: dto.privacy || 'public',
+        },
+      });
+
+      // Xử lý media
+      if (dto.media && dto.media.length > 0) {
+        await Promise.all(
+          dto.media.map((media, index) =>
+            tx.resPostMedia.create({
+              data: {
+                post_id: newPost.id,
+                media_url: media.media_url,
+                media_type: media.media_type,
+                thumbnail_url: media.thumbnail_url,
+                width: media.width,
+                height: media.height,
+                order: media.order !== undefined ? media.order : index,
+              },
+            }),
+          ),
+        );
+      }
+
+      // Xử lý hashtags
+      if (dto.hashtags && dto.hashtags.length > 0) {
+        for (const hashtagName of dto.hashtags) {
+          // Tìm hoặc tạo hashtag
+          let hashtag = await tx.resHashtag.findFirst({
+            where: { name: hashtagName.toLowerCase().trim() },
+          });
+
+          if (!hashtag) {
+            hashtag = await tx.resHashtag.create({
+              data: { name: hashtagName.toLowerCase().trim() },
+            });
+          }
+
+          // Link hashtag với post
+          await tx.resPostHashtag.create({
+            data: {
+              post_id: newPost.id,
+              hashtag_id: hashtag.id,
+            },
+          });
+        }
+      }
+
+      // Lấy post với relations
+      return tx.resPost.findUnique({
+        where: { id: newPost.id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+              avatar: true,
+              union_id: true,
+            },
+          },
+          media: {
+            orderBy: { order: 'asc' },
+          },
+          hashtags: {
+            include: {
+              hashtag: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
           },
         },
-      },
+      });
     });
 
     // Emit live update cho followers
     try {
-      // Lấy danh sách followers
       const followers = await this.prisma.resFollow.findMany({
         where: { following_id: userId },
         select: { follower_id: true },
       });
 
-      // Emit update đến từng follower
       followers.forEach((follow) => {
         this.websocketGateway.emitLiveUpdate(follow.follower_id, {
           type: 'POST_CREATED',
@@ -139,52 +272,148 @@ export class PostService {
       console.error('Failed to emit live update for post:', error);
     }
 
-    // Invalidate cache khi tạo post mới
+    // Invalidate cache
     await this.cacheService.delPattern(`posts:${userId}:*`);
     await this.cacheService.del(`connections:${userId}:stats`);
-    await this.cacheService.del(`post:${post.id}:media`); // Post media cache
+    await this.cacheService.del(`post:${post.id}`);
 
-    return post;
+    // Format response
+    return {
+      ...post,
+      media: (post.media || []).map((m) => ({
+        id: m.id,
+        media_url: m.media_url,
+        thumbnail_url: m.thumbnail_url,
+        media_type: m.media_type,
+        width: m.width,
+        height: m.height,
+        order: m.order,
+      })),
+      hashtags: (post.hashtags || []).map((ph) => ({
+        id: ph.hashtag.id,
+        name: ph.hashtag.name,
+      })),
+      like_count: post._count?.likes || 0,
+      comment_count: post._count?.comments || 0,
+    };
   }
 
   async updatePost(userId: string, postId: string, dto: UpdatePostDto) {
     try {
-      let post;
-      if (dto.content === undefined) {
-        // Nếu không có content, cần lấy giá trị hiện tại
-        const existing = await this.prisma.resPost.findFirst({
-          where: { id: postId, user_id: userId },
-          select: { content: true },
-        });
-        if (!existing) throw new NotFoundException('Post not found');
-        post = await this.prisma.resPost.update({
-          where: { id: postId },
-          data: { content: existing.content },
-          include: {
-            user: {
-              select: {
-                id: true,
-                nickname: true,
-                avatar: true,
-              },
-            },
-          },
-        });
-      } else {
-        post = await this.prisma.resPost.update({
-          where: { id: postId, user_id: userId },
-          data: { content: dto.content },
-          include: {
-            user: {
-              select: {
-                id: true,
-                nickname: true,
-                avatar: true,
-              },
-            },
-          },
-        });
+      // Kiểm tra post tồn tại và thuộc về user
+      const existing = await this.prisma.resPost.findFirst({
+        where: { id: postId, user_id: userId },
+      });
+
+      if (!existing) {
+        throw new NotFoundException('Post not found');
       }
+
+      // Update post với media và hashtags
+      const post = await this.prisma.$transaction(async (tx) => {
+        // Update post data
+        const updateData: any = {};
+        if (dto.content !== undefined) updateData.content = dto.content;
+        if (dto.privacy !== undefined) updateData.privacy = dto.privacy;
+
+        const updatedPost = await tx.resPost.update({
+          where: { id: postId },
+          data: updateData,
+        });
+
+        // Xử lý media - thay thế toàn bộ media cũ
+        if (dto.media !== undefined) {
+          // Xóa tất cả media cũ
+          await tx.resPostMedia.deleteMany({
+            where: { post_id: postId },
+          });
+
+          // Tạo media mới
+          if (dto.media.length > 0) {
+            await Promise.all(
+              dto.media.map((media, index) =>
+                tx.resPostMedia.create({
+                  data: {
+                    post_id: postId,
+                    media_url: media.media_url,
+                    media_type: media.media_type,
+                    thumbnail_url: media.thumbnail_url,
+                    width: media.width,
+                    height: media.height,
+                    order: media.order !== undefined ? media.order : index,
+                  },
+                }),
+              ),
+            );
+          }
+        }
+
+        // Xử lý hashtags - thay thế toàn bộ hashtags cũ
+        if (dto.hashtags !== undefined) {
+          // Xóa tất cả hashtags cũ
+          await tx.resPostHashtag.deleteMany({
+            where: { post_id: postId },
+          });
+
+          // Tạo hashtags mới
+          if (dto.hashtags.length > 0) {
+            for (const hashtagName of dto.hashtags) {
+              // Tìm hoặc tạo hashtag
+              let hashtag = await tx.resHashtag.findFirst({
+                where: { name: hashtagName.toLowerCase().trim() },
+              });
+
+              if (!hashtag) {
+                hashtag = await tx.resHashtag.create({
+                  data: { name: hashtagName.toLowerCase().trim() },
+                });
+              }
+
+              // Link hashtag với post
+              await tx.resPostHashtag.create({
+                data: {
+                  post_id: postId,
+                  hashtag_id: hashtag.id,
+                },
+              });
+            }
+          }
+        }
+
+        // Lấy post với relations
+        return tx.resPost.findUnique({
+          where: { id: postId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                nickname: true,
+                avatar: true,
+                union_id: true,
+              },
+            },
+            media: {
+              orderBy: { order: 'asc' },
+            },
+            hashtags: {
+              include: {
+                hashtag: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+            _count: {
+              select: {
+                likes: true,
+                comments: true,
+              },
+            },
+          },
+        });
+      });
 
       // Emit live update
       try {
@@ -209,13 +438,31 @@ export class PostService {
         console.error('Failed to emit live update for post update:', error);
       }
 
-      // Invalidate cache khi update post
+      // Invalidate cache
       await this.cacheService.delPattern(`posts:${userId}:*`);
-      await this.cacheService.del(`post:${postId}:media`); // Post media cache
+      await this.cacheService.del(`post:${postId}`);
 
-      return post;
+      // Format response
+      return {
+        ...post,
+        media: (post.media || []).map((m) => ({
+          id: m.id,
+          media_url: m.media_url,
+          thumbnail_url: m.thumbnail_url,
+          media_type: m.media_type,
+          width: m.width,
+          height: m.height,
+          order: m.order,
+        })),
+        hashtags: (post.hashtags || []).map((ph) => ({
+          id: ph.hashtag.id,
+          name: ph.hashtag.name,
+        })),
+        like_count: post._count?.likes || 0,
+        comment_count: post._count?.comments || 0,
+      };
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (error.code === 'P2025' || error instanceof NotFoundException) {
         throw new NotFoundException('Post not found');
       }
       throw error;

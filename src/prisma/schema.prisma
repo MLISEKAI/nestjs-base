@@ -23,6 +23,15 @@ enum ProviderEnum {
   password
 }
 
+enum PostReaction {
+  like
+  love
+  haha
+  wow
+  sad
+  angry
+}
+
 // USER BASE MODEL
 model ResUser {
   id         String    @id @default(uuid())
@@ -699,11 +708,11 @@ model ResComment {
 
 // POST LIKE/REACTION
 model ResPostLike {
-  id         String   @id @default(uuid())
+  id         String       @id @default(uuid())
   post_id    String
   user_id    String
-  reaction   String   @default("like") // like, love, haha, wow, sad, angry
-  created_at DateTime @default(now())
+  reaction   PostReaction @default(like)
+  created_at DateTime     @default(now())
 
   post ResPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
   user ResUser @relation(fields: [user_id], references: [id], onDelete: Cascade)

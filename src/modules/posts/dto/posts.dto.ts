@@ -202,6 +202,17 @@ export class UpdatePostDto {
   @IsArray()
   @IsString({ each: true })
   hashtags?: string[];
+
+  @ApiPropertyOptional({
+    example: [{ media_url: 'https://example.com/image.jpg', media_type: 'image', order: 1 }],
+    description: 'Danh sách media đính kèm (thay thế toàn bộ media cũ)',
+    type: [CreatePostMediaDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePostMediaDto)
+  media?: CreatePostMediaDto[];
 }
 
 export class UpdatePostMediaDto {

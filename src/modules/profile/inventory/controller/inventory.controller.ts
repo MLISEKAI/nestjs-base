@@ -28,6 +28,7 @@ import {
   UpdateInventoryItemDto,
 } from '../dto/inventory.dto';
 import { InventoryService } from '../service/inventory.service';
+import type { AuthenticatedRequest } from '../../../../common/interfaces/request.interface';
 
 /**
  * User Inventory Controller - Yêu cầu authentication
@@ -80,7 +81,7 @@ export class InventoryController {
       },
     },
   })
-  getInventory(@Req() req: any, @Query() query: BaseQueryDto) {
+  getInventory(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.inventory.getInventory(userId, query);
   }
@@ -88,7 +89,7 @@ export class InventoryController {
   @Post()
   @ApiOperation({ summary: 'Thêm vật phẩm vào inventory của user hiện tại' })
   @ApiBody({ type: CreateInventoryItemDto })
-  addInventoryItem(@Req() req: any, @Body() dto: CreateInventoryItemDto) {
+  addInventoryItem(@Req() req: AuthenticatedRequest, @Body() dto: CreateInventoryItemDto) {
     const userId = req.user.id;
     return this.inventory.addInventoryItem(userId, dto);
   }
@@ -97,7 +98,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Cập nhật vật phẩm inventory của user hiện tại' })
   @ApiBody({ type: UpdateInventoryItemDto })
   updateInventoryItem(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('item_id') itemId: string,
     @Body() dto: UpdateInventoryItemDto,
   ) {
@@ -107,7 +108,7 @@ export class InventoryController {
 
   @Delete(':item_id')
   @ApiOperation({ summary: 'Xóa vật phẩm inventory của user hiện tại' })
-  deleteInventoryItem(@Req() req: any, @Param('item_id') itemId: string) {
+  deleteInventoryItem(@Req() req: AuthenticatedRequest, @Param('item_id') itemId: string) {
     const userId = req.user.id;
     return this.inventory.deleteInventoryItem(userId, itemId);
   }

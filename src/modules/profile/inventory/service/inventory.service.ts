@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { CreateInventoryItemDto, UpdateInventoryItemDto } from '../dto/inventory.dto';
 import { buildPaginatedResponse } from '../../../../common/utils/pagination.util';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class InventoryService {
@@ -14,7 +15,7 @@ export class InventoryService {
     const skip = (page - 1) * take;
 
     // Build where clause
-    const where: any = { user_id: userId };
+    const where: Prisma.ResInventoryWhereInput = { user_id: userId };
 
     // Nếu có itemType, filter theo type của ResItem
     if (itemType) {

@@ -4,3 +4,4 @@
 export * from './user-role.enum';
 export * from './provider.enum';
 export * from './wallet-transaction.enum';
+export * from './post-reaction.enum';

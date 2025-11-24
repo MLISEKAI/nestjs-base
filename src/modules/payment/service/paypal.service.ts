@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import type { PayPalWebhookHeaders, PayPalWebhookPayload } from '../interfaces/webhook.interface';
 
 interface PayPalAccessToken {
   access_token: string;
@@ -372,7 +373,7 @@ export class PayPalService {
    * @param headers - Request headers từ PayPal webhook
    * @param body - Request body từ PayPal webhook
    */
-  async verifyWebhook(headers: any, body: any): Promise<boolean> {
+  async verifyWebhook(headers: PayPalWebhookHeaders, body: PayPalWebhookPayload): Promise<boolean> {
     // TODO: Implement PayPal webhook signature verification
     // PayPal có webhook verification API riêng
     // Xem: https://developer.paypal.com/docs/api-basics/notifications/webhooks/notification-messages/

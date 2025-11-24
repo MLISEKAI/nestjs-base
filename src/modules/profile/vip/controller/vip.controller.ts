@@ -24,6 +24,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { CreateVipStatusDto, UpdateVipStatusDto } from '../dto/vip.dto';
 import { VipService } from '../service/vip.service';
+import type { AuthenticatedRequest } from '../../../../common/interfaces/request.interface';
 
 /**
  * User VIP Controller - Yêu cầu authentication
@@ -51,7 +52,7 @@ export class VipController {
       },
     },
   })
-  getVipStatus(@Req() req: any, @Query() query: BaseQueryDto) {
+  getVipStatus(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.vip.getVipStatus(userId, query);
   }
@@ -71,7 +72,7 @@ export class VipController {
       },
     },
   })
-  createVipStatus(@Req() req: any, @Body() dto: CreateVipStatusDto) {
+  createVipStatus(@Req() req: AuthenticatedRequest, @Body() dto: CreateVipStatusDto) {
     const userId = req.user.id;
     return this.vip.createVipStatus(userId, dto);
   }
@@ -91,14 +92,14 @@ export class VipController {
       },
     },
   })
-  updateVipStatus(@Req() req: any, @Body() dto: UpdateVipStatusDto) {
+  updateVipStatus(@Req() req: AuthenticatedRequest, @Body() dto: UpdateVipStatusDto) {
     const userId = req.user.id;
     return this.vip.updateVipStatus(userId, dto);
   }
 
   @Delete()
   @ApiOperation({ summary: 'Xóa trạng thái VIP của user hiện tại' })
-  deleteVipStatus(@Req() req: any) {
+  deleteVipStatus(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.vip.deleteVipStatus(userId);
   }

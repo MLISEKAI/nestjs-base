@@ -4,6 +4,7 @@ import { CacheService } from 'src/common/cache/cache.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/interfaces/pagination.interface';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class GiftCatalogService {
@@ -18,7 +19,7 @@ export class GiftCatalogService {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const where: any = {};
+    const where: Prisma.ResGiftItemWhereInput = {};
 
     if (type) {
       where.type = type;
@@ -36,7 +37,7 @@ export class GiftCatalogService {
     // ResGiftItem có các field: id, category_id, name, image_url, price, type, event_id
     // Không có created_at, nên chỉ cho phép sort theo các field hợp lệ
     const allowedSortFields = ['id', 'name', 'price', 'type'];
-    let orderBy: any = { name: 'asc' }; // Default
+    let orderBy: Prisma.ResGiftItemOrderByWithRelationInput = { name: 'asc' }; // Default
     if (query?.sort) {
       const [field, order] = query.sort.split(':');
       if (field && allowedSortFields.includes(field) && (order === 'asc' || order === 'desc')) {
@@ -100,7 +101,7 @@ export class GiftCatalogService {
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
-        const where: any = {};
+        const where: Prisma.ResGiftItemWhereInput = {};
 
         if (type) {
           where.type = type;

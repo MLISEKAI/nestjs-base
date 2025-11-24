@@ -12,17 +12,12 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBody,
-  ApiOkResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { StoreDto, CreateStoreItemDto, UpdateStoreItemDto } from '../dto/store.dto';
 import { StoreService } from '../service/store.service';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 /**
  * User Store Controller - Yêu cầu authentication
@@ -58,7 +53,7 @@ export class StoreController {
       },
     },
   })
-  getStore(@Req() req: any, @Query() query: BaseQueryDto) {
+  getStore(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.store.getStore(userId, query);
   }
@@ -66,7 +61,7 @@ export class StoreController {
   @Post('items')
   @ApiOperation({ summary: 'Thêm item vào store của user hiện tại' })
   @ApiBody({ type: CreateStoreItemDto })
-  addStoreItem(@Req() req: any, @Body() dto: CreateStoreItemDto) {
+  addStoreItem(@Req() req: AuthenticatedRequest, @Body() dto: CreateStoreItemDto) {
     const userId = req.user.id;
     return this.store.addStoreItem(userId, dto);
   }
@@ -75,7 +70,7 @@ export class StoreController {
   @ApiOperation({ summary: 'Cập nhật item trong store của user hiện tại' })
   @ApiBody({ type: UpdateStoreItemDto })
   updateStoreItem(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('item_id') itemId: string,
     @Body() dto: UpdateStoreItemDto,
   ) {
@@ -85,7 +80,7 @@ export class StoreController {
 
   @Delete('items/:item_id')
   @ApiOperation({ summary: 'Xóa item trong store của user hiện tại' })
-  deleteStoreItem(@Req() req: any, @Param('item_id') itemId: string) {
+  deleteStoreItem(@Req() req: AuthenticatedRequest, @Param('item_id') itemId: string) {
     const userId = req.user.id;
     return this.store.deleteStoreItem(userId, itemId);
   }

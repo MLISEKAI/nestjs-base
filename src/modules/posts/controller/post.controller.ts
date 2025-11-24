@@ -26,6 +26,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CreatePostDto, UpdatePostDto, PostDto } from '../dto';
 import { PostService } from '../service/post.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 @ApiTags('Posts')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -40,7 +41,7 @@ export class PostController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ description: 'Danh sách posts với pagination', type: [PostDto] })
-  getPosts(@Req() req: any, @Query() query?: BaseQueryDto) {
+  getPosts(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.posts.getPosts(userId, query);
@@ -63,7 +64,7 @@ export class PostController {
     description: 'Bài viết được tạo thành công',
     type: PostDto,
   })
-  createPost(@Body() dto: CreatePostDto, @Req() req: any) {
+  createPost(@Body() dto: CreatePostDto, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.posts.createPost(userId, dto);
@@ -78,7 +79,11 @@ export class PostController {
     description: 'Bài viết đã được cập nhật',
     type: PostDto,
   })
-  updatePost(@Param('post_id') postId: string, @Body() dto: UpdatePostDto, @Req() req: any) {
+  updatePost(
+    @Param('post_id') postId: string,
+    @Body() dto: UpdatePostDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.posts.updatePost(userId, postId, dto);
@@ -92,7 +97,7 @@ export class PostController {
     description: 'Kết quả xóa',
     schema: { type: 'object', properties: { message: { example: 'Post deleted' } } },
   })
-  deletePost(@Param('post_id') postId: string, @Req() req: any) {
+  deletePost(@Param('post_id') postId: string, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.posts.deletePost(userId, postId);

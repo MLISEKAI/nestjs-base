@@ -4,6 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { FeedService } from '../service/feed.service';
 import { FeedResponseDto } from '../dto/feed.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 @ApiTags('Latest Feed')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -34,7 +35,10 @@ export class LatestFeedController {
     description: 'Timestamp for pull-to-refresh',
   })
   @ApiOkResponse({ description: 'Danh sách latest posts với pagination', type: FeedResponseDto })
-  getLatestFeed(@Req() req: any, @Query() query?: BaseQueryDto & { since?: string }) {
+  getLatestFeed(
+    @Req() req: AuthenticatedRequest,
+    @Query() query?: BaseQueryDto & { since?: string },
+  ) {
     return this.feedService.getLatestFeed(req.user.id, query);
   }
 }

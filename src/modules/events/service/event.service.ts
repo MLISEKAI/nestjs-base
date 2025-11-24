@@ -8,6 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto, JoinEventDto } from '../dto/event.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventService {
@@ -185,7 +186,7 @@ export class EventService {
       throw new ForbiddenException('Only event creator can update event');
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.ResEventUpdateInput = {};
     if (dto.title) updateData.title = dto.title;
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.location !== undefined) updateData.location = dto.location;

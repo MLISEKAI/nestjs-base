@@ -24,6 +24,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
 import { LoveSpaceDto, CreateLoveSpaceDto, UpdateLoveSpaceDto } from '../dto/lovespace.dto';
 import { LoveSpaceService } from '../service/love-space.service';
+import type { AuthenticatedRequest } from '../../../../common/interfaces/request.interface';
 
 /**
  * User Love Space Controller - Yêu cầu authentication
@@ -52,7 +53,7 @@ export class LoveSpaceController {
       },
     },
   })
-  getLoveSpace(@Req() req: any, @Query() query: BaseQueryDto) {
+  getLoveSpace(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.loveSpace.getLoveSpace(userId, query);
   }
@@ -73,7 +74,7 @@ export class LoveSpaceController {
       },
     },
   })
-  createLoveSpace(@Req() req: any, @Body() dto: CreateLoveSpaceDto) {
+  createLoveSpace(@Req() req: AuthenticatedRequest, @Body() dto: CreateLoveSpaceDto) {
     const userId = req.user.id;
     return this.loveSpace.createLoveSpace(userId, dto);
   }
@@ -94,7 +95,7 @@ export class LoveSpaceController {
       },
     },
   })
-  updateLoveSpace(@Req() req: any, @Body() dto: UpdateLoveSpaceDto) {
+  updateLoveSpace(@Req() req: AuthenticatedRequest, @Body() dto: UpdateLoveSpaceDto) {
     const userId = req.user.id;
     return this.loveSpace.updateLoveSpace(userId, dto);
   }
@@ -105,7 +106,7 @@ export class LoveSpaceController {
     description: 'Kết quả xóa',
     schema: { type: 'object', properties: { message: { example: 'Love Space deleted' } } },
   })
-  deleteLoveSpace(@Req() req: any) {
+  deleteLoveSpace(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.loveSpace.deleteLoveSpace(userId);
   }

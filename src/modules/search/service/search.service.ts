@@ -3,6 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
 import { SearchQueryDto, SearchType } from '../dto/search.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+import type { DateFilter } from '../../../common/interfaces/prisma.interface';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class SearchService {
@@ -83,7 +85,7 @@ export class SearchService {
    */
   private async searchUsers(
     q: string,
-    dateFilter: any,
+    dateFilter: DateFilter | undefined,
     skip: number,
     take: number,
     page: number,
@@ -124,7 +126,7 @@ export class SearchService {
    */
   private async searchPosts(
     q: string,
-    dateFilter: any,
+    dateFilter: DateFilter | undefined,
     skip: number,
     take: number,
     page: number,
@@ -169,7 +171,7 @@ export class SearchService {
    */
   private async searchComments(
     q: string,
-    dateFilter: any,
+    dateFilter: DateFilter | undefined,
     skip: number,
     take: number,
     page: number,
@@ -219,10 +221,10 @@ export class SearchService {
   /**
    * Build date filter
    */
-  private buildDateFilter(from_date?: string, to_date?: string) {
+  private buildDateFilter(from_date?: string, to_date?: string): DateFilter | undefined {
     if (!from_date && !to_date) return undefined;
 
-    const filter: any = {};
+    const filter: DateFilter = {};
     if (from_date) {
       filter.gte = new Date(from_date);
     }

@@ -24,6 +24,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { WalletService } from '../service/wallet.service';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 import { WalletSummaryService } from '../service/wallet-summary.service';
 import { RechargeService } from '../service/recharge.service';
 import { SubscriptionService } from '../service/subscription.service';
@@ -134,7 +135,7 @@ export class WalletController {
       },
     },
   })
-  getWallet(@Req() req: any, @Query() query: BaseQueryDto) {
+  getWallet(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.walletService.getWallet(userId, query);
   }
@@ -150,7 +151,7 @@ export class WalletController {
     type: WalletSummaryResponseDto,
     description: 'Thông tin tổng quan về wallet: Diamond balance, VEX balance, Monthly card status',
   })
-  getWalletSummary(@Req() req: any): Promise<WalletSummaryResponseDto> {
+  getWalletSummary(@Req() req: AuthenticatedRequest): Promise<WalletSummaryResponseDto> {
     const userId = req.user.id;
     return this.walletSummaryService.getWalletSummary(userId);
   }
@@ -166,7 +167,7 @@ export class WalletController {
     description:
       'Thông tin chi tiết VEX balance: số dư, giá trị USD, tỷ giá, và daily limits còn lại',
   })
-  getVexBalance(@Req() req: any): Promise<VexBalanceResponseDto> {
+  getVexBalance(@Req() req: AuthenticatedRequest): Promise<VexBalanceResponseDto> {
     const userId = req.user.id;
     return this.walletSummaryService.getVexBalance(userId);
   }
@@ -181,7 +182,7 @@ export class WalletController {
     type: DiamondBalanceResponseDto,
     description: 'Số dư Diamond hiện tại của user',
   })
-  getDiamondBalance(@Req() req: any): Promise<DiamondBalanceResponseDto> {
+  getDiamondBalance(@Req() req: AuthenticatedRequest): Promise<DiamondBalanceResponseDto> {
     const userId = req.user.id;
     return this.walletSummaryService.getDiamondBalance(userId);
   }
@@ -234,7 +235,7 @@ export class WalletController {
     description: 'Not Found - Không tìm thấy gói nạp với packageId được chỉ định',
   })
   checkoutRecharge(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: CheckoutRechargeDto,
   ): Promise<CheckoutRechargeResponseDto> {
     const userId = req.user.id;
@@ -276,7 +277,7 @@ export class WalletController {
     description: 'Not Found - Không tìm thấy Monthly Card với cardId được chỉ định',
   })
   purchaseSubscription(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: PurchaseSubscriptionDto,
   ): Promise<PurchaseSubscriptionResponseDto> {
     const userId = req.user.id;
@@ -296,7 +297,9 @@ export class WalletController {
   @ApiNotFoundResponse({
     description: 'Not Found - User chưa đăng ký Monthly Card hoặc subscription đã hết hạn',
   })
-  getSubscriptionDetails(@Req() req: any): Promise<SubscriptionDetailsResponseDto> {
+  getSubscriptionDetails(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<SubscriptionDetailsResponseDto> {
     const userId = req.user.id;
     return this.subscriptionService.getSubscriptionDetails(userId);
   }
@@ -333,7 +336,7 @@ export class WalletController {
       'Bad Request - Số dư VEX không đủ để mua Diamond hoặc số lượng VEX không hợp lệ (chỉ hỗ trợ các gói: 20, 50, 80, 120, 200, 420 VEX)',
   })
   checkoutVexToDiamond(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: ConvertVexToDiamondDto,
   ): Promise<ConvertVexToDiamondResponseDto> {
     const userId = req.user.id;
@@ -359,7 +362,10 @@ export class WalletController {
   @ApiNotFoundResponse({
     description: 'Not Found - Không tìm thấy receiver với receiver_id được chỉ định',
   })
-  transferVex(@Req() req: any, @Body() dto: TransferVexDto): Promise<TransferVexResponseDto> {
+  transferVex(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: TransferVexDto,
+  ): Promise<TransferVexResponseDto> {
     const userId = req.user.id;
     return this.transferService.transferVex(userId, dto);
   }
@@ -375,7 +381,7 @@ export class WalletController {
     type: DepositInfoResponseDto,
     description: 'Thông tin deposit address: deposit_address, qr_code, và network',
   })
-  getDepositInfo(@Req() req: any): Promise<DepositInfoResponseDto> {
+  getDepositInfo(@Req() req: AuthenticatedRequest): Promise<DepositInfoResponseDto> {
     const userId = req.user.id;
     return this.depositService.getDepositInfo(userId);
   }
@@ -395,7 +401,7 @@ export class WalletController {
     description: 'Bad Request - Network không hợp lệ hoặc blockchain service chưa được tích hợp',
   })
   updateDepositNetwork(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateDepositNetworkDto,
   ): Promise<CreateDepositResponseDto> {
     const userId = req.user.id;
@@ -418,7 +424,10 @@ export class WalletController {
     description:
       'Bad Request - Số dư VEX không đủ, email PayPal không hợp lệ, hoặc lỗi khi tạo PayPal payout',
   })
-  withdrawVex(@Req() req: any, @Body() dto: WithdrawVexDto): Promise<WithdrawVexResponseDto> {
+  withdrawVex(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: WithdrawVexDto,
+  ): Promise<WithdrawVexResponseDto> {
     const userId = req.user.id;
     return this.depositService.withdrawVex(userId, dto);
   }
@@ -435,7 +444,7 @@ export class WalletController {
     type: TransactionHistoryResponseDto,
   })
   getTransactionHistory(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query() query: BaseQueryDto,
   ): Promise<TransactionHistoryResponseDto> {
     const userId = req.user.id;
@@ -460,7 +469,7 @@ export class WalletController {
       'Bad Request - Receipt không hợp lệ, platform không đúng, hoặc receipt đã được sử dụng',
   })
   verifyIapReceipt(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Body() dto: IapVerifyReceiptDto,
   ): Promise<IapVerifyReceiptResponseDto> {
     const userId = req.user.id;

@@ -5,6 +5,7 @@ import { SearchService } from '../service/search.service';
 import { RecommendationService } from '../service/recommendation.service';
 import { TrendingService } from '../service/trending.service';
 import { SearchQueryDto, RecommendationQueryDto, TrendingQueryDto } from '../dto/search.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 @ApiTags('Search & Discovery')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -54,7 +55,7 @@ export class SearchController {
       },
     },
   })
-  async search(@Query() query: SearchQueryDto, @Req() req: any) {
+  async search(@Query() query: SearchQueryDto, @Req() req?: AuthenticatedRequest) {
     const userId = req?.user?.id;
     return this.searchService.search(query, userId);
   }
@@ -65,7 +66,7 @@ export class SearchController {
     description: 'Tìm kiếm users theo nickname hoặc ID. Hỗ trợ filter theo date range.',
   })
   @ApiOkResponse({ description: 'Danh sách users với pagination' })
-  async searchUsers(@Query() query: SearchQueryDto, @Req() req: any) {
+  async searchUsers(@Query() query: SearchQueryDto, @Req() req?: AuthenticatedRequest) {
     const userId = req?.user?.id;
     return this.searchService.search({ ...query, type: 'users' as any }, userId);
   }
@@ -76,7 +77,7 @@ export class SearchController {
     description: 'Tìm kiếm posts theo content hoặc title. Hỗ trợ filter theo date range.',
   })
   @ApiOkResponse({ description: 'Danh sách posts với pagination' })
-  async searchPosts(@Query() query: SearchQueryDto, @Req() req: any) {
+  async searchPosts(@Query() query: SearchQueryDto, @Req() req?: AuthenticatedRequest) {
     const userId = req?.user?.id;
     return this.searchService.search({ ...query, type: 'posts' as any }, userId);
   }
@@ -115,7 +116,10 @@ export class SearchController {
       },
     },
   })
-  async getRecommendedUsers(@Req() req: any, @Query() query: RecommendationQueryDto) {
+  async getRecommendedUsers(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: RecommendationQueryDto,
+  ) {
     const userId = req.user.id;
     return this.recommendationService.getRecommendedUsers(userId, query);
   }
@@ -129,7 +133,10 @@ export class SearchController {
       'Gợi ý posts từ users mà bạn đang follow. Nếu không đủ, sẽ bổ sung bằng trending posts.',
   })
   @ApiOkResponse({ description: 'Danh sách recommended posts' })
-  async getRecommendedPosts(@Req() req: any, @Query() query: RecommendationQueryDto) {
+  async getRecommendedPosts(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: RecommendationQueryDto,
+  ) {
     const userId = req.user.id;
     return this.recommendationService.getRecommendedPosts(userId, query);
   }

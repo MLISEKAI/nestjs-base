@@ -13,6 +13,10 @@ import {
   RelatedUserDto,
   ExchangeDetailsDto,
 } from '../dto/diamond-wallet.dto';
+import type {
+  TransactionForDescription,
+  GiftForDescription,
+} from '../interfaces/transaction.interface';
 
 @Injectable()
 export class TransactionService {
@@ -281,8 +285,8 @@ export class TransactionService {
    * Build description for transaction (matching UI format)
    */
   private buildDescription(
-    tx: any,
-    gift?: any,
+    tx: TransactionForDescription,
+    gift?: GiftForDescription,
     isGiftSent?: boolean,
     exchange?: { fromAmount: number; toAmount: number },
   ): string {

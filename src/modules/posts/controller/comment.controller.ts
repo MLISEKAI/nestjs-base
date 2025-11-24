@@ -26,6 +26,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CommentService } from '../service/comment.service';
 import { CreateCommentDto, UpdateCommentDto, CommentDto } from '../dto/comments.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 @ApiTags('Post Comments')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -61,11 +62,39 @@ export class CommentController {
   @Post()
   @UseGuards(AuthGuard('account-auth'))
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Tạo comment mới' })
+  @ApiOperation({
+    summary: 'Tạo comment mới',
+    description:
+      'Tạo comment đầu tiên: chỉ cần content, KHÔNG cần parent_id.\nTạo reply: cần content + parent_id (UUID của comment muốn reply).',
+  })
   @ApiParam({ name: 'post_id', description: 'Post ID', example: 'post-1' })
-  @ApiBody({ type: CreateCommentDto })
+  @ApiBody({
+    type: CreateCommentDto,
+    examples: {
+      'top-level-comment': {
+        summary: 'Tạo comment đầu tiên (top-level)',
+        description: 'Comment trực tiếp trên post, không reply ai cả',
+        value: {
+          content: 'Great post!',
+          // parent_id: không cần gửi hoặc để null
+        },
+      },
+      'reply-comment': {
+        summary: 'Reply một comment',
+        description: 'Reply comment đã có (cần UUID của comment cha)',
+        value: {
+          content: 'I agree with you!',
+          parent_id: 'top-level-comment-ID', // UUID của comment muốn reply
+        },
+      },
+    },
+  })
   @ApiCreatedResponse({ description: 'Comment đã được tạo', type: CommentDto })
-  createComment(@Param('post_id') postId: string, @Body() dto: CreateCommentDto, @Req() req: any) {
+  createComment(
+    @Param('post_id') postId: string,
+    @Body() dto: CreateCommentDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.commentService.createComment(userId, postId, dto);
@@ -83,7 +112,7 @@ export class CommentController {
     @Param('post_id') postId: string,
     @Param('comment_id') commentId: string,
     @Body() dto: UpdateCommentDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
@@ -100,7 +129,7 @@ export class CommentController {
   deleteComment(
     @Param('post_id') postId: string,
     @Param('comment_id') commentId: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;

@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import type {
+  PostWithRelations,
+  FormattedPost,
+  PostWhereClause,
+} from '../interfaces/post.interface';
+import { PostPrivacy } from '@prisma/client';
 
 @Injectable()
 export class FeedService {
@@ -16,23 +22,23 @@ export class FeedService {
   /**
    * Format post for response
    */
-  private formatPost(post: any, currentUserId?: string): any {
+  private formatPost(post: PostWithRelations, currentUserId?: string): FormattedPost {
     const isLiked = currentUserId
-      ? post.likes?.some((like: any) => like.user_id === currentUserId) || false
+      ? post.likes?.some((like) => like.user_id === currentUserId) || false
       : false;
 
     return {
       id: post.id,
       user: {
-        id: post.user?.id,
-        nickname: post.user?.nickname,
-        avatar: post.user?.avatar,
-        username: post.user?.union_id, // Using union_id as username
+        id: post.user?.id || post.user_id,
+        nickname: post.user?.nickname || '',
+        username: post.user?.union_id,
         display_name: post.user?.nickname,
+        avatar: post.user?.avatar,
         avatar_url: post.user?.avatar,
       },
       content: post.content,
-      media: (post.media || []).map((media: any) => ({
+      media: (post.media || []).map((media) => ({
         id: media.id,
         type: media.media_type,
         url: media.media_url,
@@ -40,13 +46,16 @@ export class FeedService {
         width: media.width || 1080,
         height: media.height || 1080,
       })),
-      hashtags: [], // Will be populated after migration and prisma generate
+      hashtags: (post.hashtags || []).map((ph) => ({
+        id: ph.hashtag.id,
+        name: ph.hashtag.name,
+      })),
       like_count: post._count?.likes || post.likes?.length || 0,
-      comment_count: post._count?.comments || post.comments?.length || 0,
+      comment_count: post._count?.comments || 0,
       share_count: post.share_count || 0,
       is_liked: isLiked,
       created_at: post.created_at,
-      privacy: post.privacy || 'public',
+      privacy: post.privacy || PostPrivacy.public,
     };
   }
 
@@ -73,9 +82,9 @@ export class FeedService {
     friendIds.push(userId); // Include own posts
 
     // Build where clause
-    const where: any = {
+    const where: PostWhereClause = {
       user_id: { in: friendIds },
-      privacy: { in: ['public', 'friends'] },
+      privacy: { in: [PostPrivacy.public, PostPrivacy.friends] },
     };
 
     if (query?.since) {
@@ -98,15 +107,16 @@ export class FeedService {
           media: {
             orderBy: { order: 'asc' },
           },
-          // hashtags: {
-          //   include: {
-          //     hashtag: {
-          //       select: {
-          //         name: true,
-          //       },
-          //     },
-          //   },
-          // },
+          hashtags: {
+            include: {
+              hashtag: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
           _count: {
             select: {
               likes: true,
@@ -151,8 +161,8 @@ export class FeedService {
     const skip = page * limit;
 
     // Build where clause
-    const where: any = {
-      privacy: 'public',
+    const where: PostWhereClause = {
+      privacy: PostPrivacy.public,
     };
 
     if (query?.since) {
@@ -175,15 +185,16 @@ export class FeedService {
           media: {
             orderBy: { order: 'asc' },
           },
-          // hashtags: {
-          //   include: {
-          //     hashtag: {
-          //       select: {
-          //         name: true,
-          //       },
-          //     },
-          //   },
-          // },
+          hashtags: {
+            include: {
+              hashtag: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
           _count: {
             select: {
               likes: true,
@@ -236,8 +247,8 @@ export class FeedService {
     `) as any[];
 
     // Build where clause
-    const where: any = {
-      privacy: 'public',
+    const where: PostWhereClause = {
+      privacy: PostPrivacy.public,
     };
 
     // Get posts
@@ -256,15 +267,16 @@ export class FeedService {
           media: {
             orderBy: { order: 'asc' },
           },
-          // hashtags: {
-          //   include: {
-          //     hashtag: {
-          //       select: {
-          //         name: true,
-          //       },
-          //     },
-          //   },
-          // },
+          hashtags: {
+            include: {
+              hashtag: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
           _count: {
             select: {
               likes: true,

@@ -25,6 +25,7 @@ import { UserProfileService } from '../service/profile-user.service';
 import { ProfileServiceDb } from '../../profile.service';
 import { UpdateUserProfileDto } from '../dto/profile.dto';
 import { StatsQueryDto } from '../dto/stats-query.dto';
+import type { AuthenticatedRequest } from '../../../../common/interfaces/request.interface';
 
 /**
  * User Profile Controller - Một số endpoints cần auth, một số public
@@ -45,7 +46,7 @@ export class UserProfileController {
   @ApiOkResponse({
     description: 'Hồ sơ user theo schema Prisma',
   })
-  getMyProfile(@Req() req: any) {
+  getMyProfile(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.userProfile.getProfile(userId, userId);
   }
@@ -55,7 +56,7 @@ export class UserProfileController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Cập nhật hồ sơ của user hiện tại' })
   @ApiBody({ type: UpdateUserProfileDto })
-  updateProfile(@Req() req: any, @Body() dto: UpdateUserProfileDto) {
+  updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateUserProfileDto) {
     const userId = req.user.id;
     return this.userProfile.updateProfile(userId, dto);
   }
@@ -64,7 +65,7 @@ export class UserProfileController {
   @UseGuards(AuthGuard('account-auth'))
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Xóa hồ sơ của user hiện tại' })
-  deleteProfile(@Req() req: any) {
+  deleteProfile(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.userProfile.deleteProfile(userId);
   }
@@ -93,7 +94,7 @@ export class UserProfileController {
       },
     },
   })
-  getRoomStatus(@Req() req: any) {
+  getRoomStatus(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.userProfile.getRoomStatus(userId);
   }
@@ -116,7 +117,7 @@ export class UserProfileController {
       },
     },
   })
-  getUserInterests(@Req() req: any) {
+  getUserInterests(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.service.getUserInterests(userId);
   }
@@ -137,7 +138,7 @@ export class UserProfileController {
       },
     },
   })
-  getUserContribution(@Req() req: any) {
+  getUserContribution(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.service.getUserContribution(userId);
   }

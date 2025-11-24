@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Put, Body, Post, Query, Req, UseGuards } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 import {
   ApiTags,
   ApiOperation,
@@ -113,7 +114,7 @@ export class UserController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Cập nhật thông tin cá nhân của user hiện tại' })
   @ApiBody({ type: UpdateUserDto })
-  async updateProfile(@Req() req: any, @Body() dto: UpdateUserDto) {
+  async updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateUserDto) {
     const userId = req.user.id;
     return this.profileService.updateProfile(userId, dto);
   }
@@ -123,7 +124,7 @@ export class UserController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Upload avatar cho user hiện tại' })
   @ApiBody({ type: UploadAvatarDto })
-  async uploadAvatar(@Req() req: any, @Body() dto: UploadAvatarDto) {
+  async uploadAvatar(@Req() req: AuthenticatedRequest, @Body() dto: UploadAvatarDto) {
     const userId = req.user.id;
     return this.profileService.uploadAvatar(userId, dto.fileUrl);
   }
@@ -133,7 +134,7 @@ export class UserController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Lấy thông tin cấp độ và XP của user hiện tại' })
   @ApiOkResponse({ type: UserBalanceDto })
-  async getBalance(@Req() req: any) {
+  async getBalance(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.levelService.getUserBalance(userId);
   }

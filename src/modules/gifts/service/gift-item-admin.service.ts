@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
 import { CreateGiftItemDto, UpdateGiftItemDto } from '../dto/gift-item-admin.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class GiftItemAdminService {
@@ -54,7 +55,7 @@ export class GiftItemAdminService {
    * Lấy danh sách gift items (admin - không format, trả về UUID)
    */
   async findAll(type?: string) {
-    const where: any = {};
+    const where: Prisma.ResGiftItemWhereInput = {};
     if (type) {
       where.type = type;
     }

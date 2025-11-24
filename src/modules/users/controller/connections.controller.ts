@@ -22,6 +22,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { UserConnectionsService } from '../service/user-connections.service';
 import { ConnectionsResponseDto } from '../dto/user-response';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 /**
  * User Connections Controller - Yêu cầu authentication
@@ -58,7 +59,7 @@ export class ConnectionsController {
       },
     },
   })
-  async getStats(@Req() req: any) {
+  async getStats(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.connectionsService.getStats(userId);
   }
@@ -86,7 +87,7 @@ export class ConnectionsController {
       },
     },
   })
-  async follow(@Req() req: any, @Param('target_id') targetId: string) {
+  async follow(@Req() req: AuthenticatedRequest, @Param('target_id') targetId: string) {
     const userId = req.user.id;
     return this.connectionsService.followUser(userId, targetId, req.user);
   }
@@ -94,7 +95,7 @@ export class ConnectionsController {
   @Delete('following/:following_id')
   @ApiOperation({ summary: 'Hủy follow user' })
   @ApiParam({ name: 'following_id', description: 'ID của user muốn unfollow' })
-  async unfollow(@Req() req: any, @Param('following_id') followingId: string) {
+  async unfollow(@Req() req: AuthenticatedRequest, @Param('following_id') followingId: string) {
     const userId = req.user.id;
     return this.connectionsService.unfollowUser(userId, followingId);
   }
@@ -155,7 +156,7 @@ export class ConnectionsController {
       },
     },
   })
-  async getFollowing(@Req() req: any, @Query() query: BaseQueryDto) {
+  async getFollowing(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.connectionsService.getFollowing(userId, query.page || 1, query.limit || 20);
   }
@@ -188,7 +189,7 @@ export class ConnectionsController {
       },
     },
   })
-  async getFollowers(@Req() req: any, @Query() query: BaseQueryDto) {
+  async getFollowers(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.connectionsService.getFollowers(userId, query.page || 1, query.limit || 20);
   }
@@ -196,7 +197,7 @@ export class ConnectionsController {
   @Delete('followers/:follower_id')
   @ApiOperation({ summary: 'Xóa follower của user hiện tại' })
   @ApiParam({ name: 'follower_id', description: 'ID của follower muốn xóa' })
-  async removeFollower(@Req() req: any, @Param('follower_id') followerId: string) {
+  async removeFollower(@Req() req: AuthenticatedRequest, @Param('follower_id') followerId: string) {
     const userId = req.user.id;
     return this.connectionsService.removeFollower(userId, followerId);
   }
@@ -229,7 +230,7 @@ export class ConnectionsController {
       },
     },
   })
-  async getFriends(@Req() req: any, @Query() query: BaseQueryDto) {
+  async getFriends(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     const userId = req.user.id;
     return this.connectionsService.getFriends(userId, query.page || 1, query.limit || 20);
   }
@@ -237,7 +238,7 @@ export class ConnectionsController {
   @Delete('friends/:friend_id')
   @ApiOperation({ summary: 'Xóa friend của user hiện tại' })
   @ApiParam({ name: 'friend_id', description: 'ID của friend muốn xóa' })
-  async unfriend(@Req() req: any, @Param('friend_id') friendId: string) {
+  async unfriend(@Req() req: AuthenticatedRequest, @Param('friend_id') friendId: string) {
     const userId = req.user.id;
     return this.connectionsService.unfriend(userId, friendId);
   }
@@ -278,7 +279,7 @@ export class ConnectionsController {
     },
   })
   async getConnections(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('type') type: 'followers' | 'following' | 'friends',
     @Query() query: BaseQueryDto & { search?: string },
   ) {

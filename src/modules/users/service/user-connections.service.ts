@@ -4,6 +4,8 @@ import { CacheService } from 'src/common/cache/cache.service';
 import { UserProfileService } from './user-profile.service';
 import { UserConnectionDto } from '../dto/connection-user.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
+import type { PaginationMeta } from '../../../common/interfaces/prisma.interface';
+import type { ResUser } from '@prisma/client';
 
 @Injectable()
 export class UserConnectionsService {
@@ -236,7 +238,10 @@ export class UserConnectionsService {
     }));
   }
 
-  async attachStatus(currentUserId: string | null, users: any[]): Promise<UserConnectionDto[]> {
+  async attachStatus(
+    currentUserId: string | null,
+    users: Array<Pick<ResUser, 'id' | 'nickname' | 'avatar' | 'bio'>>,
+  ): Promise<UserConnectionDto[]> {
     if (!currentUserId) {
       return users.map((u) => ({
         id: u.id,

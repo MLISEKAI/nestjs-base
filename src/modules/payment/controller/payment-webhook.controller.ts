@@ -14,6 +14,7 @@ import type { Response } from 'express';
 import { PayPalService } from '../service/paypal.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import type { PayPalWebhookHeaders, PayPalWebhookPayload } from '../interfaces/webhook.interface';
 
 /**
  * Payment Webhook Controller
@@ -39,7 +40,10 @@ export class PaymentWebhookController {
    */
   @Post('webhook/paypal')
   @ApiOperation({ summary: 'PayPal webhook handler (internal)' })
-  async handlePayPalWebhook(@Body() payload: any, @Headers() headers: any) {
+  async handlePayPalWebhook(
+    @Body() payload: PayPalWebhookPayload,
+    @Headers() headers: PayPalWebhookHeaders,
+  ) {
     this.logger.log('Received PayPal webhook', { eventType: payload.event_type });
 
     // Verify webhook signature
@@ -143,7 +147,7 @@ export class PaymentWebhookController {
   /**
    * Xử lý khi payment completed từ webhook
    */
-  private async handlePaymentCompleted(payload: any) {
+  private async handlePaymentCompleted(payload: PayPalWebhookPayload) {
     const resource = payload.resource;
     const referenceId = resource?.supplementary_data?.related_ids?.order_id;
 
@@ -173,7 +177,7 @@ export class PaymentWebhookController {
   /**
    * Xử lý khi payment failed từ webhook
    */
-  private async handlePaymentFailed(payload: any) {
+  private async handlePaymentFailed(payload: PayPalWebhookPayload) {
     const resource = payload.resource;
     const referenceId = resource?.supplementary_data?.related_ids?.order_id;
 

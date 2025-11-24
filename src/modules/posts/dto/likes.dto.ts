@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsIn } from 'class-validator';
+import { IsEnum } from 'class-validator';
+import { PostReaction } from '../../../common/enums';
 
 export class LikeUserDto {
   @ApiProperty({ example: 'user-1' })
@@ -25,9 +26,9 @@ export class PostLikeDto {
   @ApiProperty({
     example: 'like',
     description: 'Reaction type: like, love, haha, wow, sad, angry',
-    enum: ['like', 'love', 'haha', 'wow', 'sad', 'angry'],
+    enum: PostReaction,
   })
-  reaction: string;
+  reaction: PostReaction;
 
   @ApiProperty({ example: '2025-11-12T00:00:00.000Z' })
   created_at: Date;
@@ -63,17 +64,22 @@ export class CheckUserLikedDto {
   @ApiProperty({ example: true, description: 'Whether user has liked the post' })
   is_liked: boolean;
 
-  @ApiPropertyOptional({ example: 'like', description: 'Reaction type if liked' })
-  reaction?: string;
+  @ApiPropertyOptional({
+    example: 'like',
+    description: 'Reaction type if liked',
+    enum: PostReaction,
+  })
+  reaction?: PostReaction;
 }
 
 export class LikePostDto {
   @ApiProperty({
     example: 'like',
     description: 'Reaction type: like, love, haha, wow, sad, angry',
-    enum: ['like', 'love', 'haha', 'wow', 'sad', 'angry'],
+    enum: PostReaction,
   })
-  @IsString()
-  @IsIn(['like', 'love', 'haha', 'wow', 'sad', 'angry'])
-  reaction: string;
+  @IsEnum(PostReaction, {
+    message: 'reaction must be one of the following values: like, love, haha, wow, sad, angry',
+  })
+  reaction: PostReaction;
 }

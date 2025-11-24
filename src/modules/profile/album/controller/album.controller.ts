@@ -23,6 +23,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AlbumDto, PhotoDto, CreateAlbumDto, UpdateAlbumDto, AddPhotoDto } from '../dto/album.dto';
 import { AlbumService } from '../service/album.service';
+import type { AuthenticatedRequest } from '../../../../common/interfaces/request.interface';
 
 /**
  * User Albums Controller - Yêu cầu authentication
@@ -44,7 +45,7 @@ export class AlbumController {
     type: AlbumDto,
     isArray: true,
   })
-  getUserAlbums(@Req() req: any) {
+  getUserAlbums(@Req() req: AuthenticatedRequest) {
     const userId = req.user.id;
     return this.albums.getAlbums(userId);
   }
@@ -56,7 +57,7 @@ export class AlbumController {
     description: 'Album được tạo',
     type: AlbumDto,
   })
-  createAlbum(@Req() req: any, @Body() dto: CreateAlbumDto) {
+  createAlbum(@Req() req: AuthenticatedRequest, @Body() dto: CreateAlbumDto) {
     const userId = req.user.id;
     return this.albums.createAlbum(userId, dto);
   }
@@ -64,7 +65,11 @@ export class AlbumController {
   @Patch(':album_id')
   @ApiOperation({ summary: 'Cập nhật album của user hiện tại' })
   @ApiBody({ type: UpdateAlbumDto })
-  updateAlbum(@Req() req: any, @Param('album_id') albumId: string, @Body() dto: UpdateAlbumDto) {
+  updateAlbum(
+    @Req() req: AuthenticatedRequest,
+    @Param('album_id') albumId: string,
+    @Body() dto: UpdateAlbumDto,
+  ) {
     const userId = req.user.id;
     return this.albums.updateAlbum(userId, albumId, dto);
   }
@@ -76,7 +81,7 @@ export class AlbumController {
     type: PhotoDto,
     isArray: true,
   })
-  getAlbumPhotos(@Req() req: any, @Param('album_id') albumId: string) {
+  getAlbumPhotos(@Req() req: AuthenticatedRequest, @Param('album_id') albumId: string) {
     const userId = req.user.id;
     return this.albums.getAlbumPhotos(userId, albumId);
   }
@@ -84,7 +89,11 @@ export class AlbumController {
   @Post(':album_id/photos')
   @ApiOperation({ summary: 'Thêm ảnh vào album của user hiện tại' })
   @ApiBody({ type: AddPhotoDto })
-  addPhotoToAlbum(@Req() req: any, @Param('album_id') albumId: string, @Body() dto: AddPhotoDto) {
+  addPhotoToAlbum(
+    @Req() req: AuthenticatedRequest,
+    @Param('album_id') albumId: string,
+    @Body() dto: AddPhotoDto,
+  ) {
     const userId = req.user.id;
     return this.albums.addPhotoToAlbum(userId, albumId, dto.image_url);
   }
@@ -92,7 +101,7 @@ export class AlbumController {
   @Delete(':album_id/photos/:photo_id')
   @ApiOperation({ summary: 'Xóa ảnh khỏi album của user hiện tại' })
   deletePhotoFromAlbum(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('album_id') albumId: string,
     @Param('photo_id') photoId: string,
   ) {

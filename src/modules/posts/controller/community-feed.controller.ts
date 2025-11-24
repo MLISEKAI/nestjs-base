@@ -4,6 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { FeedService } from '../service/feed.service';
 import { CommunityFeedResponseDto } from '../dto/feed.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 @ApiTags('Community Feed')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -31,7 +32,7 @@ export class CommunityFeedController {
     description: 'Community feed với hot topics và posts',
     type: CommunityFeedResponseDto,
   })
-  getCommunityFeed(@Req() req: any, @Query() query?: BaseQueryDto) {
+  getCommunityFeed(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
     return this.feedService.getCommunityFeed(req.user.id, query);
   }
 }

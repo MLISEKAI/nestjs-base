@@ -4,6 +4,7 @@ import { CacheService } from 'src/common/cache/cache.service';
 import { UpdateUserDto } from '../dto/user-response';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 import { SearchUsersParams } from '../interfaces';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserProfileService {
@@ -87,7 +88,7 @@ export class UserProfileService {
   async searchUsers(params: SearchUsersParams) {
     // Xử lý search: trim và kiểm tra empty string
     const search = params?.search?.trim();
-    const where: any =
+    const where: Prisma.ResUserWhereInput =
       search && search.length > 0
         ? {
             OR: [

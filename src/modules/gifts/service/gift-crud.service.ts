@@ -11,6 +11,7 @@ import { CreateGiftDto, PurchaseGiftResponseDto } from '../dto/gift.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import { Prisma } from '@prisma/client';
+import type { GiftItemForInventory } from '../interfaces/gift.interface';
 
 @Injectable()
 export class GiftCrudService {
@@ -565,7 +566,7 @@ export class GiftCrudService {
    */
   private async addGiftToInventory(
     receiverId: string,
-    giftItem: { id: string; name: string; image_url: string | null; price: any },
+    giftItem: GiftItemForInventory,
     quantity: number,
   ): Promise<void> {
     try {

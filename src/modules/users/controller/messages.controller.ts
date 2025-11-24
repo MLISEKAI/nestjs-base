@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiBody, ApiOkResponse, ApiBearerAuth } from '@n
 import { AuthGuard } from '@nestjs/passport';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { UserMessagingService } from '../service/user-messaging.service';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 /**
  * User Messages Controller - Yêu cầu authentication
@@ -31,7 +32,7 @@ export class MessagesController {
       },
     },
   })
-  async sendMessage(@Req() req: any, @Body() dto: SendMessageDto) {
+  async sendMessage(@Req() req: AuthenticatedRequest, @Body() dto: SendMessageDto) {
     const senderId = req.user.id;
     return this.messagingService.sendMessage(senderId, dto);
   }

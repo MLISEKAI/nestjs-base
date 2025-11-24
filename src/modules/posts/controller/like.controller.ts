@@ -24,6 +24,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { LikeService } from '../service/like.service';
 import { LikePostDto, PostLikeDto, LikeStatsDto, CheckUserLikedDto } from '../dto/likes.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
 @ApiTags('Post Likes')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -55,7 +56,7 @@ export class LikeController {
   @ApiOperation({ summary: 'Kiểm tra user đã like post chưa' })
   @ApiParam({ name: 'post_id', description: 'Post ID', example: 'post-1' })
   @ApiOkResponse({ description: 'Trạng thái like của user', type: CheckUserLikedDto })
-  checkUserLiked(@Param('post_id') postId: string, @Req() req: any) {
+  checkUserLiked(@Param('post_id') postId: string, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.likeService.checkUserLiked(userId, postId);
@@ -68,7 +69,11 @@ export class LikeController {
   @ApiParam({ name: 'post_id', description: 'Post ID', example: 'post-1' })
   @ApiBody({ type: LikePostDto })
   @ApiOkResponse({ description: 'Post đã được like/react', type: PostLikeDto })
-  likePost(@Param('post_id') postId: string, @Body() dto: LikePostDto, @Req() req: any) {
+  likePost(
+    @Param('post_id') postId: string,
+    @Body() dto: LikePostDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.likeService.likePost(userId, postId, dto);
@@ -80,7 +85,7 @@ export class LikeController {
   @ApiOperation({ summary: 'Unlike post' })
   @ApiParam({ name: 'post_id', description: 'Post ID', example: 'post-1' })
   @ApiOkResponse({ description: 'Post đã được unlike' })
-  unlikePost(@Param('post_id') postId: string, @Req() req: any) {
+  unlikePost(@Param('post_id') postId: string, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token
     const userId = req.user.id;
     return this.likeService.unlikePost(userId, postId);
