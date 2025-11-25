@@ -1,303 +1,258 @@
-# Docker Setup Guide
+# 🐳 Docker Setup - Hướng Dẫn
 
-Hướng dẫn chạy NestJS REST API với Docker.
+## ⚡ Quick Start
 
-## 📋 Yêu cầu
+### 1. Tạo file .env
 
-- Docker >= 20.10
-- Docker Compose >= 2.0
-
-## ⚠️ Troubleshooting
-
-### Lỗi `npm ci` failed khi build
-
-Nếu gặp lỗi:
-
-```
-failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1
+```cmd
+copy env.example .env
+notepad .env
 ```
 
-**Nguyên nhân**: Docker đang cache layer cũ hoặc `package-lock.json` bị outdated.
+**Bắt buộc thay đổi:**
 
-**Giải pháp**:
-
-**Option 1: Rebuild với script (Windows)**
-
-```powershell
-.\docker-rebuild.ps1
+```env
+POSTGRES_PASSWORD=your_password
+JWT_TOKEN_SECRET=your-secret-min-32-chars
 ```
 
-**Option 2: Rebuild với script (Linux/Mac)**
+### 2. Chạy
+
+**Production (tất cả trong Docker):**
+
+```cmd
+docker-compose up -d
+```
+
+**Development (chỉ databases):**
+
+```cmd
+docker-compose up -d postgres redis
+npm run start:dev
+```
+
+### 3. Truy cập
+
+- API: http://localhost:3001
+- Swagger: http://localhost:3001/api
+
+---
+
+## 🎯 Database Options
+
+### Option 1: Docker PostgreSQL (Mặc định)
+
+**File .env:**
+
+```env
+# Không cần DATABASE_URL, docker-compose.yml tự set
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=nestjs_db
+```
+
+**Chạy:**
+
+```cmd
+docker-compose up -d
+```
+
+### Option 2: Neon Cloud Database (Khuyến nghị)
+
+**File .env:**
+
+```env
+# Dùng Neon database
+DATABASE_URL=postgresql://user:pass@host.neon.tech/db?sslmode=require
+
+# Không cần PostgreSQL container
+# Chỉ chạy app và redis
+```
+
+**Chạy:**
+
+```cmd
+docker-compose up -d app redis
+```
+
+**Lợi ích:**
+
+- ✅ Managed service
+- ✅ Auto backup
+- ✅ Không cần quản lý database
+
+---
+
+## 🛠️ Commands
+
+### Windows (docker.bat)
+
+```cmd
+docker.bat up          # Start production
+docker.bat dev         # Start development
+docker.bat down        # Stop
+docker.bat logs        # View logs
+docker.bat migrate     # Run migrations
+docker.bat generate    # Generate Prisma Client
+docker.bat studio      # Open Prisma Studio
+docker.bat help        # Show all commands
+```
+
+### Linux/Mac (Makefile)
 
 ```bash
-chmod +x docker-rebuild.sh
-./docker-rebuild.sh
-```
-
-**Option 3: Manual rebuild**
-
-```bash
-# Stop containers
-docker compose -f docker-compose.local.yml down
-
-# Remove images and cache
-docker compose -f docker-compose.local.yml down --rmi all
-docker builder prune -f
-
-# Rebuild without cache
-docker compose -f docker-compose.local.yml build --no-cache
-
-# Start
-docker compose -f docker-compose.local.yml up -d
-```
-
-**Option 4: Regenerate package-lock.json**
-
-```bash
-# Xóa node_modules và package-lock.json
-rm -rf node_modules package-lock.json
-
-# Reinstall
-npm install
-
-# Rebuild Docker
-docker compose -f docker-compose.local.yml up -d --build
+make up-build          # Build and start
+make dev               # Development mode
+make migrate           # Run migrations
+make generate          # Generate Prisma Client
+make studio            # Prisma Studio
+make help              # Show all commands
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🔄 Migrations
 
-### 1. Production Mode
+### Tự động
 
-```bash
-# Build và chạy tất cả services
-docker-compose up -d
+Migrations tự động chạy khi container start (trong `docker-entrypoint.sh`)
 
-# Xem logs
+### Thủ công
+
+**Từ máy local (khuyến nghị cho Neon):**
+
+```cmd
+npx prisma migrate deploy --schema=./src/prisma/schema.prisma
+```
+
+**Từ container:**
+
+```cmd
+docker.bat migrate
+# Hoặc
+make migrate
+```
+
+---
+
+## 📊 Services
+
+| Service  | Port | Description                    |
+| -------- | ---- | ------------------------------ |
+| postgres | 5432 | PostgreSQL Database (optional) |
+| redis    | 6379 | Redis Cache                    |
+| app      | 3001 | NestJS Application             |
+
+---
+
+## 🔧 Troubleshooting
+
+### Container restart liên tục
+
+```cmd
+REM Xem logs
 docker-compose logs -f app
 
-# Dừng services
-docker-compose down
-
-# Dừng và xóa volumes (xóa data)
-docker-compose down -v
-```
-
-### 2. Local Mode (PostgreSQL trong Docker, Redis Local)
-
-```bash
-# Chỉ chạy PostgreSQL (Redis chạy local trên máy)
-docker-compose -f docker-compose.local.yml up -d
-
-# Xem logs
-docker-compose -f docker-compose.local.yml logs -f
-
-# Dừng services
-docker-compose -f docker-compose.local.yml down
-```
-
-**Lưu ý**: Xem file `REDIS_LOCAL_SETUP.md` để biết cách cài đặt và chạy Redis local.
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Tạo file `.env` trong root directory:
-
-```env
-# Database
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=nestjs_db
-POSTGRES_PORT=5432
-
-# Redis
-REDIS_PASSWORD=redis_password
-REDIS_PORT=6379
-
-# Application
-APP_PORT=3001
-NODE_ENV=production
-
-# JWT
-JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRES_IN=7d
-JWT_REFRESH_SECRET=your-refresh-secret-key-change-in-production
-JWT_REFRESH_EXPIRES_IN=30d
-
-# Database URL (auto-generated from above)
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/nestjs_db?schema=public
-
-# Redis URL (auto-generated from above)
-REDIS_URL=redis://:redis_password@redis:6379
-```
-
-## 📦 Services
-
-### 1. PostgreSQL (postgres)
-
-- **Port**: 5432
-- **Database**: nestjs_db (default)
-- **User**: postgres (default)
-- **Password**: postgres (default)
-- **Volume**: `postgres_data` (persistent storage)
-
-### 2. Redis (redis)
-
-- **Port**: 6379
-- **Password**: redis_password (default)
-- **Volume**: `redis_data` (persistent storage)
-
-### 3. NestJS App (app)
-
-- **Port**: 3001
-- **Health Check**: `/health` endpoint
-- **Auto Migration**: Chạy Prisma migrations khi start
-
-## 🛠️ Commands
-
-### Build và Start
-
-```bash
-# Build image
-docker-compose build
-
-# Build và start
-docker-compose up -d --build
-
-# Start services
-docker-compose start
-
-# Stop services
-docker-compose stop
-
-# Restart services
-docker-compose restart
-```
-
-### Database Operations
-
-```bash
-# Chạy migrations
-docker-compose exec app npx prisma migrate deploy --schema=./src/prisma/schema.prisma
-
-# Generate Prisma Client
-docker-compose exec app npx prisma generate --schema=./src/prisma/schema.prisma
-
-# Prisma Studio (GUI)
-docker-compose exec app npx prisma studio --schema=./src/prisma/schema.prisma
-
-# Reset database
-docker-compose exec app npx prisma migrate reset --schema=./src/prisma/schema.prisma
-```
-
-### Logs và Debugging
-
-```bash
-# Xem logs của tất cả services
-docker-compose logs -f
-
-# Xem logs của app
-docker-compose logs -f app
-
-# Xem logs của database
-docker-compose logs -f postgres
-
-# Xem logs của Redis
-docker-compose logs -f redis
-
-# Vào container
-docker-compose exec app sh
-```
-
-### Cleanup
-
-```bash
-# Dừng và xóa containers
-docker-compose down
-
-# Dừng, xóa containers và volumes
-docker-compose down -v
-
-# Xóa images
-docker-compose down --rmi all
-
-# Xóa tất cả (containers, volumes, images)
-docker-compose down -v --rmi all
-```
-
-## 🔍 Health Checks
-
-Tất cả services đều có health checks:
-
-- **PostgreSQL**: `pg_isready`
-- **Redis**: `redis-cli ping`
-- **App**: HTTP GET `/health`
-
-Kiểm tra health status:
-
-```bash
+REM Kiểm tra health
 docker-compose ps
 ```
 
-## 🐛 Troubleshooting
+### Migration failed
 
-### App không start
+```cmd
+REM Chạy từ local (khuyến nghị)
+npx prisma migrate deploy --schema=./src/prisma/schema.prisma
 
-```bash
-# Kiểm tra logs
-docker-compose logs app
-
-# Kiểm tra database connection
-docker-compose exec app sh
-# Trong container: ping postgres
+REM Hoặc
+docker.bat migrate
 ```
 
-### Database connection error
+### Table không tồn tại
 
-```bash
-# Kiểm tra database đã sẵn sàng
-docker-compose exec postgres pg_isready -U postgres
+```cmd
+REM Chạy migrations
+docker.bat migrate
 
-# Kiểm tra environment variables
-docker-compose exec app env | grep DATABASE
+REM Hoặc từ local
+npx prisma migrate deploy --schema=./src/prisma/schema.prisma
 ```
 
-### Port đã được sử dụng
+### Prisma CLI không hoạt động trong container
 
-Thay đổi ports trong `.env` hoặc `docker-compose.yml`:
+**Giải pháp:** Chạy từ máy local:
 
-```yaml
-ports:
-  - '3002:3001' # Thay đổi port host
+```cmd
+npx prisma migrate deploy --schema=./src/prisma/schema.prisma
+npx prisma generate --schema=./src/prisma/schema.prisma
+npx prisma studio --schema=./src/prisma/schema.prisma
 ```
 
-### Reset tất cả
+---
 
-```bash
-# Dừng và xóa tất cả
-docker-compose down -v
+## 💡 Tips
 
-# Xóa images
-docker rmi nestjs-base-app
+### Development Workflow
 
-# Start lại
+```cmd
+REM 1. Start databases
+docker-compose up -d postgres redis
+
+REM 2. Run app local
+npm run start:dev
+
+REM 3. Khi cần migrations
+npx prisma migrate dev --name migration_name
+```
+
+### Production Workflow
+
+```cmd
+REM 1. Update .env
+notepad .env
+
+REM 2. Build and start
 docker-compose up -d --build
+
+REM 3. Check logs
+docker-compose logs -f app
 ```
 
-## 📝 Notes
+### Dùng Neon Database
 
-- **Development**: Sử dụng `docker-compose.dev.yml` để chỉ chạy database và Redis, app chạy local với `npm run start:dev`
-- **Production**: Sử dụng `docker-compose.yml` để chạy tất cả services
-- **Migrations**: Tự động chạy khi app start (production mode)
-- **Volumes**: Data được lưu persistent trong Docker volumes
+```cmd
+REM 1. Set DATABASE_URL trong .env
+DATABASE_URL=postgresql://user:pass@host.neon.tech/db
 
-## 🔐 Security
+REM 2. Chỉ start app và redis
+docker-compose up -d app redis
 
-⚠️ **Important**: Thay đổi các default passwords trong production:
+REM 3. Migrations từ local
+npx prisma migrate deploy --schema=./src/prisma/schema.prisma
+```
 
-- `POSTGRES_PASSWORD`
-- `REDIS_PASSWORD`
-- `JWT_SECRET`
-- `JWT_REFRESH_SECRET`
+---
+
+## ✅ Features
+
+- ✅ Auto migrations on startup
+- ✅ Auto Prisma Client generation
+- ✅ Support Docker PostgreSQL & Neon
+- ✅ Health checks
+- ✅ Volume persistence
+- ✅ Helper scripts (Windows & Linux)
+- ✅ Production-ready
+
+---
+
+## 📖 Files
+
+- `docker-compose.yml` - Main compose file
+- `Dockerfile` - App image definition
+- `docker-entrypoint.sh` - Startup script
+- `docker.bat` - Windows helper
+- `Makefile` - Linux/Mac helper
+
+---
+
+**Version:** 2.0  
+**Status:** ✅ Production Ready
