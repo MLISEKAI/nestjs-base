@@ -84,7 +84,12 @@ export class RegisterUserDto {
   @IsDateString()
   birthday?: Date;
 
-  @ApiProperty({ description: 'Role', example: 'user', enum: UserBasicRole, required: false })
+  @ApiProperty({
+    description: 'Role',
+    example: 'user',
+    enum: ['admin', 'user', 'guest'],
+    required: false,
+  })
   @IsOptional()
   @IsEnum(UserBasicRole)
   role?: UserBasicRole = 'user';

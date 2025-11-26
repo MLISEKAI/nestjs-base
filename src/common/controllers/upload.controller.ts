@@ -9,6 +9,7 @@ import {
   UseGuards, // Decorator để sử dụng guard (authentication, authorization)
   Body, // Decorator để lấy body từ request
   Param, // Decorator để lấy parameter từ URL
+  Query, // Decorator để lấy query parameters
   BadRequestException, // Exception cho bad request
 } from '@nestjs/common';
 // Import file interceptors từ NestJS platform-express
@@ -21,6 +22,7 @@ import {
   ApiBearerAuth, // Yêu cầu JWT token trong header
   ApiBody, // Mô tả request body
   ApiParam, // Mô tả path parameter
+  ApiQuery, // Mô tả query parameter
 } from '@nestjs/swagger';
 // Import AuthGuard từ Passport để xác thực JWT token
 import { AuthGuard } from '@nestjs/passport';
@@ -208,6 +210,90 @@ export class UploadController {
       mimetype: file.mimetype,
       media_type: 'audio',
     };
+  }
+
+  @Post('media')
+  @ApiOperation({
+    summary: 'Upload media file (unified endpoint)',
+    description:
+      'Upload media file (image/video/audio) với query parameter type. Unified endpoint theo API documentation.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiQuery({
+    name: 'type',
+    enum: ['image', 'video', 'audio'],
+    description: 'Media type: image, video, or audio',
+    required: true,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Media file cần upload',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(AuthGuard('account-auth'))
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadMedia(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('type') type: 'image' | 'video' | 'audio',
+    @Body() uploadDto?: SimpleUploadDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    if (!type || !['image', 'video', 'audio'].includes(type)) {
+      throw new BadRequestException('Invalid type. Must be image, video, or audio.');
+    }
+
+    const folder = uploadDto?.folder || `uploads/${type}s`;
+
+    if (type === 'image') {
+      const urls = await this.uploadService.uploadMultipleImages([file], folder);
+      return {
+        items: [
+          {
+            url: urls[0],
+            thumbnail_url: urls[0],
+            filename: file.originalname,
+            size: file.size,
+            mimetype: file.mimetype,
+            media_type: 'image',
+          },
+        ],
+        count: 1,
+      };
+    } else if (type === 'video') {
+      const result = await this.uploadService.uploadVideo(file, folder);
+      return {
+        url: result.url,
+        thumbnail_url: result.thumbnail_url,
+        filename: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        media_type: 'video',
+      };
+    } else {
+      // audio
+      const { url, duration } = await this.uploadService.uploadAudio(file, folder);
+      return {
+        file_url: url,
+        url: url,
+        duration: duration,
+        filename: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        media_type: 'audio',
+      };
+    }
   }
 
   @Delete(':file_id')

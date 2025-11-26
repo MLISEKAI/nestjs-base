@@ -50,7 +50,8 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/src/prisma ./src/prisma
 
-# Copy Prisma CLI và tất cả dependencies từ builder
+# Copy Prisma CLI và engines từ builder stage (đã được build sẵn)
+# Tránh phải build lại native binaries trong production stage
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma

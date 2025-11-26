@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
-import { TrendingQueryDto, TrendingPeriod } from '../dto/search.dto';
+import { TrendingPeriod } from 'src/common/enums/search';
+import { TrendingQueryDto } from '../dto';
 
 @Injectable()
 export class TrendingService {

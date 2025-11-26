@@ -6,41 +6,41 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 
 ## 📋 Bảng Components
 
-| Component              | Type   | API Endpoint                                    | Notes                                                                              |
-| ---------------------- | ------ | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Chat Settings Screen  | Screen | `GET /messages/:conversationId/settings`        | Hiển thị cài đặt chat với profile, options, và toggles                           |
-| Change Name           | Action | `PATCH /messages/:conversationId/display-name`  | Đổi tên hiển thị trong conversation                                               |
-| Create Group Chat     | Action | `POST /groups`                                  | Tạo group chat mới                                                                |
-| Mute Notifications    | Toggle | `PATCH /messages/:conversationId/notifications`  | Bật/tắt thông báo cho conversation                                                |
-| Gift Sounds           | Toggle | `PATCH /messages/:conversationId/gift-sounds`    | Bật/tắt âm thanh khi nhận quà                                                      |
-| Block User            | Action | `POST /users/:userId/block`                     | Chặn user trong conversation                                                      |
-| Unblock User          | Action | `DELETE /users/:userId/block`                  | Bỏ chặn user                                                                      |
-| Report Chat           | Action | `POST /messages/:conversationId/report`         | Báo cáo conversation                                                              |
-| New Group Screen      | Screen | `GET /users/suggestions?type=group`             | Lấy danh sách suggested users để tạo group                                        |
-| Search Users for Group| Search | `GET /users/suggestions?q={query}&type=group`   | Tìm kiếm users để thêm vào group                                                  |
-| Group Members         | List   | `GET /groups/:groupId/members`                  | Lấy danh sách members trong group                                                 |
+| Component              | Type   | API Endpoint                                    | Notes                                                  |
+| ---------------------- | ------ | ----------------------------------------------- | ------------------------------------------------------ |
+| Chat Settings Screen   | Screen | `GET /messages/:conversationId/settings`        | Hiển thị cài đặt chat với profile, options, và toggles |
+| Change Name            | Action | `PATCH /messages/:conversationId/display-name`  | Đổi tên hiển thị trong conversation                    |
+| Create Group Chat      | Action | `POST /groups`                                  | Tạo group chat mới                                     |
+| Mute Notifications     | Toggle | `PATCH /messages/:conversationId/notifications` | Bật/tắt thông báo cho conversation                     |
+| Gift Sounds            | Toggle | `PATCH /messages/:conversationId/gift-sounds`   | Bật/tắt âm thanh khi nhận quà                          |
+| Block User             | Action | `POST /users/:userId/block`                     | Chặn user trong conversation                           |
+| Unblock User           | Action | `DELETE /users/:userId/block`                   | Bỏ chặn user                                           |
+| Report Chat            | Action | `POST /messages/:conversationId/report`         | Báo cáo conversation                                   |
+| New Group Screen       | Screen | `GET /users/suggestions?type=group`             | Lấy danh sách suggested users để tạo group             |
+| Search Users for Group | Search | `GET /users/suggestions?q={query}&type=group`   | Tìm kiếm users để thêm vào group                       |
+| Group Members          | List   | `GET /groups/:group_id/members`                 | Lấy danh sách members trong group                      |
 
 ---
 
 ## 🔌 API Endpoints
 
-| Method | Endpoint                                    | Response                    | Note                                                      |
-| ------ | ------------------------------------------- | ---------------------------- | --------------------------------------------------------- |
-| GET    | `/messages/:conversationId/settings`         | `ChatSettingsResponse`       | Lấy cài đặt chat của conversation                         |
-| PATCH  | `/messages/:conversationId/display-name`    | `ChangeDisplayNameResponse`  | Đổi tên hiển thị trong conversation                      |
-| POST   | `/groups`                                    | `CreateGroupResponse`        | Tạo group chat mới                                        |
-| PATCH  | `/messages/:conversationId/notifications`    | `MuteNotificationsResponse` | Bật/tắt thông báo (mute/unmute)                          |
-| PATCH  | `/messages/:conversationId/gift-sounds`      | `GiftSoundsResponse`         | Bật/tắt âm thanh quà tặng                                 |
-| POST   | `/users/:userId/block`                       | `BlockUserResponse`          | Chặn user                                                 |
-| DELETE | `/users/:userId/block`                       | `UnblockUserResponse`       | Bỏ chặn user                                              |
-| GET    | `/users/blocked`                             | `BlockedUsersResponse`       | Lấy danh sách users đã chặn                              |
-| POST   | `/messages/:conversationId/report`           | `ReportChatResponse`         | Báo cáo conversation                                       |
-| GET    | `/users/suggestions?type=group`              | `GroupSuggestionsResponse`   | Lấy suggested users để tạo group                          |
-| GET    | `/users/suggestions?q={query}&type=group`    | `GroupSuggestionsResponse`   | Tìm kiếm users để thêm vào group                          |
-| GET    | `/groups/:groupId`                           | `GroupDetailResponse`        | Lấy thông tin chi tiết group                              |
-| GET    | `/groups/:groupId/members`                    | `GroupMembersResponse`       | Lấy danh sách members trong group                         |
-| POST   | `/groups/:groupId/members`                   | `AddGroupMembersResponse`    | Thêm members vào group                                    |
-| DELETE | `/groups/:groupId/members/:userId`          | `RemoveGroupMemberResponse`  | Xóa member khỏi group                                     |
+| Method | Endpoint                                  | Response                    | Note                                |
+| ------ | ----------------------------------------- | --------------------------- | ----------------------------------- |
+| GET    | `/messages/:conversationId/settings`      | `ChatSettingsResponse`      | Lấy cài đặt chat của conversation   |
+| PATCH  | `/messages/:conversationId/display-name`  | `ChangeDisplayNameResponse` | Đổi tên hiển thị trong conversation |
+| POST   | `/groups`                                 | `CreateGroupResponse`       | Tạo group chat mới                  |
+| PATCH  | `/messages/:conversationId/notifications` | `MuteNotificationsResponse` | Bật/tắt thông báo (mute/unmute)     |
+| PATCH  | `/messages/:conversationId/gift-sounds`   | `GiftSoundsResponse`        | Bật/tắt âm thanh quà tặng           |
+| POST   | `/users/:userId/block`                    | `BlockUserResponse`         | Chặn user                           |
+| DELETE | `/users/:userId/block`                    | `UnblockUserResponse`       | Bỏ chặn user                        |
+| GET    | `/users/blocked`                          | `BlockedUsersResponse`      | Lấy danh sách users đã chặn         |
+| POST   | `/messages/:conversationId/report`        | `ReportChatResponse`        | Báo cáo conversation                |
+| GET    | `/users/suggestions?type=group`           | `GroupSuggestionsResponse`  | Lấy suggested users để tạo group    |
+| GET    | `/users/suggestions?q={query}&type=group` | `GroupSuggestionsResponse`  | Tìm kiếm users để thêm vào group    |
+| GET    | `/groups/:group_id`                       | `GroupDetailResponse`       | Lấy thông tin chi tiết group        |
+| GET    | `/groups/:group_id/members`               | `GroupMembersResponse`      | Lấy danh sách members trong group   |
+| POST   | `/groups/:group_id/members`               | `AddGroupMembersResponse`   | Thêm members vào group              |
+| DELETE | `/groups/:group_id/members/:userId`       | `RemoveGroupMemberResponse` | Xóa member khỏi group               |
 
 ---
 
@@ -310,6 +310,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 ```
 
 **Available Reasons:**
+
 - `violent_offensive_language` - Violent / offensive language
 - `distorted_provocative_content` - Distorted / provocative content
 - `irrelevant_content` - Irrelevant content
@@ -441,7 +442,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 }
 ```
 
-### 12. GET /groups/:groupId - Group Detail Response
+### 12. GET /groups/:group_id - Group Detail Response
 
 **Response:**
 
@@ -472,7 +473,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 }
 ```
 
-### 13. GET /groups/:groupId/members - Group Members Response
+### 13. GET /groups/:group_id/members - Group Members Response
 
 **Response:**
 
@@ -519,7 +520,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 }
 ```
 
-### 14. POST /groups/:groupId/members - Add Group Members Request & Response
+### 14. POST /groups/:group_id/members - Add Group Members Request & Response
 
 **Request Body:**
 
@@ -535,7 +536,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "addedMembers": [
       {
         "id": "user-3",
@@ -560,7 +561,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 }
 ```
 
-### 15. DELETE /groups/:groupId/members/:userId - Remove Group Member Response
+### 15. DELETE /groups/:group_id/members/:userId - Remove Group Member Response
 
 **Response:**
 
@@ -568,7 +569,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "removedUserId": "user-2",
     "removedUserName": "Kierra Curtis",
     "removedAt": "2025-01-15T23:53:00Z",
@@ -638,7 +639,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "addedUserId": "user-3",
   "addedUserName": "Emerson Dokidis",
   "addedBy": "current-user",
@@ -654,7 +655,7 @@ Tài liệu API cho tính năng Chat Settings (Cài đặt chat), Report (Báo c
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "removedUserId": "user-2",
   "removedUserName": "Kierra Curtis",
   "removedBy": "current-user",
@@ -882,6 +883,7 @@ GET /users/suggestions?type=group&page=1&limit=20&sort=createdAt&order=desc
 ### Blocked Users Filter
 
 Blocked users không xuất hiện trong:
+
 - Message suggestions
 - Forward recipients
 - Group suggestions
@@ -892,13 +894,14 @@ Blocked users không xuất hiện trong:
 Group chat messages sử dụng cùng message endpoints nhưng với `conversationId` là group ID:
 
 ```
-POST /messages/:groupId/messages
-GET /messages/:groupId/messages
+POST /messages/:group_id/messages
+GET /messages/:group_id/messages
 ```
 
 ### Conversation Settings
 
 Settings được lưu per conversation và áp dụng cho:
+
 - Notifications
 - Gift sounds
 - Display name
@@ -909,4 +912,3 @@ Settings được lưu per conversation và áp dụng cho:
 **Version:** 1.0  
 **Last Updated:** 2025-01-15  
 **Status:** ✅ Ready for Implementation
-

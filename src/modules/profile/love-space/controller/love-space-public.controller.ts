@@ -33,4 +33,3 @@ export class LoveSpacePublicController {
     return this.loveSpace.getLoveSpace(userId, query);
   }
 }
-

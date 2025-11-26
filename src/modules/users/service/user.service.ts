@@ -2,19 +2,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 // Import các DTO để validate và type-check dữ liệu
 import { UpdateUserDto } from '../dto/user-response';
-import { SendMessageDto } from '../dto/send-message.dto';
 // Import các services khác để sử dụng
 import { UserProfileService } from './user-profile.service';
 import { UserConnectionsService } from './user-connections.service';
 import { UserAlbumsService } from './user-albums.service';
-import { UserMessagingService } from './user-messaging.service';
 
 /**
  * @Injectable() - Đánh dấu class này là NestJS service
  * ResUserService - Service tổng hợp các user operations (facade pattern)
  *
  * Chức năng chính:
- * - Tổng hợp các operations từ UserProfileService, UserConnectionsService, UserMessagingService, UserAlbumsService
+ * - Tổng hợp các operations từ UserProfileService, UserConnectionsService, UserAlbumsService
  * - Cung cấp unified interface cho user operations
  * - Được export từ UsersModule để các modules khác sử dụng
  *
@@ -31,7 +29,6 @@ export class ResUserService {
   constructor(
     private profile: UserProfileService,
     private connections: UserConnectionsService,
-    private messaging: UserMessagingService,
     private albums: UserAlbumsService,
   ) {}
 
@@ -89,10 +86,6 @@ export class ResUserService {
     search?: string,
   ) {
     return this.connections.getConnections(userId, type, search);
-  }
-
-  async sendMessage(senderId: string, dto: SendMessageDto) {
-    return this.messaging.sendMessage(senderId, dto);
   }
 
   async uploadAvatar(userId: string, fileUrl: string) {

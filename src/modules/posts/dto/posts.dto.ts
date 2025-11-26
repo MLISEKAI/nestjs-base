@@ -9,12 +9,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export enum PostPrivacy {
-  public = 'public',
-  private = 'private',
-  friends = 'friends',
-}
+import { PostPrivacy } from '@prisma/client';
 
 export class PostMediaDto {
   @ApiProperty({ example: 'media-1' })
@@ -71,7 +66,7 @@ export class PostDto {
   @ApiProperty({ example: 'Hello world!' })
   content: string;
 
-  @ApiProperty({ example: 'public', enum: ['public', 'private', 'friends'] })
+  @ApiProperty({ example: PostPrivacy.public, enum: PostPrivacy })
   privacy: PostPrivacy;
 
   @ApiProperty({ example: 0 })
@@ -147,10 +142,10 @@ export class CreatePostDto {
   content?: string;
 
   @ApiPropertyOptional({
-    example: 'public',
-    enum: ['public', 'private', 'friends'],
+    example: PostPrivacy.public,
+    enum: PostPrivacy,
     description: 'Quyền riêng tư của bài viết',
-    default: 'public',
+    default: PostPrivacy.public,
   })
   @IsOptional()
   @IsEnum(PostPrivacy)
@@ -185,8 +180,8 @@ export class UpdatePostDto {
   content?: string;
 
   @ApiPropertyOptional({
-    example: 'friends',
-    enum: ['public', 'private', 'friends'],
+    example: PostPrivacy.friends,
+    enum: PostPrivacy,
     description: 'Quyền riêng tư của bài viết',
   })
   @IsOptional()

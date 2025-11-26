@@ -12,6 +12,7 @@
  * - image-transformation.interface: Image transformation types
  * - request.interface: Express request types với authentication
  * - prisma.interface: Prisma-related types
+ * - messaging.interface: Messaging và groups related types
  */
 export * from './api-response.interface';
 export * from './pagination.interface';
@@ -22,3 +23,4 @@ export * from './image-transformation.interface';
 export * from './request.interface';
 export * from './prisma.interface';
 export * from './profile.interface';
+export * from './messaging.interface';

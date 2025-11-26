@@ -90,32 +90,32 @@ Tài liệu tổng hợp đầy đủ tất cả các API endpoints cho hệ th�
 
 ### 👥 Group Settings
 
-| Method | Endpoint                          | Mô Tả                 | File           |
-| ------ | --------------------------------- | --------------------- | -------------- |
-| GET    | `/groups/:groupId/settings`       | Group settings        | Group Settings |
-| GET    | `/groups/:groupId`                | Group detail          | Group Settings |
-| PATCH  | `/groups/:groupId/introduction`   | Cập nhật introduction | Group Settings |
-| PATCH  | `/groups/:groupId/name`           | Đổi tên group         | Group Settings |
-| PATCH  | `/groups/:groupId/avatar`         | Đổi avatar group      | Group Settings |
-| GET    | `/groups/:groupId/classification` | Group classification  | Group Settings |
-| PATCH  | `/groups/:groupId/notifications`  | Mute notifications    | Group Settings |
-| PATCH  | `/groups/:groupId/gift-effect`    | Bật/tắt gift effect   | Group Settings |
-| POST   | `/groups/:groupId/report`         | Báo cáo group         | Group Settings |
-| DELETE | `/groups/:groupId/members/me`     | Rời khỏi group        | Group Settings |
+| Method | Endpoint                           | Mô Tả                 | File           |
+| ------ | ---------------------------------- | --------------------- | -------------- |
+| GET    | `/groups/:group_id/settings`       | Group settings        | Group Settings |
+| GET    | `/groups/:group_id`                | Group detail          | Group Settings |
+| PATCH  | `/groups/:group_id/introduction`   | Cập nhật introduction | Group Settings |
+| PATCH  | `/groups/:group_id/name`           | Đổi tên group         | Group Settings |
+| PATCH  | `/groups/:group_id/avatar`         | Đổi avatar group      | Group Settings |
+| GET    | `/groups/:group_id/classification` | Group classification  | Group Settings |
+| PATCH  | `/groups/:group_id/notifications`  | Mute notifications    | Group Settings |
+| PATCH  | `/groups/:group_id/gift-effect`    | Bật/tắt gift effect   | Group Settings |
+| POST   | `/groups/:group_id/report`         | Báo cáo group         | Group Settings |
+| DELETE | `/groups/:group_id/members/me`     | Rời khỏi group        | Group Settings |
 
 ### 👤 Group Member Management
 
-| Method | Endpoint                                               | Mô Tả                     | File        |
-| ------ | ------------------------------------------------------ | ------------------------- | ----------- |
-| GET    | `/groups/:groupId/members`                             | Danh sách members         | Member Mgmt |
-| GET    | `/groups/:groupId/members?role={role}`                 | Filter members theo role  | Member Mgmt |
-| POST   | `/groups/:groupId/members`                             | Thêm members              | Member Mgmt |
-| DELETE | `/groups/:groupId/members/:userId`                     | Xóa member                | Member Mgmt |
-| PATCH  | `/groups/:groupId/members/:userId/role`                | Thay đổi role             | Member Mgmt |
-| GET    | `/groups/:groupId/members/summary`                     | Member summary            | Member Mgmt |
-| GET    | `/users/suggestions?type=group&excludeGroup={groupId}` | More people suggestions   | Member Mgmt |
-| GET    | `/groups/classifications`                              | Danh sách classifications | Member Mgmt |
-| PATCH  | `/groups/:groupId/classification`                      | Cập nhật classification   | Member Mgmt |
+| Method | Endpoint                                                | Mô Tả                     | File        |
+| ------ | ------------------------------------------------------- | ------------------------- | ----------- |
+| GET    | `/groups/:group_id/members`                             | Danh sách members         | Member Mgmt |
+| GET    | `/groups/:group_id/members?role={role}`                 | Filter members theo role  | Member Mgmt |
+| POST   | `/groups/:group_id/members`                             | Thêm members              | Member Mgmt |
+| DELETE | `/groups/:group_id/members/:userId`                     | Xóa member                | Member Mgmt |
+| PATCH  | `/groups/:group_id/members/:userId/role`                | Thay đổi role             | Member Mgmt |
+| GET    | `/groups/:group_id/members/summary`                     | Member summary            | Member Mgmt |
+| GET    | `/users/suggestions?type=group&excludeGroup={group_id}` | More people suggestions   | Member Mgmt |
+| GET    | `/groups/classifications`                               | Danh sách classifications | Member Mgmt |
+| PATCH  | `/groups/:group_id/classification`                      | Cập nhật classification   | Member Mgmt |
 
 ---
 
@@ -430,12 +430,12 @@ GET /messages?page=1&limit=20&sort=updatedAt&order=desc
 
 Endpoint này được dùng cho nhiều mục đích khác nhau:
 
-| Query Parameter                     | Purpose                        | File                       |
-| ----------------------------------- | ------------------------------ | -------------------------- |
-| `type=message`                      | New message suggestions        | New Conversation           |
-| `type=group`                        | Group creation suggestions     | New Conversation, Settings |
-| `type=group&excludeGroup={groupId}` | More people (exclude existing) | Member Management          |
-| `type=forward`                      | Forward recipients             | Gift & Forward             |
+| Query Parameter                      | Purpose                        | File                       |
+| ------------------------------------ | ------------------------------ | -------------------------- |
+| `type=message`                       | New message suggestions        | New Conversation           |
+| `type=group`                         | Group creation suggestions     | New Conversation, Settings |
+| `type=group&excludeGroup={group_id}` | More people (exclude existing) | Member Management          |
+| `type=forward`                       | Forward recipients             | Gift & Forward             |
 
 ### `/messages/:conversationId/messages` - Multi-type Endpoint
 
@@ -450,7 +450,7 @@ Endpoint này hỗ trợ nhiều message types:
 | `gift`          | Gift message  | Gift & Forward     |
 | `business_card` | Business card | Send Message       |
 
-### `/groups/:groupId/members` - Multi-purpose Endpoint
+### `/groups/:group_id/members` - Multi-purpose Endpoint
 
 | Query Parameter | Purpose              | File                        |
 | --------------- | -------------------- | --------------------------- |
@@ -489,16 +489,16 @@ Endpoint này hỗ trợ nhiều message types:
 
 ### ⚙️ Group Settings
 
-1. Get settings: `GET /groups/:groupId/settings`
-2. Update: `PATCH /groups/:groupId/{field}`
+1. Get settings: `GET /groups/:group_id/settings`
+2. Update: `PATCH /groups/:group_id/{field}`
 3. WebSocket: `group_settings_updated` event
 
 ### 👤 Manage Members
 
-1. Get members: `GET /groups/:groupId/members`
-2. Add: `POST /groups/:groupId/members`
-3. Remove: `DELETE /groups/:groupId/members/:userId`
-4. Change role: `PATCH /groups/:groupId/members/:userId/role`
+1. Get members: `GET /groups/:group_id/members`
+2. Add: `POST /groups/:group_id/members`
+3. Remove: `DELETE /groups/:group_id/members/:userId`
+4. Change role: `PATCH /groups/:group_id/members/:userId/role`
 5. WebSocket: `group_member_added`, `group_member_removed`, `group_member_role_updated`
 
 ### 🚫 Block User
@@ -549,10 +549,10 @@ Endpoint này hỗ trợ nhiều message types:
 
 ### Member Management Flow
 
-1. `GET /groups/:groupId/members`
-2. Click "+" → `GET /users/suggestions?type=group&excludeGroup={groupId}`
-3. Select members → `POST /groups/:groupId/members`
-4. Click member → Actions menu → `PATCH /groups/:groupId/members/:userId/role`
+1. `GET /groups/:group_id/members`
+2. Click "+" → `GET /users/suggestions?type=group&excludeGroup={group_id}`
+3. Select members → `POST /groups/:group_id/members`
+4. Click member → Actions menu → `PATCH /groups/:group_id/members/:userId/role`
 
 ---
 

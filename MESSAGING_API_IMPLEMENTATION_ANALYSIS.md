@@ -90,19 +90,19 @@ src/modules/messaging/
 
 #### ❌ Thiếu:
 
-- `GET /groups/:groupId/settings` - Group settings
-- `PATCH /groups/:groupId/introduction` - Update introduction
-- `PATCH /groups/:groupId/name` - Change name (có nhưng trong update)
-- `PATCH /groups/:groupId/avatar` - Change avatar (có nhưng trong update)
-- `GET /groups/:groupId/classification` - Classification
-- `PATCH /groups/:groupId/notifications` - Mute notifications
-- `PATCH /groups/:groupId/gift-effect` - Gift effect
-- `POST /groups/:groupId/report` - Report group
-- `DELETE /groups/:groupId/members/me` - Leave group (có nhưng route khác)
+- `GET /groups/:group_id/settings` - Group settings
+- `PATCH /groups/:group_id/introduction` - Update introduction
+- `PATCH /groups/:group_id/name` - Change name (có nhưng trong update)
+- `PATCH /groups/:group_id/avatar` - Change avatar (có nhưng trong update)
+- `GET /groups/:group_id/classification` - Classification
+- `PATCH /groups/:group_id/notifications` - Mute notifications
+- `PATCH /groups/:group_id/gift-effect` - Gift effect
+- `POST /groups/:group_id/report` - Report group
+- `DELETE /groups/:group_id/members/me` - Leave group (có nhưng route khác)
 
 #### ⚠️ Vấn Đề:
 
-1. **Route khác:** Code dùng `:group_id`, MD dùng `:groupId`
+1. **Route khác:** Code dùng `:group_id`, MD dùng `:group_id`
 2. **Thiếu user_id trong route:** Code có `user/:user_id` trong một số routes
 3. **Thiếu settings endpoints**
 
@@ -248,14 +248,14 @@ src/modules/messaging/
 
 #### ❌ Thiếu:
 
-- `GET /groups/:groupId/members?role={role}` - Filter by role
-- `POST /groups/:groupId/members` - Add members
-- `DELETE /groups/:groupId/members/:userId` - Remove member
-- `PATCH /groups/:groupId/members/:userId/role` - Change role
-- `GET /groups/:groupId/members/summary` - Member summary
-- `GET /users/suggestions?type=group&excludeGroup={groupId}` - More people
+- `GET /groups/:group_id/members?role={role}` - Filter by role
+- `POST /groups/:group_id/members` - Add members
+- `DELETE /groups/:group_id/members/:userId` - Remove member
+- `PATCH /groups/:group_id/members/:userId/role` - Change role
+- `GET /groups/:group_id/members/summary` - Member summary
+- `GET /users/suggestions?type=group&excludeGroup={group_id}` - More people
 - `GET /groups/classifications` - Classifications
-- `PATCH /groups/:groupId/classification` - Update classification
+- `PATCH /groups/:group_id/classification` - Update classification
 
 #### 🔧 Giải Pháp:
 
@@ -329,7 +329,7 @@ src/modules/messaging/
 
 **Tasks:**
 
-1. ✅ Refactor group routes (standardize `:groupId`)
+1. ✅ Refactor group routes (standardize `:group_id`)
 2. ✅ Add group settings endpoints
 3. ✅ Add member management endpoints
 4. ✅ Add classification system
@@ -388,7 +388,7 @@ src/modules/messaging/
 model Conversation {
   id            String   @id @default(uuid())
   type          String   // "direct" | "group"
-  groupId       String?  @unique
+  group_id       String?  @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -486,7 +486,7 @@ src/modules/messaging/
 | ------------------------------ | ------------------------------- | -------------------- |
 | `POST /messages`               | `POST /messages`                | ✅ OK                |
 | `GET /groups`                  | `GET /groups`                   | ✅ OK                |
-| `GET /groups/:group_id`        | `GET /groups/:groupId`          | ⚠️ Change param name |
+| `GET /groups/:group_id`        | `GET /groups/:group_id`         | ⚠️ Change param name |
 | `POST /profile/:user_id/block` | `POST /users/:userId/block`     | ⚠️ Change route      |
 | `POST /uploads/images`         | `POST /upload/media?type=image` | ⚠️ Change route      |
 
@@ -536,7 +536,7 @@ src/modules/messaging/
 
 3. **Groups:**
    - Old: `:group_id` param
-   - New: `:groupId` param
+   - New: `:group_id` param
    - **Action:** Support cả hai (backward compatibility)
 
 ---

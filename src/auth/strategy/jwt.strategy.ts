@@ -11,7 +11,7 @@ import { UserBasicRole } from '@prisma/client';
 // Import PrismaService để check token blacklist
 import { PrismaService } from '../../prisma/prisma.service';
 // Import ResUserService để lấy user info
-import { ResUserService } from 'src/modules/users/service/res-user.service';
+import { ResUserService } from 'src/modules/users/service/user.service';
 // Import ConfigService để đọc JWT config
 import { ConfigService } from '@nestjs/config';
 

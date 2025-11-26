@@ -6,14 +6,11 @@ import { GuardsModule } from '../../auth/guards/guards.module';
 // Import services
 import { UserProfileService } from './service/user-profile.service';
 import { UserConnectionsService } from './service/user-connections.service';
-import { UserMessagingService } from './service/user-messaging.service';
 import { UserAlbumsService } from './service/user-albums.service';
 import { UserLevelService } from './service/user-level.service';
 import { UserGiftWallService } from './service/user-gift-wall.service';
-import { ResUserService } from './service/res-user.service';
+import { ResUserService } from './service/user.service';
 // Import controllers
-import { MessagesController } from './controller/messages.controller';
-import { MessagesAdminController } from './controller/messages-admin.controller';
 import { ConnectionsController } from './controller/connections.controller';
 import { ConnectionsAdminController } from './controller/connections-admin.controller';
 import { ConnectionsPublicController } from './controller/connections-public.controller';
@@ -25,6 +22,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 // Import Block User module
 import { BlockUserController } from './block-user/controller/block-user.controller';
+import { UserStatusController } from './controller/user-status.controller';
 import { BlockUserService } from './block-user/service/block-user.service';
 
 /**
@@ -62,19 +60,17 @@ import { BlockUserService } from './block-user/service/block-user.service';
     UserController,
     UsersAdminController,
     UsersPublicController,
-    MessagesController,
-    MessagesAdminController,
     ConnectionsController,
     ConnectionsAdminController,
     ConnectionsPublicController,
     // Block User
     BlockUserController,
+    UserStatusController,
   ],
   providers: [
     ResUserService,
     UserProfileService,
     UserConnectionsService,
-    UserMessagingService,
     UserAlbumsService,
     UserLevelService,
     UserGiftWallService,

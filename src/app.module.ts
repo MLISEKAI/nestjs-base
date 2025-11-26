@@ -25,6 +25,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
 import { ClansModule } from './modules/clans/clans.module';
 import { GiftsModule } from './modules/gifts/gifts.module';
 import { SearchModule } from './modules/search/search.module';
+import { MessagingModule } from './modules/messaging/messaging.module';
 // Import common modules
 import { CacheModule } from './common/cache/cache.module';
 import { MonitoringModule } from './common/monitoring/monitoring.module';
@@ -51,16 +52,6 @@ import jwtConfig from './config/jwt.config';
  * - ThrottlerModule: Rate limiting (100 requests per 60 seconds)
  * - ThrottlerGuard: Global rate limiting guard
  *
- * Feature Modules:
- * - AuthModule: Authentication và authorization
- * - UsersModule: User management
- * - ProfileModuleDb: Profile operations
- * - PostsModule: Posts, comments, likes, feeds
- * - WalletModule: Wallet operations (Diamond, VEX)
- * - GiftsModule: Gift operations
- * - NotificationsModule: Notifications
- * - RealtimeModule: WebSocket real-time features
- * - Và nhiều modules khác...
  */
 @Module({
   imports: [
@@ -94,6 +85,7 @@ import jwtConfig from './config/jwt.config';
     ClansModule,
     GiftsModule,
     SearchModule,
+    MessagingModule,
     CacheModule,
     MonitoringModule,
     RateLimitModule,

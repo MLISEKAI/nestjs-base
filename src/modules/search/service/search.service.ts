@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CacheService } from 'src/common/cache/cache.service';
-import { SearchQueryDto, SearchType } from '../dto/search.dto';
 import { buildPaginatedResponse } from '../../../common/utils/pagination.util';
 import type { DateFilter } from '../../../common/interfaces/prisma.interface';
 import { Prisma } from '@prisma/client';
+import { SearchType } from 'src/common/enums/search';
+import { SearchQueryDto } from '../dto';
 
 @Injectable()
 export class SearchService {

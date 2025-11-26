@@ -24,7 +24,8 @@
     "seed:wallet": "ts-node -r tsconfig-paths/register src/prisma/seed-wallet.ts",
     "seed:posts": "ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts",
     "seed:posts:clear": "ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts --clear",
-    "clear:posts": "ts-node -r tsconfig-paths/register src/prisma/clear-posts.ts"
+    "clear:posts": "ts-node -r tsconfig-paths/register src/prisma/clear-posts.ts",
+    "ndb:debug": "ndb node -r tsconfig-paths/register -r ts-node/register src/main.ts"
   },
   "engines": {
     "npm": ">=10.0.0",

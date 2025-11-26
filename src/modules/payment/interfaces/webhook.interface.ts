@@ -26,4 +26,3 @@ export interface PayPalWebhookHeaders {
   'paypal-transmission-sig'?: string;
   [key: string]: string | string[] | undefined; // HTTP headers
 }
-

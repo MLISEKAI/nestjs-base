@@ -6,46 +6,46 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 
 ## 📋 Bảng Components
 
-| Component              | Type   | API Endpoint                                    | Notes                                                                              |
-| ---------------------- | ------ | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Group Chat Settings    | Screen | `GET /groups/:groupId/settings`                 | Hiển thị cài đặt group chat                                                        |
-| Group Introduction     | Field  | `GET /groups/:groupId`                          | Hiển thị introduction của group                                                    |
-| Edit Introduction      | Action | `PATCH /groups/:groupId/introduction`           | Chỉnh sửa introduction của group                                                   |
-| Change Group Name      | Action | `PATCH /groups/:groupId/name`                   | Đổi tên group                                                                      |
-| Change Group Photo     | Action | `PATCH /groups/:groupId/avatar`                  | Đổi avatar/photo của group                                                         |
-| Upload Group Photo     | Action | `POST /upload/media` (type: group_avatar)        | Upload photo cho group                                                             |
-| Member List            | List   | `GET /groups/:groupId/members`                   | Xem danh sách members (10/120)                                                     |
-| Group Classification   | Field  | `GET /groups/:groupId/classification`           | Xem classification của group                                                       |
-| Mute Notifications     | Toggle | `PATCH /groups/:groupId/notifications`           | Bật/tắt thông báo cho group                                                        |
-| Gift Effect            | Toggle | `PATCH /groups/:groupId/gift-effect`             | Bật/tắt gift effect cho group                                                      |
-| Report Group           | Action | `POST /groups/:groupId/report`                   | Báo cáo group                                                                      |
-| Leave Group            | Action | `DELETE /groups/:groupId/members/me`             | Rời khỏi group                                                                     |
-| Group Info Display     | Display| `GET /groups/:groupId`                           | Hiển thị thông tin group (name, avatar, member count)                             |
+| Component            | Type    | API Endpoint                              | Notes                                                 |
+| -------------------- | ------- | ----------------------------------------- | ----------------------------------------------------- |
+| Group Chat Settings  | Screen  | `GET /groups/:group_id/settings`          | Hiển thị cài đặt group chat                           |
+| Group Introduction   | Field   | `GET /groups/:group_id`                   | Hiển thị introduction của group                       |
+| Edit Introduction    | Action  | `PATCH /groups/:group_id/introduction`    | Chỉnh sửa introduction của group                      |
+| Change Group Name    | Action  | `PATCH /groups/:group_id/name`            | Đổi tên group                                         |
+| Change Group Photo   | Action  | `PATCH /groups/:group_id/avatar`          | Đổi avatar/photo của group                            |
+| Upload Group Photo   | Action  | `POST /upload/media` (type: group_avatar) | Upload photo cho group                                |
+| Member List          | List    | `GET /groups/:group_id/members`           | Xem danh sách members (10/120)                        |
+| Group Classification | Field   | `GET /groups/:group_id/classification`    | Xem classification của group                          |
+| Mute Notifications   | Toggle  | `PATCH /groups/:group_id/notifications`   | Bật/tắt thông báo cho group                           |
+| Gift Effect          | Toggle  | `PATCH /groups/:group_id/gift-effect`     | Bật/tắt gift effect cho group                         |
+| Report Group         | Action  | `POST /groups/:group_id/report`           | Báo cáo group                                         |
+| Leave Group          | Action  | `DELETE /groups/:group_id/members/me`     | Rời khỏi group                                        |
+| Group Info Display   | Display | `GET /groups/:group_id`                   | Hiển thị thông tin group (name, avatar, member count) |
 
 ---
 
 ## 🔌 API Endpoints
 
-| Method | Endpoint                                    | Response                    | Note                                                      |
-| ------ | ------------------------------------------- | ---------------------------- | --------------------------------------------------------- |
-| GET    | `/groups/:groupId/settings`                 | `GroupSettingsResponse`       | Lấy cài đặt group chat                                     |
-| GET    | `/groups/:groupId`                           | `GroupDetailResponse`         | Lấy thông tin chi tiết group                               |
-| PATCH  | `/groups/:groupId/introduction`              | `UpdateIntroductionResponse`  | Cập nhật introduction của group                            |
-| PATCH  | `/groups/:groupId/name`                      | `UpdateGroupNameResponse`     | Đổi tên group                                              |
-| PATCH  | `/groups/:groupId/avatar`                   | `UpdateGroupAvatarResponse`   | Đổi avatar của group                                       |
-| POST   | `/upload/media` (group_avatar)               | `UploadGroupAvatarResponse`   | Upload avatar cho group                                    |
-| GET    | `/groups/:groupId/members`                   | `GroupMembersResponse`        | Lấy danh sách members trong group                           |
-| GET    | `/groups/:groupId/classification`            | `GroupClassificationResponse` | Lấy classification của group                              |
-| PATCH  | `/groups/:groupId/notifications`             | `MuteGroupNotificationsResponse` | Bật/tắt thông báo cho group                              |
-| PATCH  | `/groups/:groupId/gift-effect`               | `GiftEffectResponse`          | Bật/tắt gift effect cho group                             |
-| POST   | `/groups/:groupId/report`                    | `ReportGroupResponse`         | Báo cáo group                                              |
-| DELETE | `/groups/:groupId/members/me`                | `LeaveGroupResponse`          | Rời khỏi group                                             |
+| Method | Endpoint                           | Response                         | Note                              |
+| ------ | ---------------------------------- | -------------------------------- | --------------------------------- |
+| GET    | `/groups/:group_id/settings`       | `GroupSettingsResponse`          | Lấy cài đặt group chat            |
+| GET    | `/groups/:group_id`                | `GroupDetailResponse`            | Lấy thông tin chi tiết group      |
+| PATCH  | `/groups/:group_id/introduction`   | `UpdateIntroductionResponse`     | Cập nhật introduction của group   |
+| PATCH  | `/groups/:group_id/name`           | `UpdateGroupNameResponse`        | Đổi tên group                     |
+| PATCH  | `/groups/:group_id/avatar`         | `UpdateGroupAvatarResponse`      | Đổi avatar của group              |
+| POST   | `/upload/media` (group_avatar)     | `UploadGroupAvatarResponse`      | Upload avatar cho group           |
+| GET    | `/groups/:group_id/members`        | `GroupMembersResponse`           | Lấy danh sách members trong group |
+| GET    | `/groups/:group_id/classification` | `GroupClassificationResponse`    | Lấy classification của group      |
+| PATCH  | `/groups/:group_id/notifications`  | `MuteGroupNotificationsResponse` | Bật/tắt thông báo cho group       |
+| PATCH  | `/groups/:group_id/gift-effect`    | `GiftEffectResponse`             | Bật/tắt gift effect cho group     |
+| POST   | `/groups/:group_id/report`         | `ReportGroupResponse`            | Báo cáo group                     |
+| DELETE | `/groups/:group_id/members/me`     | `LeaveGroupResponse`             | Rời khỏi group                    |
 
 ---
 
 ## 📦 JSON Response Examples
 
-### 1. GET /groups/:groupId/settings - Group Settings Response
+### 1. GET /groups/:group_id/settings - Group Settings Response
 
 **Response:**
 
@@ -53,7 +53,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "name": "Study Group",
     "avatar": "https://example.com/group-avatar.jpg",
     "introduction": "- No spam, send the group link. No spam, send the group link... - No spam, send the group link.",
@@ -80,7 +80,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 2. GET /groups/:groupId - Group Detail Response
+### 2. GET /groups/:group_id - Group Detail Response
 
 **Response:**
 
@@ -113,7 +113,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 3. PATCH /groups/:groupId/introduction - Update Introduction Request & Response
+### 3. PATCH /groups/:group_id/introduction - Update Introduction Request & Response
 
 **Request Body:**
 
@@ -129,7 +129,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "introduction": "- No spam, send the group link. No spam, send the group link... - No spam, send the group link.",
     "updatedAt": "2025-01-16T19:05:00Z",
     "updatedBy": "current-user"
@@ -139,7 +139,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 4. PATCH /groups/:groupId/name - Update Group Name Request & Response
+### 4. PATCH /groups/:group_id/name - Update Group Name Request & Response
 
 **Request Body:**
 
@@ -155,7 +155,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "name": "Study Group Updated",
     "updatedAt": "2025-01-16T19:06:00Z",
     "updatedBy": "current-user"
@@ -170,9 +170,10 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 **Request:** `multipart/form-data`
 
 **Form Data:**
+
 - `file` - Image file
 - `type` - `group_avatar`
-- `groupId` - Group ID
+- `group_id` - Group ID
 
 **Response:**
 
@@ -187,7 +188,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
     "size": 2048000,
     "width": 1920,
     "height": 1920,
-    "groupId": "group-123",
+    "group_id": "group-123",
     "createdAt": "2025-01-16T19:07:00Z"
   },
   "message": "Group avatar uploaded successfully",
@@ -195,7 +196,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 6. PATCH /groups/:groupId/avatar - Update Group Avatar Request & Response
+### 6. PATCH /groups/:group_id/avatar - Update Group Avatar Request & Response
 
 **Request Body:**
 
@@ -211,7 +212,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "avatar": "https://example.com/uploads/group-avatar-123.jpg",
     "updatedAt": "2025-01-16T19:07:00Z",
     "updatedBy": "current-user"
@@ -221,7 +222,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 7. GET /groups/:groupId/members - Group Members Response
+### 7. GET /groups/:group_id/members - Group Members Response
 
 **Response:**
 
@@ -275,7 +276,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 8. GET /groups/:groupId/classification - Group Classification Response
+### 8. GET /groups/:group_id/classification - Group Classification Response
 
 **Response:**
 
@@ -283,7 +284,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "classification": "education",
     "classificationName": "Education",
     "description": "Groups for educational purposes",
@@ -294,7 +295,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 9. PATCH /groups/:groupId/notifications - Mute Group Notifications Request & Response
+### 9. PATCH /groups/:group_id/notifications - Mute Group Notifications Request & Response
 
 **Request Body:**
 
@@ -318,7 +319,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "notificationsEnabled": false,
     "isMuted": true,
     "updatedAt": "2025-01-16T19:08:00Z"
@@ -328,7 +329,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 10. PATCH /groups/:groupId/gift-effect - Gift Effect Request & Response
+### 10. PATCH /groups/:group_id/gift-effect - Gift Effect Request & Response
 
 **Request Body:**
 
@@ -344,7 +345,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "giftEffectEnabled": true,
     "updatedAt": "2025-01-16T19:09:00Z"
   },
@@ -353,7 +354,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 11. POST /groups/:groupId/report - Report Group Request & Response
+### 11. POST /groups/:group_id/report - Report Group Request & Response
 
 **Request Body:**
 
@@ -365,6 +366,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 ```
 
 **Available Reasons:**
+
 - `inappropriate_content` - Inappropriate content
 - `spam` - Spam
 - `harassment` - Harassment
@@ -379,7 +381,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
   "success": true,
   "data": {
     "reportId": "report-301",
-    "groupId": "group-123",
+    "group_id": "group-123",
     "groupName": "Study Group",
     "reason": "inappropriate_content",
     "description": "Group contains inappropriate content",
@@ -391,7 +393,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 }
 ```
 
-### 12. DELETE /groups/:groupId/members/me - Leave Group Response
+### 12. DELETE /groups/:group_id/members/me - Leave Group Response
 
 **Response:**
 
@@ -399,7 +401,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "groupName": "Study Group",
     "leftAt": "2025-01-16T19:11:00Z",
     "newMemberCount": 9
@@ -423,7 +425,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "settings": {
     "notificationsEnabled": false,
     "isMuted": true,
@@ -444,7 +446,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "oldName": "Study Group",
   "newName": "Study Group Updated",
   "changedBy": "current-user",
@@ -460,7 +462,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "avatar": "https://example.com/uploads/group-avatar-123.jpg",
   "changedBy": "current-user",
   "changedAt": "2025-01-16T19:07:00Z"
@@ -475,7 +477,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "introduction": "- No spam, send the group link...",
   "updatedBy": "current-user",
   "updatedAt": "2025-01-16T19:05:00Z"
@@ -490,7 +492,7 @@ Tài liệu API cho tính năng Group Chat Settings (Cài đặt nhóm chat) tro
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "groupName": "Study Group",
   "userId": "current-user",
   "userName": "You",
@@ -588,7 +590,7 @@ Các list endpoints hỗ trợ pagination với query parameters:
 **Example:**
 
 ```
-GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
+GET /groups/:group_id/members?page=1&limit=50&sort=joinedAt&order=asc
 ```
 
 ---
@@ -620,7 +622,7 @@ GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
 2. **Edit Introduction**
    - User edit introduction text
    - User click checkmark để save
-   - Frontend gọi `PATCH /groups/:groupId/introduction`
+   - Frontend gọi `PATCH /groups/:group_id/introduction`
    - Introduction được update
    - WebSocket emit `group_introduction_updated` event
 
@@ -633,7 +635,7 @@ GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
 2. **Change Group Name**
    - User edit name trong input field
    - User click "Xong" (Done) button
-   - Frontend gọi `PATCH /groups/:groupId/name`
+   - Frontend gọi `PATCH /groups/:group_id/name`
    - Group name được update
    - WebSocket emit `group_name_changed` event
 
@@ -642,7 +644,7 @@ GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
    - Frontend mở image picker
    - User select image
    - Frontend upload qua `POST /upload/media` với `type: group_avatar`
-   - Frontend gọi `PATCH /groups/:groupId/avatar` với `avatarUrl`
+   - Frontend gọi `PATCH /groups/:group_id/avatar` với `avatarUrl`
    - Group avatar được update
    - WebSocket emit `group_avatar_changed` event
 
@@ -650,14 +652,14 @@ GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
 
 1. **Toggle Mute**
    - User toggle "Mute notifications" switch trong settings
-   - Frontend gọi `PATCH /groups/:groupId/notifications` với `enabled: false`
+   - Frontend gọi `PATCH /groups/:group_id/notifications` với `enabled: false`
    - Notifications bị tắt cho group này
 
 ### Gift Effect Flow
 
 1. **Toggle Gift Effect**
    - User toggle "Gift effect" switch trong settings
-   - Frontend gọi `PATCH /groups/:groupId/gift-effect` với `enabled: true/false`
+   - Frontend gọi `PATCH /groups/:group_id/gift-effect` với `enabled: true/false`
    - Gift effect được bật/tắt
 
 ### Report Group Flow
@@ -666,7 +668,7 @@ GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
    - User click "Report chat" trong settings
    - Frontend hiển thị report modal với reasons
    - User select reason và optional description
-   - Frontend gọi `POST /groups/:groupId/report`
+   - Frontend gọi `POST /groups/:group_id/report`
    - Hiển thị confirmation message
 
 ### Leave Group Flow
@@ -675,7 +677,7 @@ GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
    - User click "Leave the group" trong settings
    - Frontend hiển thị confirmation dialog
    - User confirm
-   - Frontend gọi `DELETE /groups/:groupId/members/me`
+   - Frontend gọi `DELETE /groups/:group_id/members/me`
    - User rời khỏi group
    - WebSocket emit `member_left_group` event
    - Frontend navigate về messages list
@@ -687,6 +689,7 @@ GET /groups/:groupId/members?page=1&limit=50&sort=joinedAt&order=asc
 ### Group Settings Integration
 
 Group settings được lưu per group và áp dụng cho:
+
 - Notifications (per user)
 - Gift effect (group-wide)
 - Introduction (group-wide)
@@ -695,6 +698,7 @@ Group settings được lưu per group và áp dụng cho:
 ### Member List Display
 
 Member list hiển thị:
+
 - Member count vs max members (e.g., "10/120")
 - Pagination cho large groups
 - Role indicators (admin, moderator, member)
@@ -703,6 +707,7 @@ Member list hiển thị:
 ### System Messages
 
 Khi group settings thay đổi, system messages được tạo:
+
 - "You named the group 'Study Group'"
 - "You have changed the group photo"
 - "You updated the group introduction"
@@ -712,4 +717,3 @@ Khi group settings thay đổi, system messages được tạo:
 **Version:** 1.0  
 **Last Updated:** 2025-01-16  
 **Status:** ✅ Ready for Implementation
-

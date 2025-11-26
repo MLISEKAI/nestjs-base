@@ -100,13 +100,13 @@ export class AuthController {
 
   /**
    * @Post('login') - HTTP POST method, route: POST /auth/login
-   * Đăng nhập với email/phone và password
+   * Đăng nhập với email và password
    * @Throttle({ login: RATE_LIMITS.login }) - Rate limit: tối đa 10 requests/phút
    * @Req() req - Lấy request object để lấy IP address (dùng cho rate limiting và security)
    * @ApiBody({ type: LoginDto }) - Validate request body theo LoginDto
    */
   @Post('login')
-  @ApiOperation({ summary: 'Đăng nhập với email/phone và password' })
+  @ApiOperation({ summary: 'Đăng nhập với email và password' })
   @ApiBody({ type: LoginDto })
   @Throttle({ login: RATE_LIMITS.login })
   async login(@Body() dto: LoginDto, @Req() req: Request) {

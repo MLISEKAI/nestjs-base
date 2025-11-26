@@ -2,16 +2,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 // Import decorators từ class-validator để validate dữ liệu
 import { IsString, IsEnum, IsOptional, IsNotEmpty } from 'class-validator';
-
-/**
- * ReportTargetType - Enum cho loại đối tượng có thể bị report
- * Hỗ trợ report: post, user, comment
- */
-export enum ReportTargetType {
-  POST = 'post',
-  USER = 'user',
-  COMMENT = 'comment',
-}
+import { ReportTargetType } from 'src/common/enums/report-target';
 
 /**
  * CreateReportDto - DTO để tạo report

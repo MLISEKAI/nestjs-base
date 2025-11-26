@@ -23,10 +23,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../../../../common/guards/admin.guard';
 import { BaseQueryDto } from '../../../../common/dto/base-query.dto';
-import {
-  CreateInventoryItemDto,
-  UpdateInventoryItemDto,
-} from '../dto/inventory.dto';
+import { CreateInventoryItemDto, UpdateInventoryItemDto } from '../dto/inventory.dto';
 import { InventoryService } from '../service/inventory.service';
 
 /**
@@ -85,4 +82,3 @@ export class InventoryAdminController {
     return this.inventory.deleteInventoryItem(userId, itemId);
   }
 }
-

@@ -1,19 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, IsNumber, Min, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export enum SearchType {
-  ALL = 'all',
-  USERS = 'users',
-  POSTS = 'posts',
-  COMMENTS = 'comments',
-}
-
-export enum TrendingPeriod {
-  DAY = '24h',
-  WEEK = '7d',
-  MONTH = '30d',
-}
+import { SearchType, TrendingPeriod } from 'src/common/enums/search';
 
 export class SearchQueryDto {
   @ApiProperty({

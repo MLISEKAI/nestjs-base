@@ -183,17 +183,17 @@ export class AuthService {
   }
 
   /**
-   * Đăng nhập với email/phone và password
+   * Đăng nhập với email và password
    *
-   * @param dto - LoginDto chứa ref_id (email hoặc phone) và password
+   * @param dto - LoginDto chứa ref_id (email) và password
    * @param ipAddress - IP address của client (dùng cho rate limiting và security)
    * @returns JWT tokens hoặc requires_2fa response nếu user có 2FA enabled
    *
    * Quy trình:
-   * 1. Normalize ref_id (email hoặc phone)
-   * 2. Tìm associate theo email hoặc phone
+   * 1. Normalize ref_id (email)
+   * 2. Tìm associate theo email
    * 3. Verify password với bcrypt
-   * 4. Check email/phone đã được verify chưa
+   * 4. Check email đã được verify chưa
    * 5. Check 2FA enabled:
    *    - Nếu có: trả về requires_2fa: true và temp_token
    *    - Nếu không: tạo JWT tokens và trả về
@@ -203,10 +203,10 @@ export class AuthService {
     const ref = dto.ref_id.includes('@') ? this.normalizeEmail(dto.ref_id) : dto.ref_id.trim();
     // await this.authRateLimit.checkLogin(ref, ipAddress);
 
-    // Tìm associate theo email hoặc phone
+    // Tìm associate theo email
     const associate = await this.prisma.resAssociate.findFirst({
       where: {
-        OR: [{ email: ref }, { phone_number: ref }],
+        email: ref,
       },
       include: { user: true },
     });

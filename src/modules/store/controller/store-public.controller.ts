@@ -39,4 +39,3 @@ export class StorePublicController {
     return this.store.getStore(userId, query);
   }
 }
-

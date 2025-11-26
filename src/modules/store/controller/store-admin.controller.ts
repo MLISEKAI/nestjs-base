@@ -74,4 +74,3 @@ export class StoreAdminController {
     return this.store.deleteStoreItem(userId, itemId);
   }
 }
-

@@ -4,6 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, IsEnum, Min, IsEmail } from 'class-validator';
 // Import decorators từ class-transformer để transform dữ liệu
 import { Type } from 'class-transformer';
+import { CurrencyType, TransactionType, TransactionStatus } from 'src/common/enums';
 
 /**
  * WalletSummaryResponseDto - DTO cho response của GET /wallet/summary
@@ -208,40 +209,6 @@ export class SubscriptionDetailsResponseDto {
 
   @ApiProperty({ example: 'loctran', description: 'Tên người dùng' })
   username: string;
-}
-
-/**
- * TransactionType - Enum cho các loại transaction
- * Flutter Model Compatible - tương thích với Flutter app
- */
-export enum TransactionType {
-  deposit = 'deposit',
-  withdrawal = 'withdrawal',
-  exchange = 'exchange',
-  gift_sent = 'gift_sent',
-  gift_received = 'gift_received',
-  refund = 'refund',
-  reward = 'reward',
-}
-
-/**
- * TransactionStatus - Enum cho trạng thái transaction
- * Flutter Model Compatible - tương thích với Flutter app
- */
-export enum TransactionStatus {
-  completed = 'completed',
-  pending = 'pending',
-  failed = 'failed',
-  cancelled = 'cancelled',
-}
-
-/**
- * CurrencyType - Enum cho loại currency
- * Flutter Model Compatible - tương thích với Flutter app
- */
-export enum CurrencyType {
-  Diamonds = 'Diamonds',
-  VEX = 'VEX',
 }
 
 /**

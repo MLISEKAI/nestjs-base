@@ -7,6 +7,8 @@ import {
   UsePipes,
   ValidationPipe,
   Body,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,19 +17,23 @@ import {
   ApiOkResponse,
   ApiBody,
   ApiCreatedResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { BlockUserService } from '../service/block-user.service';
 import { BlockUserDto } from '../dto/block-user.dto';
+import type { AuthenticatedRequest } from '../../../../common/interfaces/request.interface';
 
 @ApiTags('Block User')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-@Controller('profile/:user_id/block')
+@UseGuards(AuthGuard('account-auth'))
+@ApiBearerAuth('JWT-auth')
+@Controller('block')
 export class BlockUserController {
   constructor(private readonly blockUserService: BlockUserService) {}
 
   @Post()
   @ApiOperation({ summary: 'Chặn người dùng' })
-  @ApiParam({ name: 'user_id', description: 'ID của user chặn người khác', type: String })
   @ApiBody({ type: BlockUserDto })
   @ApiCreatedResponse({
     description: 'Chặn user thành công',
@@ -55,13 +61,12 @@ export class BlockUserController {
       },
     },
   })
-  blockUser(@Param('user_id') userId: string, @Body() dto: BlockUserDto) {
-    return this.blockUserService.blockUser(userId, dto.blocked_id);
+  blockUser(@Body() dto: BlockUserDto, @Req() req: AuthenticatedRequest) {
+    return this.blockUserService.blockUser(req.user.id, dto.blocked_id);
   }
 
   @Delete(':blocked_id')
   @ApiOperation({ summary: 'Bỏ chặn người dùng' })
-  @ApiParam({ name: 'user_id', description: 'ID của user đang bỏ chặn', type: String })
   @ApiParam({ name: 'blocked_id', description: 'ID của user bị chặn', type: String })
   @ApiOkResponse({
     description: 'Bỏ chặn user thành công',
@@ -72,13 +77,12 @@ export class BlockUserController {
       },
     },
   })
-  unblockUser(@Param('user_id') userId: string, @Param('blocked_id') blockedId: string) {
-    return this.blockUserService.unblockUser(userId, blockedId);
+  unblockUser(@Param('blocked_id') blockedId: string, @Req() req: AuthenticatedRequest) {
+    return this.blockUserService.unblockUser(req.user.id, blockedId);
   }
 
   @Get('blocked')
   @ApiOperation({ summary: 'Lấy danh sách người dùng đã chặn' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
   @ApiOkResponse({
     description: 'Danh sách users đã bị chặn',
     schema: {
@@ -103,13 +107,12 @@ export class BlockUserController {
       },
     },
   })
-  getBlockedUsers(@Param('user_id') userId: string) {
-    return this.blockUserService.getBlockedUsers(userId);
+  getBlockedUsers(@Req() req: AuthenticatedRequest) {
+    return this.blockUserService.getBlockedUsers(req.user.id);
   }
 
   @Get('blocked-by')
   @ApiOperation({ summary: 'Lấy danh sách người dùng đã chặn mình' })
-  @ApiParam({ name: 'user_id', description: 'ID của user', type: String })
   @ApiOkResponse({
     description: 'Danh sách users đã chặn mình',
     schema: {
@@ -134,7 +137,7 @@ export class BlockUserController {
       },
     },
   })
-  getBlockedByUsers(@Param('user_id') userId: string) {
-    return this.blockUserService.getBlockedByUsers(userId);
+  getBlockedByUsers(@Req() req: AuthenticatedRequest) {
+    return this.blockUserService.getBlockedByUsers(req.user.id);
   }
 }

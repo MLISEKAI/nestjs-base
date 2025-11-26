@@ -7,22 +7,13 @@ import { CacheService } from 'src/common/cache/cache.service';
 // Import BaseQueryDto cho pagination
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 // Import các DTO để validate và type-check dữ liệu
-import {
-  TransactionHistoryItemDto,
-  TransactionHistoryResponseDto,
-  TransactionModelDto,
-  TransactionType,
-  TransactionStatus,
-  CurrencyType,
-  TransactionItemDto,
-  RelatedUserDto,
-  ExchangeDetailsDto,
-} from '../dto/diamond-wallet.dto';
+import { TransactionHistoryResponseDto, TransactionModelDto } from '../dto/diamond-wallet.dto';
 // Import interfaces để type-check
 import type {
   TransactionForDescription,
   GiftForDescription,
 } from '../interfaces/transaction.interface';
+import { TransactionType, TransactionStatus, CurrencyType } from 'src/common/enums';
 
 /**
  * @Injectable() - Đánh dấu class này là NestJS service

@@ -6,52 +6,52 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 
 ## 📋 Bảng Components
 
-| Component                | Type   | API Endpoint                                                         | Notes                                           |
-| ------------------------ | ------ | -------------------------------------------------------------------- | ----------------------------------------------- |
-| Member List Screen       | Screen | `GET /groups/:groupId/members`                                       | Hiển thị danh sách members với filters          |
-| Member List Tabs         | Filter | `GET /groups/:groupId/members?role={role}`                           | Filter members theo role (All, Administrator)   |
-| Member Item              | Item   | -                                                                    | Component hiển thị member trong list            |
-| Add Member Button        | Button | `POST /groups/:groupId/members`                                      | Button "+" để thêm members                      |
-| Member Actions Menu      | Menu   | -                                                                    | Context menu khi click vào member               |
-| Assign Administrator     | Action | `PATCH /groups/:groupId/members/:userId/role`                        | Assign member làm administrator                 |
-| Remove Administrator     | Action | `PATCH /groups/:groupId/members/:userId/role`                        | Remove administrator role từ member             |
-| Send Message to Member   | Action | `POST /messages`                                                     | Tạo conversation với member                     |
-| View Member Profile      | Action | `GET /users/:userId`                                                 | Xem profile của member                          |
-| Remove Member            | Action | `DELETE /groups/:groupId/members/:userId`                            | Xóa member khỏi group                           |
-| Member Role Badge        | Badge  | -                                                                    | Hiển thị role của member (Owner, Admin, Member) |
-| More People Modal        | Modal  | `GET /users/suggestions?type=group&excludeGroup={groupId}`           | Modal "More people" để add members              |
-| Search Users for Group   | Search | `GET /users/suggestions?q={query}&type=group&excludeGroup={groupId}` | Tìm kiếm users để add vào group                 |
-| Leave Group Button       | Button | `DELETE /groups/:groupId/members/me`                                 | Button "Leave the group" trong settings         |
-| Leave Group Confirmation | Dialog | -                                                                    | Confirmation dialog khi leave group             |
-| Group Classification     | Field  | `GET /groups/classifications`                                        | Lấy danh sách classifications                   |
-| Classification Modal     | Modal  | `PATCH /groups/:groupId/classification`                              | Modal để chọn classification                    |
-| Classification Badge     | Badge  | -                                                                    | Hiển thị classification trong group header      |
+| Component                | Type   | API Endpoint                                                          | Notes                                           |
+| ------------------------ | ------ | --------------------------------------------------------------------- | ----------------------------------------------- |
+| Member List Screen       | Screen | `GET /groups/:group_id/members`                                       | Hiển thị danh sách members với filters          |
+| Member List Tabs         | Filter | `GET /groups/:group_id/members?role={role}`                           | Filter members theo role (All, Administrator)   |
+| Member Item              | Item   | -                                                                     | Component hiển thị member trong list            |
+| Add Member Button        | Button | `POST /groups/:group_id/members`                                      | Button "+" để thêm members                      |
+| Member Actions Menu      | Menu   | -                                                                     | Context menu khi click vào member               |
+| Assign Administrator     | Action | `PATCH /groups/:group_id/members/:userId/role`                        | Assign member làm administrator                 |
+| Remove Administrator     | Action | `PATCH /groups/:group_id/members/:userId/role`                        | Remove administrator role từ member             |
+| Send Message to Member   | Action | `POST /messages`                                                      | Tạo conversation với member                     |
+| View Member Profile      | Action | `GET /users/:userId`                                                  | Xem profile của member                          |
+| Remove Member            | Action | `DELETE /groups/:group_id/members/:userId`                            | Xóa member khỏi group                           |
+| Member Role Badge        | Badge  | -                                                                     | Hiển thị role của member (Owner, Admin, Member) |
+| More People Modal        | Modal  | `GET /users/suggestions?type=group&excludeGroup={group_id}`           | Modal "More people" để add members              |
+| Search Users for Group   | Search | `GET /users/suggestions?q={query}&type=group&excludeGroup={group_id}` | Tìm kiếm users để add vào group                 |
+| Leave Group Button       | Button | `DELETE /groups/:group_id/members/me`                                 | Button "Leave the group" trong settings         |
+| Leave Group Confirmation | Dialog | -                                                                     | Confirmation dialog khi leave group             |
+| Group Classification     | Field  | `GET /groups/classifications`                                         | Lấy danh sách classifications                   |
+| Classification Modal     | Modal  | `PATCH /groups/:group_id/classification`                              | Modal để chọn classification                    |
+| Classification Badge     | Badge  | -                                                                     | Hiển thị classification trong group header      |
 
 ---
 
 ## 🔌 API Endpoints
 
-| Method | Endpoint                                                         | Response                         | Note                                                    |
-| ------ | ---------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------- |
-| GET    | `/groups/:groupId/members`                                       | `GroupMembersResponse`           | Lấy danh sách members trong group                       |
-| GET    | `/groups/:groupId/members?role={role}`                           | `GroupMembersResponse`           | Filter members theo role (all, admin, member)           |
-| POST   | `/groups/:groupId/members`                                       | `AddGroupMembersResponse`        | Thêm members vào group                                  |
-| DELETE | `/groups/:groupId/members/:userId`                               | `RemoveGroupMemberResponse`      | Xóa member khỏi group                                   |
-| PATCH  | `/groups/:groupId/members/:userId/role`                          | `UpdateMemberRoleResponse`       | Thay đổi role của member (assign/remove admin)          |
-| GET    | `/users/:userId`                                                 | `UserProfileResponse`            | Lấy thông tin user profile                              |
-| POST   | `/messages`                                                      | `CreateConversationResponse`     | Tạo conversation với member                             |
-| GET    | `/groups/:groupId/members/summary`                               | `MemberSummaryResponse`          | Lấy summary về members (counts, roles)                  |
-| GET    | `/users/suggestions?type=group&excludeGroup={groupId}`           | `GroupMemberSuggestionsResponse` | Lấy suggested users để add vào group (exclude existing) |
-| GET    | `/users/suggestions?q={query}&type=group&excludeGroup={groupId}` | `GroupMemberSuggestionsResponse` | Search users để add vào group                           |
-| DELETE | `/groups/:groupId/members/me`                                    | `LeaveGroupResponse`             | Rời khỏi group (self-initiated)                         |
-| GET    | `/groups/classifications`                                        | `GroupClassificationsResponse`   | Lấy danh sách classifications                           |
-| PATCH  | `/groups/:groupId/classification`                                | `UpdateClassificationResponse`   | Cập nhật classification của group                       |
+| Method | Endpoint                                                          | Response                         | Note                                                    |
+| ------ | ----------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------- |
+| GET    | `/groups/:group_id/members`                                       | `GroupMembersResponse`           | Lấy danh sách members trong group                       |
+| GET    | `/groups/:group_id/members?role={role}`                           | `GroupMembersResponse`           | Filter members theo role (all, admin, member)           |
+| POST   | `/groups/:group_id/members`                                       | `AddGroupMembersResponse`        | Thêm members vào group                                  |
+| DELETE | `/groups/:group_id/members/:userId`                               | `RemoveGroupMemberResponse`      | Xóa member khỏi group                                   |
+| PATCH  | `/groups/:group_id/members/:userId/role`                          | `UpdateMemberRoleResponse`       | Thay đổi role của member (assign/remove admin)          |
+| GET    | `/users/:userId`                                                  | `UserProfileResponse`            | Lấy thông tin user profile                              |
+| POST   | `/messages`                                                       | `CreateConversationResponse`     | Tạo conversation với member                             |
+| GET    | `/groups/:group_id/members/summary`                               | `MemberSummaryResponse`          | Lấy summary về members (counts, roles)                  |
+| GET    | `/users/suggestions?type=group&excludeGroup={group_id}`           | `GroupMemberSuggestionsResponse` | Lấy suggested users để add vào group (exclude existing) |
+| GET    | `/users/suggestions?q={query}&type=group&excludeGroup={group_id}` | `GroupMemberSuggestionsResponse` | Search users để add vào group                           |
+| DELETE | `/groups/:group_id/members/me`                                    | `LeaveGroupResponse`             | Rời khỏi group (self-initiated)                         |
+| GET    | `/groups/classifications`                                         | `GroupClassificationsResponse`   | Lấy danh sách classifications                           |
+| PATCH  | `/groups/:group_id/classification`                                | `UpdateClassificationResponse`   | Cập nhật classification của group                       |
 
 ---
 
 ## 📦 JSON Response Examples
 
-### 1. GET /groups/:groupId/members - Group Members Response
+### 1. GET /groups/:group_id/members - Group Members Response
 
 **Query Parameters:**
 
@@ -188,7 +188,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 }
 ```
 
-### 2. GET /groups/:groupId/members?role=admin - Filter Members by Role Response
+### 2. GET /groups/:group_id/members?role=admin - Filter Members by Role Response
 
 **Response:**
 
@@ -240,7 +240,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 }
 ```
 
-### 3. POST /groups/:groupId/members - Add Group Members Request & Response
+### 3. POST /groups/:group_id/members - Add Group Members Request & Response
 
 **Request Body:**
 
@@ -256,7 +256,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "addedMembers": [
       {
         "id": "user-11",
@@ -281,7 +281,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 }
 ```
 
-### 4. DELETE /groups/:groupId/members/:userId - Remove Group Member Response
+### 4. DELETE /groups/:group_id/members/:userId - Remove Group Member Response
 
 **Response:**
 
@@ -289,7 +289,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "removedUserId": "user-4",
     "removedUserName": "Emerson Dokidis",
     "removedBy": "current-user",
@@ -301,7 +301,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 }
 ```
 
-### 5. PATCH /groups/:groupId/members/:userId/role - Assign Administrator Request & Response
+### 5. PATCH /groups/:group_id/members/:userId/role - Assign Administrator Request & Response
 
 **Request Body:**
 
@@ -317,7 +317,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "userId": "user-4",
     "userName": "Justin Korsgaard",
     "oldRole": "member",
@@ -331,7 +331,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 }
 ```
 
-### 6. PATCH /groups/:groupId/members/:userId/role - Remove Administrator Request & Response
+### 6. PATCH /groups/:group_id/members/:userId/role - Remove Administrator Request & Response
 
 **Request Body:**
 
@@ -347,7 +347,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "userId": "user-4",
     "userName": "Justin Korsgaard",
     "oldRole": "admin",
@@ -361,7 +361,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 }
 ```
 
-### 7. GET /groups/:groupId/members/summary - Member Summary Response
+### 7. GET /groups/:group_id/members/summary - Member Summary Response
 
 **Response:**
 
@@ -369,7 +369,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "summary": {
       "totalMembers": 10,
       "maxMembers": 120,
@@ -522,13 +522,13 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
       "hasNext": true,
       "hasPrev": false
     },
-    "excludedGroupId": "group-123"
+    "excludedgroup_id": "group-123"
   },
   "timestamp": "2025-01-16T19:02:00Z"
 }
 ```
 
-### 10. POST /groups/:groupId/members - Add Members from More People Request & Response
+### 10. POST /groups/:group_id/members - Add Members from More People Request & Response
 
 **Request Body:**
 
@@ -544,7 +544,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "addedMembers": [
       {
         "id": "user-11",
@@ -572,7 +572,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 
 **Note:** Nếu add multiple members, system message sẽ combine: "You added [user1] and [user2] to the group"
 
-### 11. DELETE /groups/:groupId/members/me - Leave Group Response
+### 11. DELETE /groups/:group_id/members/me - Leave Group Response
 
 **Response:**
 
@@ -580,7 +580,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "groupName": "Study Group",
     "leftAt": "2025-01-16T19:50:00Z",
     "newMemberCount": 9,
@@ -657,7 +657,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 }
 ```
 
-### 13. PATCH /groups/:groupId/classification - Update Group Classification Request & Response
+### 13. PATCH /groups/:group_id/classification - Update Group Classification Request & Response
 
 **Request Body:**
 
@@ -673,7 +673,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 {
   "success": true,
   "data": {
-    "groupId": "group-123",
+    "group_id": "group-123",
     "groupName": "Study Group",
     "oldClassification": null,
     "newClassification": "learning",
@@ -702,7 +702,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "groupName": "Study Group",
   "addedUserId": "user-11",
   "addedUserName": "Ann Botosh",
@@ -720,7 +720,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "groupName": "Study Group",
   "removedUserId": "user-4",
   "removedUserName": "Emerson Dokidis",
@@ -738,7 +738,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "userId": "user-4",
   "userName": "Justin Korsgaard",
   "oldRole": "member",
@@ -756,7 +756,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "groupName": "Study Group",
   "userId": "user-3",
   "userName": "Abram Mango",
@@ -773,7 +773,7 @@ Tài liệu API cho tính năng Group Member Management (Quản lý thành viên
 
 ```json
 {
-  "groupId": "group-123",
+  "group_id": "group-123",
   "groupName": "Study Group",
   "oldClassification": null,
   "newClassification": "learning",
@@ -882,7 +882,7 @@ Các list endpoints hỗ trợ pagination với query parameters:
 **Example:**
 
 ```
-GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
+GET /groups/:group_id/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
 ```
 
 ---
@@ -912,12 +912,12 @@ GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
 
 1. **Open Member List**
    - User click "Member list (10/120)" trong group settings
-   - Frontend gọi `GET /groups/:groupId/members`
+   - Frontend gọi `GET /groups/:group_id/members`
    - Hiển thị member list với tabs "All" và "Administrator"
 
 2. **Filter by Role**
    - User click tab "Administrator"
-   - Frontend gọi `GET /groups/:groupId/members?role=admin`
+   - Frontend gọi `GET /groups/:group_id/members?role=admin`
    - Filter và hiển thị chỉ admin/owner members
 
 ### Member Actions Menu Flow
@@ -933,14 +933,14 @@ GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
 
 2. **Assign Administrator**
    - User click "Assign as administrator"
-   - Frontend gọi `PATCH /groups/:groupId/members/:userId/role` với `role: "admin"`
+   - Frontend gọi `PATCH /groups/:group_id/members/:userId/role` với `role: "admin"`
    - Member role được update thành "Admin"
    - System message: "You have added [user] as a group administrator"
    - WebSocket emit `group_member_role_updated` event
 
 3. **Remove Administrator**
    - User click "Remove administrator role"
-   - Frontend gọi `PATCH /groups/:groupId/members/:userId/role` với `role: "member"`
+   - Frontend gọi `PATCH /groups/:group_id/members/:userId/role` với `role: "member"`
    - Member role được update thành "Member"
    - System message: "You have removed [user] administrator status"
    - WebSocket emit `group_member_role_updated` event
@@ -959,7 +959,7 @@ GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
    - User click "Remove from the group"
    - Frontend hiển thị confirmation dialog
    - User confirm
-   - Frontend gọi `DELETE /groups/:groupId/members/:userId`
+   - Frontend gọi `DELETE /groups/:group_id/members/:userId`
    - Member bị remove khỏi group
    - System message: "You removed [user] from the group"
    - WebSocket emit `group_member_removed` event
@@ -968,12 +968,12 @@ GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
 
 1. **Open More People Modal**
    - User click "+" icon trong member list header
-   - Frontend gọi `GET /users/suggestions?type=group&excludeGroup={groupId}`
+   - Frontend gọi `GET /users/suggestions?type=group&excludeGroup={group_id}`
    - Hiển thị modal "More people" với search bar và suggested users
 
 2. **Search Users**
    - User type trong search bar
-   - Frontend debounce và gọi `GET /users/suggestions?q={query}&type=group&excludeGroup={groupId}`
+   - Frontend debounce và gọi `GET /users/suggestions?q={query}&type=group&excludeGroup={group_id}`
    - Filter và hiển thị matching users (exclude existing members)
 
 3. **Select Members**
@@ -983,7 +983,7 @@ GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
 
 4. **Add Members**
    - User click "Start a group chat" button (hoặc "Add" button)
-   - Frontend gọi `POST /groups/:groupId/members` với `memberIds`
+   - Frontend gọi `POST /groups/:group_id/members` với `memberIds`
    - Members được add vào group
    - System message: "You added [user1] and [user2] to the group" (combined message)
    - WebSocket emit `group_member_added` events
@@ -1000,7 +1000,7 @@ GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
 
 2. **Confirm Leave**
    - User click "Leave" button
-   - Frontend gọi `DELETE /groups/:groupId/members/me`
+   - Frontend gọi `DELETE /groups/:group_id/members/me`
    - User rời khỏi group
    - System message: "You has left the group"
    - WebSocket emit `member_left_group` event
@@ -1021,7 +1021,7 @@ GET /groups/:groupId/members?page=1&limit=50&role=admin&sort=joinedAt&order=asc
 
 3. **Confirm Classification**
    - User click "Confirm" button
-   - Frontend gọi `PATCH /groups/:groupId/classification` với `classification: "learning"`
+   - Frontend gọi `PATCH /groups/:group_id/classification` với `classification: "learning"`
    - Classification được update
    - Group header hiển thị: "Study Group" với "2 people Learning"
    - WebSocket emit `group_classification_updated` event

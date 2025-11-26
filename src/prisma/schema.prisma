@@ -64,6 +64,8 @@ model ResUser {
   messagesRecv ResMessage[]   @relation("MessagesRecv")
   giftsSent    ResGift[]      @relation("GiftsSent")
   giftsRecv    ResGift[]      @relation("GiftsRecv")
+  conversationParticipants ResConversationParticipant[]
+  conversationsCreated ResConversation[] @relation("ConversationCreator")
 
   wallets        ResWallet[]
   vipStatus      ResVipStatus?
@@ -215,22 +217,103 @@ model ResFriend {
   @@map("res_friend")
 }
 
-// MESSAGE (TIN NHẮN)
-model ResMessage {
+// CONVERSATION (CUỘC TRÒ CHUYỆN)
+model ResConversation {
   id         String   @id @default(uuid())
+  type       String   // "direct" | "group"
+  group_id   String?  @unique // Link với ResGroup nếu là group chat
+  created_by String
   created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
 
-  sender_id   String
-  receiver_id String
-  content     String
+  creator       ResUser                      @relation("ConversationCreator", fields: [created_by], references: [id])
+  group         ResGroup?                    @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  participants  ResConversationParticipant[]
+  messages      ResMessage[]
+  settings      ResConversationSettings?
 
-  sender   ResUser @relation("MessagesSent", fields: [sender_id], references: [id])
-  receiver ResUser @relation("MessagesRecv", fields: [receiver_id], references: [id])
+  @@index([created_by])
+  @@index([type])
+  @@index([updated_at])
+  @@index([deleted_at])
+  @@map("res_conversation")
+}
+
+// CONVERSATION PARTICIPANT
+model ResConversationParticipant {
+  id              String   @id @default(uuid())
+  conversation_id String
+  user_id         String
+  display_name    String?  // Custom display name trong conversation này
+  is_muted        Boolean  @default(false)
+  gift_sounds_enabled Boolean @default(true)
+  joined_at       DateTime @default(now())
+  left_at         DateTime?
+
+  conversation ResConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  user         ResUser          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([conversation_id, user_id])
+  @@index([conversation_id])
+  @@index([user_id])
+  @@index([conversation_id, left_at])
+  @@map("res_conversation_participant")
+}
+
+// CONVERSATION SETTINGS
+model ResConversationSettings {
+  id                    String   @id @default(uuid())
+  conversation_id       String   @unique
+  notifications_enabled Boolean  @default(true)
+  gift_sounds_enabled   Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  conversation ResConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@map("res_conversation_settings")
+}
+
+// MESSAGE (TIN NHẮN) - Updated với conversation support
+model ResMessage {
+  id              String   @id @default(uuid())
+  conversation_id String?  // Link với conversation (mới)
+  sender_id       String
+  receiver_id     String?  // Giữ lại cho backward compatibility
+  type            String   @default("text") // "text" | "image" | "video" | "audio" | "gift" | "business_card" | "system"
+  content         String?
+  media_url       String?
+  media_thumbnail String?
+  media_size      Int?
+  media_duration  Int?
+  waveform        String?  // JSON array cho voice messages
+  is_read         Boolean  @default(false)
+  is_forwarded    Boolean  @default(false)
+  original_message_id String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  deleted_at      DateTime?
+
+  // Gift specific
+  gift_id String?
+  gift    ResGift? @relation("GiftMessages", fields: [gift_id], references: [id], onDelete: SetNull)
+
+  // Business card specific
+  business_card_user_id String?
+
+  conversation ResConversation? @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  sender      ResUser           @relation("MessagesSent", fields: [sender_id], references: [id])
+  receiver    ResUser?          @relation("MessagesRecv", fields: [receiver_id], references: [id])
 
   @@index([sender_id])
   @@index([receiver_id])
+  @@index([conversation_id])
+  @@index([conversation_id, created_at])
+  @@index([conversation_id, is_read])
   @@index([receiver_id, created_at])
   @@index([created_at])
+  @@index([deleted_at])
   @@map("res_message")
 }
 
@@ -247,6 +330,7 @@ model ResGift {
   sender   ResUser     @relation("GiftsSent", fields: [sender_id], references: [id], onDelete: Cascade)
   receiver ResUser     @relation("GiftsRecv", fields: [receiver_id], references: [id], onDelete: Cascade)
   giftItem ResGiftItem @relation(fields: [gift_item_id], references: [id], onDelete: Cascade)
+  messages ResMessage[] @relation("GiftMessages")
 
   @@index([sender_id])
   @@index([receiver_id])
@@ -828,20 +912,25 @@ model ResStory {
 
 // GROUP/CHAT ROOM
 model ResGroup {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  avatar      String?
-  is_public   Boolean  @default(false)
-  created_by  String
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  introduction  String?  // Group introduction
+  avatar        String?
+  is_public     Boolean  @default(false)
+  classification String?  // "games" | "making_friends" | "enjoyment" | "entertainment" | "learning" | "networking" | "others"
+  max_members   Int      @default(120)
+  created_by    String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   members  ResGroupMember[]
   messages ResGroupMessage[]
+  conversation ResConversation? // Link với conversation (one-to-one)
 
   @@index([created_by])
   @@index([is_public])
+  @@index([classification])
   @@map("res_group")
 }
 
@@ -850,8 +939,9 @@ model ResGroupMember {
   id        String   @id @default(uuid())
   group_id  String
   user_id   String
-  role      String   @default("member") // admin, moderator, member
+  role      String   @default("member") // "owner" | "admin" | "member"
   joined_at DateTime @default(now())
+  left_at   DateTime?
 
   group ResGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
   user  ResUser  @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -859,10 +949,12 @@ model ResGroupMember {
   @@unique([group_id, user_id])
   @@index([group_id])
   @@index([user_id])
+  @@index([group_id, role])
+  @@index([group_id, left_at])
   @@map("res_group_member")
 }
 
-// GROUP MESSAGE
+// GROUP MESSAGE (Deprecated - sẽ dùng ResMessage với conversation_id)
 model ResGroupMessage {
   id         String   @id @default(uuid())
   group_id   String

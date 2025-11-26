@@ -216,10 +216,23 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   /**
-   * Public method để emit message từ service
+   * Public method để emit message đến conversation room
+   * @param conversationId - Conversation ID (not user ID)
+   * @param message - Message data
    */
-  emitMessage(receiverId: string, message: any) {
-    this.server.to(`user:${receiverId}`).emit('new_message', message);
+  emitMessage(conversationId: string, message: any) {
+    // Emit đến conversation room (clients subscribe to room:${conversationId})
+    this.server.to(`room:${conversationId}`).emit('new_message', message);
+  }
+
+  /**
+   * Public method để emit message đến user (for direct notifications)
+   * @param userId - User ID
+   * @param message - Message data
+   */
+  emitMessageToUser(userId: string, message: any) {
+    // Emit đến user room (clients subscribe to user:${userId})
+    this.server.to(`user:${userId}`).emit('new_message', message);
   }
 
   /**
@@ -227,6 +240,30 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
    */
   emitLiveUpdate(userId: string, update: any) {
     this.server.to(`user:${userId}`).emit('live_update', update);
+  }
+
+  /**
+   * Public method để emit typing indicator
+   */
+  emitTyping(conversationId: string, data: { userId: string; isTyping: boolean }) {
+    this.server.to(`room:${conversationId}`).emit('user_typing', data);
+  }
+
+  /**
+   * Public method để emit message read receipt
+   */
+  emitMessageRead(
+    conversationId: string,
+    data: { messageId: string; userId: string; readAt: Date },
+  ) {
+    this.server.to(`room:${conversationId}`).emit('message_read', data);
+  }
+
+  /**
+   * Public method để emit user status update
+   */
+  emitUserStatus(userId: string, status: { isOnline: boolean; lastSeen?: Date }) {
+    this.server.to(`user:${userId}`).emit('user_status', { userId, ...status });
   }
 
   /**

@@ -86,4 +86,3 @@ export class VipAdminController {
     return this.vip.deleteVipStatus(userId);
   }
 }
-

@@ -9,12 +9,7 @@ import {
   ValidationPipe,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../../../../common/guards/admin.guard';
 import { ReferralService } from '../service/referral.service';
@@ -53,4 +48,3 @@ export class ReferralAdminController {
     return this.referral.removeReferral(userId, referredId);
   }
 }
-
