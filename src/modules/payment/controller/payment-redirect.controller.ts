@@ -1,6 +1,9 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { PayPalService } from '../service/paypal.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import type { Response } from 'express';
 
 /**
@@ -14,19 +17,84 @@ import type { Response } from 'express';
 @ApiTags('Payment Redirect')
 @Controller('payment-redirect')
 export class PaymentRedirectController {
-  constructor(private readonly configService: ConfigService) {}
+  private readonly logger = new Logger(PaymentRedirectController.name);
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly paypalService: PayPalService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get('success')
   @ApiOperation({ summary: 'PayPal success redirect to mobile app' })
   @ApiExcludeEndpoint()
-  paymentSuccess(@Query() query: any, @Res() res: Response) {
+  async paymentSuccess(@Query() query: any, @Res() res: Response) {
     const mobileDeepLink = this.configService.get<string>('MOBILE_DEEP_LINK') || 'jt291://';
     const transactionId = query.transactionId || '';
     const token = query.token || '';
     const payerId = query.PayerID || '';
 
+    this.logger.log(
+      `Payment redirect success. TransactionId: ${transactionId}, Token: ${token}, PayerID: ${payerId}`,
+    );
+
+    // Auto-capture payment trước khi redirect
+    let captureSuccess = false;
+    let captureMessage = '';
+    try {
+      // 1. Capture payment từ PayPal
+      const captureResult = await this.paypalService.captureOrder(token);
+      this.logger.log(
+        `PayPal capture successful. OrderId: ${captureResult.orderId}, Status: ${captureResult.status}`,
+      );
+
+      // 2. Tìm transaction trong database
+      const transaction = await this.prisma.resWalletTransaction.findFirst({
+        where: { reference_id: transactionId },
+        include: { wallet: true },
+      });
+
+      if (!transaction) {
+        this.logger.error(`Transaction not found: ${transactionId}`);
+        captureMessage = 'Transaction not found';
+      } else if (transaction.status === 'success') {
+        this.logger.warn(`Transaction ${transactionId} already completed`);
+        captureSuccess = true;
+        captureMessage = 'Payment already processed';
+      } else {
+        // 3. Cập nhật transaction status và cộng tiền vào wallet
+        const amount = Number(transaction.amount);
+        const currentBalance = Number(transaction.wallet.balance);
+        const newBalance = currentBalance + amount;
+
+        await this.prisma.$transaction(async (tx) => {
+          await tx.resWallet.update({
+            where: { id: transaction.wallet_id },
+            data: { balance: new Prisma.Decimal(newBalance) },
+          });
+
+          await tx.resWalletTransaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'success',
+              balance_after: new Prisma.Decimal(newBalance),
+            },
+          });
+        });
+
+        this.logger.log(
+          `Payment captured successfully. Transaction: ${transactionId}, Amount: ${amount}, New Balance: ${newBalance}`,
+        );
+        captureSuccess = true;
+        captureMessage = `Payment successful! +${amount} ${transaction.wallet.currency}`;
+      }
+    } catch (error) {
+      this.logger.error(`Failed to capture payment: ${error.message}`, error.stack);
+      captureMessage = `Error: ${error.message}`;
+    }
+
     // Build deep link URL
-    const deepLinkUrl = `${mobileDeepLink}payment/success?transactionId=${transactionId}&token=${token}&PayerID=${payerId}`;
+    const deepLinkUrl = `${mobileDeepLink}payment/success?transactionId=${transactionId}&token=${token}&PayerID=${payerId}&captured=${captureSuccess}`;
 
     // Return HTML page với JavaScript để redirect về mobile app
     const html = `
@@ -90,9 +158,12 @@ export class PaymentRedirectController {
   <div class="container">
     <div class="spinner"></div>
     <h1>✅ Payment Successful!</h1>
-    <p>Redirecting to app...</p>
+    <p>${captureMessage || 'Processing payment...'}</p>
     <p style="font-size: 0.875rem; margin-top: 1rem;">
       Transaction ID: ${transactionId}
+    </p>
+    <p style="font-size: 0.875rem; opacity: 0.8;">
+      ${captureSuccess ? '✅ Payment captured' : '⏳ Capturing payment...'}
     </p>
     <a href="${deepLinkUrl}" class="button" id="manualLink">
       Open App Manually
