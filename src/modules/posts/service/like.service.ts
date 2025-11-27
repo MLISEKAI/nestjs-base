@@ -263,21 +263,13 @@ export class LikeService {
     // Kiểm tra: nếu user like không phải là chủ bài viết thì mới gửi notification
     if (post.user_id !== userId) {
       try {
-        // Lấy thông tin nickname của user đang like để hiển thị trong notification
-        const sender = await this.prisma.resUser.findUnique({
-          where: { id: userId },
-          select: { nickname: true }, // Chỉ lấy nickname để tối ưu
-        });
-
         // Tạo notification cho chủ bài viết
         await this.notificationService.createNotification({
           user_id: post.user_id, // Chủ bài viết nhận notification
           sender_id: userId, // Người like (user đang thực hiện hành động)
           type: NotificationType.LIKE, // Loại notification là LIKE
           title: 'New Like', // Tiêu đề notification
-          content: sender?.nickname
-            ? `${sender.nickname} liked your post` // Nếu có nickname thì dùng nickname
-            : 'Someone liked your post', // Không có thì dùng "Someone"
+          content: 'liked your post', // Content đơn giản, frontend sẽ ghép với sender.nickname
           link: `/posts/${postId}`, // Link đến bài viết được like
           data: JSON.stringify({ post_id: postId, like_id: like.id }), // Dữ liệu bổ sung dạng JSON
         });

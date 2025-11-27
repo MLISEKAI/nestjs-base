@@ -300,12 +300,6 @@ export class CommentService {
 
     // Tự động tạo notification cho các user liên quan
     try {
-      // Lấy thông tin nickname của user đang comment để hiển thị trong notification
-      const sender = await this.prisma.resUser.findUnique({
-        where: { id: userId },
-        select: { nickname: true }, // Chỉ lấy nickname để tối ưu
-      });
-
       // Nếu là reply (có parent_id), gửi notification cho người comment cha
       // Ví dụ: User A comment, User B reply => User A nhận notification
       if (dto.parent_id && parentComment) {
@@ -316,9 +310,7 @@ export class CommentService {
             sender_id: userId, // Người reply (user đang thực hiện hành động)
             type: NotificationType.COMMENT, // Loại notification là COMMENT
             title: 'New Reply', // Tiêu đề
-            content: sender?.nickname
-              ? `${sender.nickname} replied to your comment` // Nếu có nickname
-              : 'Someone replied to your comment', // Không có thì dùng "Someone"
+            content: 'replied to your comment', // Content đơn giản, frontend sẽ ghép với sender.nickname
             link: `/posts/${postId}/comments/${comment.id}`, // Link đến comment
             data: JSON.stringify({
               post_id: postId,
@@ -342,9 +334,7 @@ export class CommentService {
           sender_id: userId, // Người comment (user đang thực hiện hành động)
           type: NotificationType.COMMENT, // Loại notification là COMMENT
           title: 'New Comment', // Tiêu đề
-          content: sender?.nickname
-            ? `${sender.nickname} commented on your post` // Nếu có nickname
-            : 'Someone commented on your post', // Không có thì dùng "Someone"
+          content: 'commented on your post', // Content đơn giản, frontend sẽ ghép với sender.nickname
           link: `/posts/${postId}/comments/${comment.id}`, // Link đến comment
           data: JSON.stringify({ post_id: postId, comment_id: comment.id }), // Dữ liệu bổ sung
         });

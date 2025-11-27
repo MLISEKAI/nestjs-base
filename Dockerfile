@@ -27,7 +27,7 @@ RUN npx prisma generate --schema=./src/prisma/schema.prisma
 RUN npm run build
 
 # Stage 2: Production
-FROM node:20-alpine AS production
+FROM node:20-alpine3.19 AS production
 
 # Install required tools
 RUN apk add --no-cache wget postgresql-client bash
@@ -42,8 +42,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm install --only=production --legacy-peer-deps && \
-    npm cache clean --force
+RUN npm install --only=production --legacy-peer-deps && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
