@@ -18,12 +18,12 @@ export class CommentService {
     private notificationService: NotificationService,
   ) {}
 
-  async getComments(postId: string, query?: BaseQueryDto) {
+  async getComments(postId: string, query?: BaseQueryDto, currentUserId?: string) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const cacheKey = `post:${postId}:comments:page:${page}:limit:${take}`;
+    const cacheKey = `post:${postId}:comments:page:${page}:limit:${take}:user:${currentUserId || 'guest'}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -32,6 +32,14 @@ export class CommentService {
         // Check if post exists
         const post = await this.prisma.resPost.findUnique({
           where: { id: postId },
+          include: {
+            _count: {
+              select: {
+                likes: true,
+                comments: true,
+              },
+            },
+          },
         });
 
         if (!post) {
@@ -50,7 +58,11 @@ export class CommentService {
                   id: true,
                   nickname: true,
                   avatar: true,
+                  bio: true,
                 },
+              },
+              media: {
+                orderBy: { order: 'asc' },
               },
               _count: {
                 select: {
@@ -64,13 +76,82 @@ export class CommentService {
           }),
         ]);
 
-        const formattedComments = comments.map((comment) => ({
-          ...comment,
-          replies_count: comment._count.replies,
-          _count: undefined,
-        }));
+        // Nếu có currentUserId, lấy thông tin quan hệ với các user đã comment
+        let relationshipData = null;
+        if (currentUserId) {
+          const commentUserIds = comments.map((c) => c.user_id);
 
-        return buildPaginatedResponse(formattedComments, total, page, take);
+          const [followings, friends, followers] = await Promise.all([
+            // Users mà currentUser đang follow
+            this.prisma.resFollow.findMany({
+              where: {
+                follower_id: currentUserId,
+                following_id: { in: commentUserIds },
+              },
+              select: { following_id: true },
+            }),
+            // Users là bạn bè với currentUser
+            this.prisma.resFriend.findMany({
+              where: {
+                OR: [
+                  { user_a_id: currentUserId, user_b_id: { in: commentUserIds } },
+                  { user_b_id: currentUserId, user_a_id: { in: commentUserIds } },
+                ],
+              },
+              select: { user_a_id: true, user_b_id: true },
+            }),
+            // Users đang follow currentUser
+            this.prisma.resFollow.findMany({
+              where: {
+                following_id: currentUserId,
+                follower_id: { in: commentUserIds },
+              },
+              select: { follower_id: true },
+            }),
+          ]);
+
+          relationshipData = {
+            followingIds: new Set(followings.map((f) => f.following_id)),
+            friendIds: new Set(
+              friends.flatMap((f) => [f.user_a_id, f.user_b_id]).filter((id) => id !== currentUserId),
+            ),
+            followerIds: new Set(followers.map((f) => f.follower_id)),
+          };
+        }
+
+        const formattedComments = comments.map((comment) => {
+          const baseComment = {
+            ...comment,
+            replies_count: comment._count.replies,
+            _count: undefined,
+          };
+
+          // Thêm relationship status nếu có currentUserId
+          if (relationshipData && currentUserId !== comment.user_id) {
+            return {
+              ...baseComment,
+              user: {
+                ...comment.user,
+                is_following: relationshipData.followingIds.has(comment.user_id),
+                is_friend: relationshipData.friendIds.has(comment.user_id),
+                is_follower: relationshipData.followerIds.has(comment.user_id),
+              },
+            };
+          }
+
+          return baseComment;
+        });
+
+        // Thêm post reactions vào response
+        const responseData = {
+          post_reactions: {
+            like_count: post._count.likes,
+            comment_count: post._count.comments,
+          },
+          comments: buildPaginatedResponse(formattedComments, total, page, take),
+        };
+
+        return responseData;
       },
       cacheTtl,
     );
@@ -101,6 +182,9 @@ export class CommentService {
                   avatar: true,
                 },
               },
+              media: {
+                orderBy: { order: 'asc' },
+              },
             },
           }),
           this.prisma.resComment.count({
@@ -122,6 +206,11 @@ export class CommentService {
    * @returns Thông tin comment đã tạo
    */
   async createComment(userId: string, postId: string, dto: CreateCommentDto) {
+    // Validate: comment phải có content hoặc media
+    if (!dto.content && (!dto.media || dto.media.length === 0)) {
+      throw new NotFoundException('Comment must have content or media');
+    }
+
     // Kiểm tra bài viết có tồn tại không
     const post = await this.prisma.resPost.findUnique({
       where: { id: postId }, // Tìm post theo ID
@@ -146,30 +235,59 @@ export class CommentService {
       }
     }
 
-    // Tạo comment mới trong database
-    const comment = await this.prisma.resComment.create({
-      data: {
-        post_id: postId, // ID của bài viết
-        user_id: userId, // ID của user đang comment
-        content: dto.content, // Nội dung comment
-        parent_id: dto.parent_id || null, // ID của comment cha (null nếu là top-level comment)
-      },
-      include: {
-        // Include thông tin user để trả về trong response
-        user: {
-          select: {
-            id: true,
-            nickname: true,
-            avatar: true,
+    // Tạo comment mới trong database với transaction
+    const comment = await this.prisma.$transaction(async (tx) => {
+      // Tạo comment
+      const newComment = await tx.resComment.create({
+        data: {
+          post_id: postId, // ID của bài viết
+          user_id: userId, // ID của user đang comment
+          content: dto.content || null, // Nội dung comment (có thể null nếu chỉ có media)
+          parent_id: dto.parent_id || null, // ID của comment cha (null nếu là top-level comment)
+        },
+      });
+
+      // Tạo media nếu có
+      if (dto.media && dto.media.length > 0) {
+        await Promise.all(
+          dto.media.map((media, index) =>
+            tx.resCommentMedia.create({
+              data: {
+                comment_id: newComment.id,
+                media_url: media.media_url,
+                media_type: media.media_type,
+                thumbnail_url: media.thumbnail_url,
+                width: media.width,
+                height: media.height,
+                duration: media.duration,
+                order: media.order !== undefined ? media.order : index,
+              },
+            }),
+          ),
+        );
+      }
+
+      // Lấy comment với relations
+      return tx.resComment.findUnique({
+        where: { id: newComment.id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+              avatar: true,
+            },
+          },
+          media: {
+            orderBy: { order: 'asc' },
+          },
+          _count: {
+            select: {
+              replies: true,
+            },
           },
         },
-        // Include _count để đếm số lượng replies của comment này
-        _count: {
-          select: {
-            replies: true, // Đếm số lượng comment con (replies)
-          },
-        },
-      },
+      });
     });
 
     // Xóa cache liên quan đến comments của post này
@@ -248,28 +366,75 @@ export class CommentService {
 
   async updateComment(userId: string, commentId: string, dto: UpdateCommentDto) {
     try {
-      const comment = await this.prisma.resComment.update({
-        where: {
-          id: commentId,
-          user_id: userId, // Only owner can update
-        },
-        data: {
-          content: dto.content,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              nickname: true,
-              avatar: true,
+      // Kiểm tra comment tồn tại và thuộc về user
+      const existing = await this.prisma.resComment.findFirst({
+        where: { id: commentId, user_id: userId },
+      });
+
+      if (!existing) {
+        throw new NotFoundException('Comment not found or you do not have permission to update it');
+      }
+
+      // Update comment với transaction
+      const comment = await this.prisma.$transaction(async (tx) => {
+        // Update comment data
+        const updateData: any = {};
+        if (dto.content !== undefined) updateData.content = dto.content;
+
+        const updatedComment = await tx.resComment.update({
+          where: { id: commentId },
+          data: updateData,
+        });
+
+        // Xử lý media - thay thế toàn bộ media cũ
+        if (dto.media !== undefined) {
+          // Xóa tất cả media cũ
+          await tx.resCommentMedia.deleteMany({
+            where: { comment_id: commentId },
+          });
+
+          // Tạo media mới
+          if (dto.media.length > 0) {
+            await Promise.all(
+              dto.media.map((media, index) =>
+                tx.resCommentMedia.create({
+                  data: {
+                    comment_id: commentId,
+                    media_url: media.media_url,
+                    media_type: media.media_type,
+                    thumbnail_url: media.thumbnail_url,
+                    width: media.width,
+                    height: media.height,
+                    duration: media.duration,
+                    order: media.order !== undefined ? media.order : index,
+                  },
+                }),
+              ),
+            );
+          }
+        }
+
+        // Lấy comment với relations
+        return tx.resComment.findUnique({
+          where: { id: commentId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                nickname: true,
+                avatar: true,
+              },
+            },
+            media: {
+              orderBy: { order: 'asc' },
+            },
+            _count: {
+              select: {
+                replies: true,
+              },
             },
           },
-          _count: {
-            select: {
-              replies: true,
-            },
-          },
-        },
+        });
       });
 
       // Invalidate cache
@@ -284,7 +449,7 @@ export class CommentService {
         _count: undefined,
       };
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (error.code === 'P2025' || error instanceof NotFoundException) {
         throw new NotFoundException('Comment not found or you do not have permission to update it');
       }
       throw error;

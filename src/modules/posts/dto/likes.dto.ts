@@ -11,6 +11,21 @@ export class LikeUserDto {
 
   @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
   avatar?: string;
+
+  @ApiPropertyOptional({ example: 'Striving for excellence...' })
+  bio?: string;
+
+  @ApiPropertyOptional({ example: 'male', description: 'Gender: male, female, other' })
+  gender?: string;
+
+  @ApiPropertyOptional({ example: true, description: 'Current user is following this user' })
+  is_following?: boolean;
+
+  @ApiPropertyOptional({ example: false, description: 'Current user is friend with this user (both follow each other)' })
+  is_friend?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'This user is following current user (follower)' })
+  is_follower?: boolean;
 }
 
 export class PostLikeDto {

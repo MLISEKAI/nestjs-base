@@ -25,12 +25,12 @@ export class LikeService {
     private notificationService: NotificationService,
   ) {}
 
-  async getLikes(postId: string, query?: BaseQueryDto) {
+  async getLikes(postId: string, query?: BaseQueryDto, currentUserId?: string) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const cacheKey = `post:${postId}:likes:page:${page}:limit:${take}`;
+    const cacheKey = `post:${postId}:likes:page:${page}:limit:${take}:user:${currentUserId || 'guest'}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -57,6 +57,8 @@ export class LikeService {
                   id: true,
                   nickname: true,
                   avatar: true,
+                  bio: true,
+                  gender: true,
                 },
               },
             },
@@ -66,7 +68,77 @@ export class LikeService {
           }),
         ]);
 
-        return buildPaginatedResponse(likes, total, page, take);
+        // Nếu có currentUserId, lấy thông tin relationship
+        let relationshipData = null;
+        if (currentUserId) {
+          const likedUserIds = likes.map((like) => like.user_id);
+
+          const [followings, friends, followers] = await Promise.all([
+            // Users mà currentUser đang follow
+            this.prisma.resFollow.findMany({
+              where: {
+                follower_id: currentUserId,
+                following_id: { in: likedUserIds },
+              },
+              select: { following_id: true },
+            }),
+            // Users là bạn bè với currentUser (cả 2 đều follow nhau)
+            this.prisma.resFriend.findMany({
+              where: {
+                OR: [
+                  { user_a_id: currentUserId, user_b_id: { in: likedUserIds } },
+                  { user_b_id: currentUserId, user_a_id: { in: likedUserIds } },
+                ],
+              },
+              select: { user_a_id: true, user_b_id: true },
+            }),
+            // Users đang follow currentUser (followers)
+            this.prisma.resFollow.findMany({
+              where: {
+                following_id: currentUserId,
+                follower_id: { in: likedUserIds },
+              },
+              select: { follower_id: true },
+            }),
+          ]);
+
+          relationshipData = {
+            followingIds: new Set(followings.map((f) => f.following_id)),
+            friendIds: new Set(
+              friends.flatMap((f) => [f.user_a_id, f.user_b_id]).filter((id) => id !== currentUserId),
+            ),
+            followerIds: new Set(followers.map((f) => f.follower_id)),
+          };
+        }
+
+        // Format response với relationship status
+        const formattedLikes = likes.map((like) => {
+          if (relationshipData && currentUserId !== like.user_id) {
+            return {
+              ...like,
+              user: {
+                ...like.user,
+                is_following: relationshipData.followingIds.has(like.user_id),
+                is_friend: relationshipData.friendIds.has(like.user_id),
+                is_follower: relationshipData.followerIds.has(like.user_id),
+              },
+            };
+          }
+          return like;
+        });
+
+        const response = buildPaginatedResponse(formattedLikes, total, page, take);
+
+        // Thêm message khi không có dữ liệu
+        if (total === 0) {
+          this.logger.log(`No likes found for post ${postId}`);
+          return {
+            ...response,
+            message: 'No one has liked this post yet',
+          };
+        }
+
+        return response;
       },
       cacheTtl,
     );
@@ -142,61 +214,34 @@ export class LikeService {
       },
     });
 
-    // Nếu user đã like rồi
-    if (existingLike) {
-      // Nếu reaction giống nhau (ví dụ: đã like rồi, like lại) => toggle (bỏ like)
-      if (existingLike.reaction === dto.reaction) {
-        // Xóa like khỏi database
-        await this.prisma.resPostLike.delete({
-          where: {
-            id: existingLike.id, // Xóa theo ID của like record
-          },
-        });
+    // Nếu reaction giống nhau (ví dụ: đã like rồi, like lại) => toggle (bỏ like)
+    if (existingLike && existingLike.reaction === dto.reaction) {
+      // Xóa like khỏi database
+      await this.prisma.resPostLike.delete({
+        where: {
+          id: existingLike.id, // Xóa theo ID của like record
+        },
+      });
 
-        // Xóa cache liên quan đến likes của post này
-        // delPattern xóa tất cả cache key có pattern `post:${postId}:likes:*`
-        await this.cacheService.delPattern(`post:${postId}:likes:*`);
-        // Xóa cache thống kê likes (tổng số likes, số lượng mỗi reaction)
-        await this.cacheService.del(`post:${postId}:like:stats`);
+      // Xóa cache liên quan đến likes của post này
+      // delPattern xóa tất cả cache key có pattern `post:${postId}:likes:*`
+      await this.cacheService.delPattern(`post:${postId}:likes:*`);
+      // Xóa cache thống kê likes (tổng số likes, số lượng mỗi reaction)
+      await this.cacheService.del(`post:${postId}:like:stats`);
 
-        // Trả về thông báo đã bỏ like
-        return { message: 'Like removed', liked: false };
-      } else {
-        // Nếu reaction khác (ví dụ: đã like, giờ đổi thành love) => cập nhật reaction
-        const updated = await this.prisma.resPostLike.update({
-          where: {
-            id: existingLike.id, // Tìm like theo ID
-          },
-          data: {
-            reaction: dto.reaction, // Cập nhật reaction mới
-          },
-          include: {
-            // Include thông tin user để trả về trong response
-            user: {
-              select: {
-                id: true,
-                nickname: true,
-                avatar: true,
-              },
-            },
-          },
-        });
-
-        // Xóa cache
-        await this.cacheService.delPattern(`post:${postId}:likes:*`);
-        await this.cacheService.del(`post:${postId}:like:stats`);
-
-        // Trả về like đã được cập nhật
-        return { ...updated, liked: true };
-      }
+      // Trả về thông báo đã bỏ like
+      return { message: 'Like removed', liked: false };
     }
 
+    // Upsert: tạo mới hoặc update reaction khác
     // Nếu user chưa like => tạo like mới
-    const like = await this.prisma.resPostLike.create({
-      data: {
-        post_id: postId, // ID của post được like
-        user_id: userId, // ID của user đang like
-        reaction: dto.reaction, // Loại reaction (like, love, haha, etc.)
+    const like = await this.prisma.resPostLike.upsert({
+    where: { post_id_user_id: { post_id: postId, user_id: userId } },
+    update: { reaction: dto.reaction },
+    create: {
+      post_id: postId, // ID của post được like
+      user_id: userId, // ID của user đang like
+      reaction: dto.reaction, // Loại reaction (like, love, haha, etc.)
       },
       include: {
         // Include thông tin user để trả về trong response

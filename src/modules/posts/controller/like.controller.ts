@@ -24,6 +24,8 @@ import {
 } from '@nestjs/swagger';
 // Import AuthGuard từ Passport để xác thực JWT token
 import { AuthGuard } from '@nestjs/passport';
+// Import OptionalAuthGuard cho endpoints không bắt buộc authentication
+import { OptionalAuthGuard } from '../../../common/guards/optional-auth.guard';
 // Import LikeService để xử lý business logic
 import { LikeService } from '../service/like.service';
 // Import các DTO để validate và type-check dữ liệu
@@ -58,14 +60,25 @@ export class LikeController {
    * @Query() - Lấy query parameters (page, limit) cho pagination
    */
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách likes của post' })
+  @UseGuards(OptionalAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Lấy danh sách likes của post (View activity)',
+    description: 'Public endpoint - JWT token là optional. Nếu có token, sẽ trả về thêm is_following, is_friend, is_follower'
+  })
   @ApiParam({ name: 'post_id', description: 'Post ID', example: 'post-1' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiOkResponse({ description: 'Danh sách likes với pagination', type: [PostLikeDto] })
-  getLikes(@Param('post_id') postId: string, @Query() query?: BaseQueryDto) {
-    // Gọi service để lấy danh sách likes với pagination
-    return this.likeService.getLikes(postId, query);
+  getLikes(
+    @Param('post_id') postId: string,
+    @Query() query?: BaseQueryDto,
+    @Req() req?: AuthenticatedRequest,
+  ) {
+    // Lấy currentUserId nếu user đã đăng nhập (optional)
+    const currentUserId = req?.user?.id;
+    // Gọi service để lấy danh sách likes với pagination và follow status
+    return this.likeService.getLikes(postId, query, currentUserId);
   }
 
   /**

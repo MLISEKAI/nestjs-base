@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
 }
 
 datasource db {
@@ -54,12 +55,14 @@ model ResUser {
   // --- Relations ---
   associates   ResAssociate[]
   albums       ResAlbum[]
-  followers    ResFollow[]    @relation("Followers")
-  following    ResFollow[]    @relation("Following")
-  blockedBy    ResBlock[]     @relation("BlockedBy")
-  blocking     ResBlock[]     @relation("Blocking")
-  friendsA     ResFriend[]    @relation("FriendsA")
-  friendsB     ResFriend[]    @relation("FriendsB")
+  followers    ResFollow[]     @relation("Followers")
+  following    ResFollow[]     @relation("Following")
+  favourites   ResFavourite[]  @relation("UserFavourites")
+  favouritedBy ResFavourite[]  @relation("FavouritedBy")
+  blockedBy    ResBlock[]      @relation("BlockedBy")
+  blocking     ResBlock[]      @relation("Blocking")
+  friendsA     ResFriend[]     @relation("FriendsA")
+  friendsB     ResFriend[]     @relation("FriendsB")
   messagesSent ResMessage[]   @relation("MessagesSent")
   messagesRecv ResMessage[]   @relation("MessagesRecv")
   giftsSent    ResGift[]      @relation("GiftsSent")
@@ -183,6 +186,23 @@ model ResFollow {
   @@index([follower_id])
   @@index([following_id])
   @@map("res_follow")
+}
+
+// FAVOURITE (Đánh dấu người dùng yêu thích)
+model ResFavourite {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+
+  user_id      String // User who marks as favourite
+  favourite_id String // User who is marked as favourite
+
+  user      ResUser @relation("UserFavourites", fields: [user_id], references: [id], onDelete: Cascade)
+  favourite ResUser @relation("FavouritedBy", fields: [favourite_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, favourite_id])
+  @@index([user_id])
+  @@index([favourite_id])
+  @@map("res_favourite")
 }
 
 // BLOCK USER
@@ -773,21 +793,42 @@ model ResComment {
   id         String   @id @default(uuid())
   post_id    String
   user_id    String
-  content    String
+  content    String?  // Make content optional since comment can be media-only
   parent_id  String? // For nested comments/replies
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  post    ResPost      @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user    ResUser      @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
-  parent  ResComment?  @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
-  replies ResComment[] @relation("CommentReplies")
+  post    ResPost           @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user    ResUser           @relation("CommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
+  parent  ResComment?       @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies ResComment[]      @relation("CommentReplies")
+  media   ResCommentMedia[]
 
   @@index([post_id])
   @@index([user_id])
   @@index([parent_id])
   @@index([created_at])
   @@map("res_comment")
+}
+
+// COMMENT MEDIA ATTACHMENT
+model ResCommentMedia {
+  id            String   @id @default(uuid())
+  comment_id    String
+  media_url     String
+  thumbnail_url String?
+  media_type    String // image, video, audio
+  width         Int?
+  height        Int?
+  duration      Int? // For video/audio in seconds
+  order         Int      @default(0)
+  created_at    DateTime @default(now())
+
+  comment ResComment @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@index([comment_id])
+  @@index([comment_id, order])
+  @@map("res_comment_media")
 }
 
 // POST LIKE/REACTION

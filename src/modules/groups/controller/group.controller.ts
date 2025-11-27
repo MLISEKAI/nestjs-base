@@ -24,7 +24,15 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { GroupService } from '../service/group.service';
-import { CreateGroupDto, SendGroupMessageDto, GroupDto, GroupListResponseDto, GroupMemberListResponseDto, GroupMessageListResponseDto, GroupMemberQueryDto } from '../dto/group.dto';
+import {
+  CreateGroupDto,
+  SendGroupMessageDto,
+  GroupDto,
+  GroupListResponseDto,
+  GroupMemberListResponseDto,
+  GroupMessageListResponseDto,
+  GroupMemberQueryDto,
+} from '../dto/group.dto';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 import type { AuthenticatedRequest } from '../../../common/interfaces/request.interface';
 
@@ -219,7 +227,6 @@ export class GroupController {
     return this.groupService.createGroup(req.user.id, dto);
   }
 
-
   @Delete(':group_id')
   @UseGuards(AuthGuard('account-auth'))
   @ApiBearerAuth('JWT-auth')
@@ -284,10 +291,30 @@ export class GroupController {
     type: Number,
     description: 'Số lượng thành viên mỗi trang (mặc định: 20)',
   })
-  @ApiQuery({ name: 'role', required: false, enum: MemberRole, description: 'Lọc theo vai trò thành viên' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Từ khóa tìm kiếm theo nickname' })
-  @ApiQuery({ name: 'sort', required: false, type: String, description: 'Sắp xếp: field:asc hoặc field:desc' })
-  @ApiQuery({ name: 'since', required: false, type: String, description: 'Chỉ trả về thành viên join sau thời điểm này' })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    enum: MemberRole,
+    description: 'Lọc theo vai trò thành viên',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Từ khóa tìm kiếm theo nickname',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sắp xếp: field:asc hoặc field:desc',
+  })
+  @ApiQuery({
+    name: 'since',
+    required: false,
+    type: String,
+    description: 'Chỉ trả về thành viên join sau thời điểm này',
+  })
   @ApiOkResponse({
     type: GroupMemberListResponseDto,
     description: 'Danh sách thành viên nhóm với thông tin người dùng và phân trang',
