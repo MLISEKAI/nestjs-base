@@ -13,9 +13,10 @@ COPY nest-cli.json ./
 # Copy source code and prisma schema FIRST (before npm install)
 COPY src ./src
 
-# Install all dependencies including devDependencies for build
+# Clean npm cache and install all dependencies including devDependencies for build
 # postinstall script sẽ tự động chạy prisma generate
-RUN npm install --legacy-peer-deps
+RUN npm cache clean --force && \
+    npm install --legacy-peer-deps --no-audit --prefer-online
 
 # Build application
 RUN npm run build
