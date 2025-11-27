@@ -10,18 +10,12 @@ COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
 
-# Install all dependencies including devDependencies for build
-# Sử dụng npm install thay vì npm ci để tránh lỗi lock file sync
-RUN npm install --legacy-peer-deps
-
-# Đảm bảo dùng đúng Prisma version từ package.json
-RUN npm install prisma@^6.19.0 --legacy-peer-deps --save-dev
-
-# Copy source code and prisma schema
+# Copy source code and prisma schema FIRST (before npm install)
 COPY src ./src
 
-# Generate Prisma Client
-RUN npx prisma generate --schema=./src/prisma/schema.prisma
+# Install all dependencies including devDependencies for build
+# postinstall script sẽ tự động chạy prisma generate
+RUN npm install --legacy-peer-deps
 
 # Build application
 RUN npm run build
@@ -41,15 +35,17 @@ ENV NODE_ENV=production
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-RUN npm install --only=production --legacy-peer-deps && npm cache clean --force
+# Install production dependencies only (skip postinstall to avoid prisma error)
+RUN npm install --only=production --legacy-peer-deps --ignore-scripts && \
+    npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/prisma ./src/prisma
 
-# Generate Prisma Client for production (sử dụng binaryTargets từ schema)
-RUN npx prisma generate --schema=./src/prisma/schema.prisma
+# Install Prisma CLI and generate client
+RUN npm install prisma@^6.19.0 --legacy-peer-deps --save-dev && \
+    npx prisma generate --schema=./src/prisma/schema.prisma
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
