@@ -30,7 +30,7 @@ RUN npm run build
 FROM node:20-alpine AS production
 
 # Install required tools
-RUN apk add --no-cache wget postgresql-client
+RUN apk add --no-cache wget postgresql-client bash
 
 # Set working directory
 WORKDIR /app
@@ -47,20 +47,16 @@ RUN npm install --only=production --legacy-peer-deps && \
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/src/prisma ./src/prisma
 
-# Copy Prisma CLI và engines từ builder stage (đã được build sẵn)
-# Tránh phải build lại native binaries trong production stage
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Generate Prisma Client for production (sử dụng binaryTargets từ schema)
+RUN npx prisma generate --schema=./src/prisma/schema.prisma
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Create non-root user for security (but keep as root for entrypoint to work with pg_isready)
+# Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 && \
     chown -R nestjs:nodejs /app
