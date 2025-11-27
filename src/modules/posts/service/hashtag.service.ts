@@ -198,8 +198,15 @@ export class HashtagService {
                 },
               },
               media: {
+                select: {
+                  id: true,
+                  media_type: true,
+                  media_url: true,
+                  thumbnail_url: true,
+                  width: true,
+                  height: true,
+                },
                 orderBy: { order: 'asc' },
-                take: 5,
               },
               hashtags: {
                 include: {
@@ -210,7 +217,6 @@ export class HashtagService {
                     },
                   },
                 },
-                take: 5,
               },
               _count: {
                 select: {
@@ -257,14 +263,28 @@ export class HashtagService {
             avatar: post.user.avatar,
           },
           content: post.content,
-          images: post.media.filter((m) => m.media_type === 'image').map((m) => m.media_url),
+          media: post.media.map((m) => ({
+            id: m.id,
+            type: m.media_type,
+            url: m.media_url,
+            thumbnailUrl: m.thumbnail_url,
+            width: m.width,
+            height: m.height,
+            duration: null, // ResPostMedia doesn't have duration field
+          })),
           hashtags: post.hashtags.map((ph) => ({
             id: ph.hashtag.id,
             name: ph.hashtag.name,
           })),
-          likes: post._count.likes,
+          like_count: post._count.likes,
+          comment_count: post._count.comments,
+          share_count: post.share_count,
           is_liked: userLikes.includes(post.id),
+          is_bookmarked: false, // TODO: Implement bookmark feature
           created_at: post.created_at,
+          privacy: post.privacy,
+          location: null, // ResPost doesn't have location field yet
+          updated_at: post.updated_at,
         }));
 
         return buildPaginatedResponse(formattedPosts, total, page, take);
