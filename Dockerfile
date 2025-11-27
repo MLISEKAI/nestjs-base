@@ -5,8 +5,8 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files (only package.json, not package-lock.json to avoid integrity issues)
+COPY package.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
 
@@ -15,8 +15,9 @@ COPY src ./src
 
 # Clean npm cache and install all dependencies including devDependencies for build
 # postinstall script sẽ tự động chạy prisma generate
+# Not using package-lock.json to avoid integrity checksum errors
 RUN npm cache clean --force && \
-    npm install --legacy-peer-deps --no-audit --prefer-online
+    npm install --legacy-peer-deps --no-audit
 
 # Build application
 RUN npm run build
@@ -33,8 +34,8 @@ WORKDIR /app
 # Set environment to production
 ENV NODE_ENV=production
 
-# Copy package files
-COPY package*.json ./
+# Copy package files (only package.json, not package-lock.json)
+COPY package.json ./
 
 # Install production dependencies only (skip postinstall to avoid prisma error)
 RUN npm install --only=production --legacy-peer-deps --ignore-scripts && \
