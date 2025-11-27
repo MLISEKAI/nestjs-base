@@ -121,9 +121,18 @@ export class CommentService {
 
         const formattedComments = comments.map((comment) => {
           const baseComment = {
-            ...comment,
+            id: comment.id,
+            post_id: comment.post_id,
+            user_id: comment.user_id,
+            content: comment.content,
+            parent_id: comment.parent_id,
+            created_at: comment.created_at,
+            updated_at: comment.updated_at,
+            user: comment.user,
+            media: comment.media,
+            like_count: 0, // Comment likes not implemented yet
             replies_count: comment._count.replies,
-            _count: undefined,
+            is_liked: false, // Comment likes not implemented yet
           };
 
           // Thêm relationship status nếu có currentUserId
@@ -142,16 +151,8 @@ export class CommentService {
           return baseComment;
         });
 
-        // Thêm post reactions vào response
-        const responseData = {
-          post_reactions: {
-            like_count: post._count.likes,
-            comment_count: post._count.comments,
-          },
-          comments: buildPaginatedResponse(formattedComments, total, page, take),
-        };
-
-        return responseData;
+        // Trả về comments với pagination
+        return buildPaginatedResponse(formattedComments, total, page, take);
       },
       cacheTtl,
     );

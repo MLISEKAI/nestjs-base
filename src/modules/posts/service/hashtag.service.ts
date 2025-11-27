@@ -285,7 +285,6 @@ export class HashtagService {
       const hashtag = await this.prisma.resHashtag.create({
         data: {
           name: normalizedName,
-          cover_image: dto.cover_image,
         },
         select: {
           id: true,

@@ -57,9 +57,33 @@ export class GroupSettingsController {
   }
 
   @Patch('settings')
-  @ApiOperation({ summary: 'Cập nhật cài đặt nhóm (gộp)' })
+  @ApiOperation({ 
+    summary: 'Cập nhật cài đặt nhóm (partial update)',
+    description: 'Cập nhật một hoặc nhiều trường cài đặt nhóm. Chỉ cần gửi các trường muốn thay đổi, các trường không gửi sẽ giữ nguyên giá trị cũ.'
+  })
   @ApiParam({ name: 'group_id', description: 'ID nhóm' })
-  @ApiBody({ type: UpdateGroupSettingsDto })
+  @ApiBody({ 
+    type: UpdateGroupSettingsDto,
+    examples: {
+      'Chỉ update tên': {
+        value: { name: 'Nhóm bạn thân 2025' }
+      },
+      'Chỉ update avatar': {
+        value: { avatar: 'https://example.com/new-avatar.jpg' }
+      },
+      'Update nhiều trường': {
+        value: {
+          name: 'Nhóm bạn thân 2025',
+          introduction: 'Chào mừng đến với nhóm!',
+          classification: 'games',
+          is_public: true
+        }
+      },
+      'Chỉ update notifications': {
+        value: { notifications_enabled: false }
+      }
+    }
+  })
   @ApiOkResponse({
     description: 'Cập nhật cài đặt nhóm thành công',
     example: {

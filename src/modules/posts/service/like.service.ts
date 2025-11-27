@@ -233,27 +233,43 @@ export class LikeService {
       return { message: 'Like removed', liked: false };
     }
 
-    // Upsert: tạo mới hoặc update reaction khác
-    // Nếu user chưa like => tạo like mới
-    const like = await this.prisma.resPostLike.upsert({
-    where: { post_id_user_id: { post_id: postId, user_id: userId } },
-    update: { reaction: dto.reaction },
-    create: {
-      post_id: postId, // ID của post được like
-      user_id: userId, // ID của user đang like
-      reaction: dto.reaction, // Loại reaction (like, love, haha, etc.)
-      },
-      include: {
-        // Include thông tin user để trả về trong response
-        user: {
-          select: {
-            id: true,
-            nickname: true,
-            avatar: true,
+    // Nếu đã like với reaction khác => update reaction
+    // Nếu chưa like => tạo like mới
+    let like;
+    if (existingLike) {
+      // Update reaction
+      like = await this.prisma.resPostLike.update({
+        where: { id: existingLike.id },
+        data: { reaction: dto.reaction },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+              avatar: true,
+            },
           },
         },
-      },
-    });
+      });
+    } else {
+      // Create new like
+      like = await this.prisma.resPostLike.create({
+        data: {
+          post_id: postId,
+          user_id: userId,
+          reaction: dto.reaction,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+              avatar: true,
+            },
+          },
+        },
+      });
+    }
 
     // Xóa cache để đảm bảo dữ liệu mới nhất
     await this.cacheService.delPattern(`post:${postId}:likes:*`);

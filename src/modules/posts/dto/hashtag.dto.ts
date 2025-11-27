@@ -8,20 +8,11 @@ import { IsString, IsArray, IsOptional, ArrayMinSize } from 'class-validator';
  *
  * Lưu ý:
  * - name: Bắt buộc, tên hashtag (không có dấu #)
- * - cover_image: Optional, URL ảnh cover cho hashtag
  */
 export class CreateHashtagDto {
   @ApiProperty({ example: 'Sayhi2025', description: 'Tên hashtag (không có dấu #)' })
   @IsString()
   name: string;
-
-  @ApiPropertyOptional({
-    example: 'https://example.com/cover.jpg',
-    description: 'Ảnh cover cho hashtag',
-  })
-  @IsOptional()
-  @IsString()
-  cover_image?: string;
 }
 
 /**
