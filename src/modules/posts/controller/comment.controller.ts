@@ -147,7 +147,14 @@ export class CommentController {
   @ApiOperation({
     summary: 'Tạo comment mới',
     description:
-      'Tạo comment đầu tiên: chỉ cần content, KHÔNG cần parent_id.\nTạo reply: cần content + parent_id (UUID của comment muốn reply).\nCó thể thêm media (image, video, audio) vào comment.',
+      'Tạo comment đầu tiên: chỉ cần content, KHÔNG cần parent_id.\n' +
+      'Tạo reply: cần content + parent_id (UUID của comment muốn reply).\n' +
+      'Có thể thêm media (image, video, audio) vào comment.\n\n' +
+      '⚠️ FACEBOOK STYLE: Chỉ có 2 cấp comment (giống Facebook):\n' +
+      '- Cấp 1: Comment trực tiếp trên post (parent_id = null)\n' +
+      '- Cấp 2: Tất cả replies đều ngang hàng (parent_id = comment cấp 1)\n' +
+      '- Khi reply vào reply cấp 2, hệ thống tự động gán parent_id về comment gốc cấp 1\n' +
+      '- Không có cấp 3, 4, 5... (khác với nested comments)',
   })
   @ApiParam({ name: 'post_id', description: 'Post ID', example: 'post-1' })
   @ApiBody({

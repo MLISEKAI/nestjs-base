@@ -259,7 +259,7 @@ export class HashtagService {
           id: post.id,
           user: {
             id: post.user.id,
-            name: post.user.nickname,
+            nickname: post.user.nickname,
             avatar: post.user.avatar,
           },
           content: post.content,

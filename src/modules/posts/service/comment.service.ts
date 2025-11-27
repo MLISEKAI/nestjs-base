@@ -224,6 +224,8 @@ export class CommentService {
 
     // Nếu có parent_id (là reply comment), kiểm tra parent comment có tồn tại không
     let parentComment = null;
+    let actualParentId = dto.parent_id; // ID thực tế sẽ dùng để lưu vào DB
+    
     if (dto.parent_id) {
       // Tìm parent comment theo ID
       parentComment = await this.prisma.resComment.findUnique({
@@ -233,6 +235,20 @@ export class CommentService {
       // Nếu không tìm thấy parent comment, throw exception
       if (!parentComment) {
         throw new NotFoundException('Parent comment not found');
+      }
+
+      // Nếu parent comment cũng là reply (có parent_id)
+      // thì lấy parent_id của nó làm actualParentId
+      // => Tất cả replies đều ngang hàng ở cấp 2, không có cấp 3
+      if (parentComment.parent_id) {
+        actualParentId = parentComment.parent_id;
+        // Cập nhật parentComment để notification gửi đúng người
+        const rootComment = await this.prisma.resComment.findUnique({
+          where: { id: actualParentId },
+        });
+        if (rootComment) {
+          parentComment = rootComment;
+        }
       }
     }
 
@@ -244,7 +260,7 @@ export class CommentService {
           post_id: postId, // ID của bài viết
           user_id: userId, // ID của user đang comment
           content: dto.content || null, // Nội dung comment (có thể null nếu chỉ có media)
-          parent_id: dto.parent_id || null, // ID của comment cha (null nếu là top-level comment)
+          parent_id: actualParentId || null, // ID của comment cha thực tế (đã được normalize về cấp 1)
         },
       });
 
@@ -294,20 +310,21 @@ export class CommentService {
     // Xóa cache liên quan đến comments của post này
     // delPattern xóa tất cả cache key có pattern `post:${postId}:comments:*`
     await this.cacheService.delPattern(`post:${postId}:comments:*`);
-    // Nếu là reply, cũng xóa cache của parent comment
-    if (dto.parent_id) {
-      await this.cacheService.delPattern(`comment:${dto.parent_id}:replies:*`);
+    // Nếu là reply, cũng xóa cache của parent comment (dùng actualParentId)
+    if (actualParentId) {
+      await this.cacheService.delPattern(`comment:${actualParentId}:replies:*`);
     }
 
     // Tự động tạo notification cho các user liên quan
     try {
-      // Nếu là reply (có parent_id), gửi notification cho người comment cha
-      // Ví dụ: User A comment, User B reply => User A nhận notification
-      if (dto.parent_id && parentComment) {
-        // Chỉ gửi nếu người reply không phải là người comment cha (tránh tự thông báo cho mình)
+      // Nếu là reply (có actualParentId), gửi notification cho người comment gốc (cấp 1)
+      // Ví dụ: User A comment cấp 1, User B reply => User A nhận notification
+      // Hoặc: User A comment cấp 1, User B reply cấp 2, User C reply vào B => User A vẫn nhận notification (giống Facebook)
+      if (actualParentId && parentComment) {
+        // Chỉ gửi nếu người reply không phải là người comment gốc (tránh tự thông báo cho mình)
         if (parentComment.user_id !== userId) {
           await this.notificationService.createNotification({
-            user_id: parentComment.user_id, // Người comment cha nhận notification
+            user_id: parentComment.user_id, // Người comment gốc (cấp 1) nhận notification
             sender_id: userId, // Người reply (user đang thực hiện hành động)
             type: NotificationType.COMMENT, // Loại notification là COMMENT
             title: 'New Reply', // Tiêu đề
@@ -316,7 +333,7 @@ export class CommentService {
             data: JSON.stringify({
               post_id: postId,
               comment_id: comment.id,
-              parent_id: dto.parent_id,
+              parent_id: actualParentId,
             }), // Dữ liệu bổ sung
           });
         }
@@ -325,11 +342,11 @@ export class CommentService {
       // Gửi notification cho chủ bài viết (nếu không phải chủ bài viết tự comment)
       // Điều kiện:
       // 1. post.user_id !== userId: Chủ bài viết không phải là người comment
-      // 2. (!dto.parent_id || parentComment.user_id !== post.user_id):
-      //    - Nếu là top-level comment (không có parent_id) => gửi cho chủ bài viết
-      //    - Nếu là reply nhưng người comment cha không phải chủ bài viết => gửi cho chủ bài viết
-      //    (Nếu người comment cha là chủ bài viết thì đã gửi notification ở trên rồi, không cần gửi lại)
-      if (post.user_id !== userId && (!dto.parent_id || parentComment.user_id !== post.user_id)) {
+      // 2. (!actualParentId || parentComment.user_id !== post.user_id):
+      //    - Nếu là top-level comment (không có actualParentId) => gửi cho chủ bài viết
+      //    - Nếu là reply nhưng người comment gốc không phải chủ bài viết => gửi cho chủ bài viết
+      //    (Nếu người comment gốc là chủ bài viết thì đã gửi notification ở trên rồi, không cần gửi lại)
+      if (post.user_id !== userId && (!actualParentId || parentComment.user_id !== post.user_id)) {
         await this.notificationService.createNotification({
           user_id: post.user_id, // Chủ bài viết nhận notification
           sender_id: userId, // Người comment (user đang thực hiện hành động)
