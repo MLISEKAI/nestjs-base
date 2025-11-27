@@ -1106,39 +1106,60 @@ export class AuthService {
    * Optimized to use existing user object if available to avoid duplicate queries
    *
    * @param userIdOrUser - User ID (string) hoặc User object (từ JWT strategy)
-   * @returns User object với associates (providers)
+   * @returns User object với associates (providers) và albums
    *
    * Lưu ý:
    * - Nếu user object đã được cung cấp (từ JWT strategy), sử dụng trực tiếp để tránh duplicate query
-   * - Nếu chỉ có userId, fetch full user với associates
+   * - Nếu chỉ có userId, fetch full user với associates và albums
    * - Optimize để tránh query database không cần thiết
    */
   async getCurrentUser(userIdOrUser: string | any) {
     // If user object is already provided (from JWT strategy), use it directly
     if (userIdOrUser && typeof userIdOrUser === 'object' && userIdOrUser.id) {
-      // Check if associates are already included
-      if (userIdOrUser.associates) {
+      // Check if associates and albums are already included
+      if (userIdOrUser.associates && userIdOrUser.albums) {
         return userIdOrUser;
       }
-      // If not, fetch only associates to enrich the existing user object
-      const associates = await this.prisma.resAssociate.findMany({
-        where: { user_id: userIdOrUser.id },
-        select: {
-          id: true,
-          provider: true,
-          email: true,
-          phone_number: true,
-          email_verified: true,
-          phone_verified: true,
-        },
-      });
+      // Fetch missing data (associates or albums)
+      const needsAssociates = !userIdOrUser.associates;
+      const needsAlbums = !userIdOrUser.albums;
+
+      const [associates, albums] = await Promise.all([
+        needsAssociates
+          ? this.prisma.resAssociate.findMany({
+              where: { user_id: userIdOrUser.id },
+              select: {
+                id: true,
+                provider: true,
+                email: true,
+                phone_number: true,
+                email_verified: true,
+                phone_verified: true,
+              },
+            })
+          : Promise.resolve(userIdOrUser.associates),
+        needsAlbums
+          ? this.prisma.resAlbum.findMany({
+              where: { user_id: userIdOrUser.id },
+              select: {
+                id: true,
+                image_url: true,
+                created_at: true,
+              },
+              orderBy: {
+                created_at: 'desc',
+              },
+            })
+          : Promise.resolve(userIdOrUser.albums),
+      ]);
       return {
         ...userIdOrUser,
         associates,
+        albums,
       };
     }
 
-    // If only userId is provided, fetch full user with associates
+    // If only userId is provided, fetch full user with associates and albums
     const userId = userIdOrUser as string;
     const user = await this.prisma.resUser.findUnique({
       where: { id: userId },
@@ -1151,6 +1172,16 @@ export class AuthService {
             phone_number: true,
             email_verified: true,
             phone_verified: true,
+          },
+        },
+        albums: {
+          select: {
+            id: true,
+            image_url: true,
+            created_at: true,
+          },
+          orderBy: {
+            created_at: 'desc',
           },
         },
       },

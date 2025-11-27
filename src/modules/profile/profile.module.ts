@@ -18,12 +18,6 @@ import { ProfileViewsAdminController } from './profile-views/profile-views-admin
 import { ProfileViewsPublicController } from './profile-views/profile-views-public.controller';
 import { ProfileViewsServiceDb } from './profile-views/profile-views.service';
 
-// ==================== Album ====================
-import { AlbumController } from './album/controller/album.controller';
-import { AlbumAdminController } from './album/controller/album-admin.controller';
-import { AlbumPublicController } from './album/controller/album-public.controller';
-import { AlbumService } from './album/service/album.service';
-
 // ==================== Inventory ====================
 import { InventoryController } from './inventory/controller/inventory.controller';
 import { InventoryAdminController } from './inventory/controller/inventory-admin.controller';
@@ -83,10 +77,6 @@ import { ReferralService } from './referral/service/referral.service';
     UserProfileController,
     ProfileAdminController,
     ProfilePublicController,
-    // Album
-    AlbumController,
-    AlbumAdminController,
-    AlbumPublicController,
     // Vip
     VipController,
     VipAdminController,
@@ -107,8 +97,6 @@ import { ReferralService } from './referral/service/referral.service';
     ProfileViewsServiceDb,
     // User Profile
     UserProfileService,
-    // Album
-    AlbumService,
     // Inventory
     InventoryService,
     // Vip

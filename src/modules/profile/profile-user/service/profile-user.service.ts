@@ -70,6 +70,25 @@ export class UserProfileService {
           gender: dto.gender,
           birthday: dto.birthday ? new Date(dto.birthday) : undefined,
         },
+        select: {
+          id: true,
+          nickname: true,
+          bio: true,
+          avatar: true,
+          gender: true,
+          birthday: true,
+          updated_at: true,
+          albums: {
+            select: {
+              id: true,
+              image_url: true,
+              created_at: true,
+            },
+            orderBy: {
+              created_at: 'desc',
+            },
+          },
+        },
       });
 
       // Invalidate cache

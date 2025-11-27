@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsDateString } from 'class-validator';
-import { AlbumDto } from '../../album/dto/album.dto';
+import { AlbumDto } from './album.dto';
 
 export class UserProfileDto {
   @IsOptional()
