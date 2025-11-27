@@ -216,8 +216,8 @@ export class PayPalService {
 
     // Default URLs nếu không được cung cấp
     const baseUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3001';
-    const defaultReturnUrl = `${baseUrl}/payment/success?transactionId=${transactionId}`;
-    const defaultCancelUrl = `${baseUrl}/payment/cancel?transactionId=${transactionId}`;
+    const defaultReturnUrl = `${baseUrl}/payment-redirect/success?transactionId=${transactionId}`;
+    const defaultCancelUrl = `${baseUrl}/payment-redirect/cancel?transactionId=${transactionId}`;
 
     const orderData = {
       intent: 'CAPTURE',

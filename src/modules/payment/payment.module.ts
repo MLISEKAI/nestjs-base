@@ -9,6 +9,7 @@ import { PayPalService } from './service/paypal.service';
 // Import controllers
 import { PaymentWebhookController } from './controller/payment-webhook.controller';
 import { PaymentTestController } from './controller/payment-test.controller';
+import { PaymentRedirectController } from './controller/payment-redirect.controller';
 
 /**
  * @Module() - Đánh dấu class này là NestJS module
@@ -28,7 +29,7 @@ import { PaymentTestController } from './controller/payment-test.controller';
  */
 @Module({
   imports: [PrismaModule, HttpModule],
-  controllers: [PaymentWebhookController, PaymentTestController],
+  controllers: [PaymentWebhookController, PaymentTestController, PaymentRedirectController],
   providers: [PayPalService],
   exports: [PayPalService], // Export để Wallet module có thể sử dụng
 })
