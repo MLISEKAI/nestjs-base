@@ -7,7 +7,7 @@ export class TaskSummaryDto {
   id: string;
 
   @ApiProperty({ example: 'user-1' })
-  userId: string;
+  user_id: string;
 
   @IsNumber()
   @ApiProperty({ example: 10 })

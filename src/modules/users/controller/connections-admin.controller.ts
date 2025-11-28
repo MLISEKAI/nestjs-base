@@ -37,8 +37,8 @@ export class ConnectionsAdminController {
       },
     },
   })
-  async getStats(@Param('user_id') userId: string) {
-    return this.connectionsService.getStats(userId);
+  async getStats(@Param('user_id') user_id: string) {
+    return this.connectionsService.getStats(user_id);
   }
 
   @Get('followers')
@@ -52,8 +52,8 @@ export class ConnectionsAdminController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách followers với pagination' })
-  async getFollowers(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.connectionsService.getFollowers(userId, query.page || 1, query.limit || 20);
+  async getFollowers(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.connectionsService.getFollowers(user_id, query.page || 1, query.limit || 20);
   }
 
   @Get('following')
@@ -67,8 +67,8 @@ export class ConnectionsAdminController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách following với pagination' })
-  async getFollowing(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.connectionsService.getFollowing(userId, query.page || 1, query.limit || 20);
+  async getFollowing(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.connectionsService.getFollowing(user_id, query.page || 1, query.limit || 20);
   }
 
   @Delete('following/:following_id')
@@ -76,9 +76,9 @@ export class ConnectionsAdminController {
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiParam({ name: 'following_id', description: 'ID của user muốn unfollow' })
   async removeFollowing(
-    @Param('user_id') userId: string,
+    @Param('user_id') user_id: string,
     @Param('following_id') followingId: string,
   ) {
-    return this.connectionsService.unfollowUser(userId, followingId);
+    return this.connectionsService.unfollowUser(user_id, followingId);
   }
 }

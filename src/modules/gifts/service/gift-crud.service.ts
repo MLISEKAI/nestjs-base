@@ -353,23 +353,23 @@ export class GiftCrudService {
     return gift;
   }
 
-  async getCount(userId: string) {
-    const cacheKey = `user:${userId}:gifts:count`;
+  async getCount(user_id: string) {
+    const cacheKey = `user:${user_id}:gifts:count`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
         return this.prisma.resGift.count({
-          where: { receiver_id: userId },
+          where: { receiver_id: user_id },
         });
       },
       cacheTtl,
     );
   }
 
-  async findAll(userId?: string, query?: BaseQueryDto) {
-    const where = userId ? { receiver_id: userId } : {};
+  async findAll(user_id?: string, query?: BaseQueryDto) {
+    const where = user_id ? { receiver_id: user_id } : {};
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
@@ -395,9 +395,9 @@ export class GiftCrudService {
   /**
    * Find one gift by ID
    * @param id Gift ID (ID của ResGift record, không phải gift_item_id)
-   * @param userId Optional: Check if user is sender or receiver (for authorization)
+   * @param user_id Optional: Check if user is sender or receiver (for authorization)
    */
-  async findOne(id: string, userId?: string) {
+  async findOne(id: string, user_id?: string) {
     const gift = await this.prisma.resGift.findUnique({ where: { id } });
     if (!gift) {
       throw new NotFoundException(
@@ -406,7 +406,7 @@ export class GiftCrudService {
     }
 
     // Authorization check: User chỉ có thể xem gift mà họ là sender hoặc receiver
-    if (userId && gift.sender_id !== userId && gift.receiver_id !== userId) {
+    if (user_id && gift.sender_id !== user_id && gift.receiver_id !== user_id) {
       throw new ForbiddenException('You can only view gifts you sent or received');
     }
 
@@ -416,17 +416,17 @@ export class GiftCrudService {
   /**
    * Delete gift
    * @param id Gift ID
-   * @param userId Optional: Check if user is sender (only sender can delete)
+   * @param user_id Optional: Check if user is sender (only sender can delete)
    */
-  async remove(id: string, userId?: string) {
+  async remove(id: string, user_id?: string) {
     // Check if gift exists and user has permission
     let gift = null;
-    if (userId) {
+    if (user_id) {
       gift = await this.prisma.resGift.findUnique({ where: { id } });
       if (!gift) throw new NotFoundException('Gift not found');
 
       // Authorization: Chỉ sender mới có thể delete gift
-      if (gift.sender_id !== userId) {
+      if (gift.sender_id !== user_id) {
         throw new ForbiddenException('You can only delete gifts you sent');
       }
     } else {
@@ -459,11 +459,11 @@ export class GiftCrudService {
    * Trừ Diamond từ wallet và thêm gift vào inventory
    */
   async purchaseGift(
-    userId: string,
+    user_id: string,
     giftItemId: string,
     quantity: number = 1,
   ): Promise<PurchaseGiftResponseDto> {
-    this.logger.log(`User ${userId} attempting to purchase gift ${giftItemId} x${quantity}`);
+    this.logger.log(`User ${user_id} attempting to purchase gift ${giftItemId} x${quantity}`);
 
     // Kiểm tra gift item tồn tại
     const giftItem = await this.prisma.resGiftItem.findUnique({
@@ -484,13 +484,13 @@ export class GiftCrudService {
 
     // Lấy hoặc tạo Diamond wallet
     let diamondWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: 'diamond' },
+      where: { user_id: user_id, currency: 'diamond' },
     });
 
     if (!diamondWallet) {
       diamondWallet = await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: 'diamond',
           balance: new Prisma.Decimal(0),
         },
@@ -498,13 +498,13 @@ export class GiftCrudService {
     }
 
     const currentBalance = Number(diamondWallet.balance);
-    this.logger.log(`User ${userId} current Diamond balance: ${currentBalance}`);
+    this.logger.log(`User ${user_id} current Diamond balance: ${currentBalance}`);
 
     // Kiểm tra số dư có đủ không
     if (currentBalance < totalPrice) {
       const insufficientAmount = totalPrice - currentBalance;
       this.logger.warn(
-        `Insufficient balance for user ${userId}. Required: ${totalPrice}, Current: ${currentBalance}, Missing: ${insufficientAmount}`,
+        `Insufficient balance for user ${user_id}. Required: ${totalPrice}, Current: ${currentBalance}, Missing: ${insufficientAmount}`,
       );
       throw new BadRequestException(
         `Số dư không đủ để mua quà. Cần: ${totalPrice} Diamond, Hiện có: ${currentBalance} Diamond, Thiếu: ${insufficientAmount} Diamond`,
@@ -527,7 +527,7 @@ export class GiftCrudService {
       await tx.resWalletTransaction.create({
         data: {
           wallet_id: diamondWallet.id,
-          user_id: userId,
+          user_id: user_id,
           type: 'gift', // Dùng type 'gift' cho việc mua quà
           amount: new Prisma.Decimal(-totalPrice), // Negative vì trừ tiền
           balance_before: diamondWallet.balance,
@@ -562,7 +562,7 @@ export class GiftCrudService {
       const existingInventory = await tx.resInventory.findUnique({
         where: {
           user_id_item_id: {
-            user_id: userId,
+            user_id: user_id,
             item_id: item.id,
           },
         },
@@ -583,7 +583,7 @@ export class GiftCrudService {
         // Chưa có, tạo mới
         await tx.resInventory.create({
           data: {
-            user_id: userId,
+            user_id: user_id,
             item_id: item.id,
             quantity,
           },
@@ -593,12 +593,12 @@ export class GiftCrudService {
     });
 
     // Invalidate cache
-    await this.cacheService.del(`wallet:${userId}:diamond:balance`);
-    await this.cacheService.del(`wallet:${userId}:summary`);
-    await this.cacheService.delPattern(`wallet:${userId}:*`);
+    await this.cacheService.del(`wallet:${user_id}:diamond:balance`);
+    await this.cacheService.del(`wallet:${user_id}:summary`);
+    await this.cacheService.delPattern(`wallet:${user_id}:*`);
 
     this.logger.log(
-      `Gift purchased successfully for user ${userId}. Gift: ${giftItem.name}, Quantity: ${quantity}, Total price: ${totalPrice}, New balance: ${currentBalance - totalPrice}`,
+      `Gift purchased successfully for user ${user_id}. Gift: ${giftItem.name}, Quantity: ${quantity}, Total price: ${totalPrice}, New balance: ${currentBalance - totalPrice}`,
     );
 
     return {

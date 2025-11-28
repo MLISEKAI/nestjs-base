@@ -25,8 +25,8 @@ export class ReferralPublicController {
       },
     },
   })
-  async getReferrals(@Param('user_id') userId: string) {
-    const referrals = await this.referral.getReferrals(userId);
+  async getReferrals(@Param('user_id') user_id: string) {
+    const referrals = await this.referral.getReferrals(user_id);
     // Chỉ trả về thông tin public
     const items = referrals?.items || [];
     const total_earned = items.reduce((sum, r) => sum + (Number(r.reward_amount) || 0), 0);

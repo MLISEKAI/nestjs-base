@@ -39,7 +39,7 @@ export class WalletService {
   /**
    * Lấy danh sách wallets của user với pagination
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @param query - BaseQueryDto cho pagination và filtering
    * @returns Paginated response chứa danh sách wallets
    *
@@ -48,10 +48,10 @@ export class WalletService {
    * 2. Query wallets với pagination và filtering
    * 3. Trả về paginated response
    */
-  async getWallet(userId: string, query: BaseQueryDto): Promise<IPaginatedResponse<any>> {
+  async getWallet(user_id: string, query: BaseQueryDto): Promise<IPaginatedResponse<any>> {
     // Đảm bảo user có cả 2 ví (diamond và vex)
     // Nếu thiếu, sẽ tự động tạo mới
-    await this.ensureUserWallets(userId);
+    await this.ensureUserWallets(user_id);
 
     // Pagination: lấy limit và page từ query, default limit = 20, page = 1
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
@@ -60,7 +60,7 @@ export class WalletService {
 
     // Build where clause: filter theo user_id
     const where: Prisma.ResWalletWhereInput = {
-      user_id: userId,
+      user_id: user_id,
     };
 
     // Filter by currency nếu search chứa từ khóa currency (diamond hoặc vex)
@@ -101,7 +101,7 @@ export class WalletService {
    * Đảm bảo user có cả 2 ví (diamond và vex)
    * Tự động tạo nếu chưa có
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    *
    * Quy trình:
    * 1. Kiểm tra diamond wallet, tạo nếu chưa có
@@ -112,11 +112,11 @@ export class WalletService {
    * - Balance mặc định = 0 khi tạo mới
    * - Method này được gọi tự động trong getWallet() để đảm bảo data consistency
    */
-  async ensureUserWallets(userId: string): Promise<void> {
+  async ensureUserWallets(user_id: string): Promise<void> {
     // Kiểm tra và tạo diamond wallet nếu chưa có
     const diamondWallet = await this.prisma.resWallet.findFirst({
       where: {
-        user_id: userId,
+        user_id: user_id,
         currency: 'diamond',
       },
     });
@@ -125,7 +125,7 @@ export class WalletService {
       // Tạo diamond wallet mới với balance = 0
       await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: 'diamond',
           balance: new Prisma.Decimal(0),
         },
@@ -135,7 +135,7 @@ export class WalletService {
     // Kiểm tra và tạo vex wallet nếu chưa có
     const vexWallet = await this.prisma.resWallet.findFirst({
       where: {
-        user_id: userId,
+        user_id: user_id,
         currency: 'vex',
       },
     });
@@ -144,7 +144,7 @@ export class WalletService {
       // Tạo vex wallet mới với balance = 0
       await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: 'vex',
           balance: new Prisma.Decimal(0),
         },
@@ -152,7 +152,7 @@ export class WalletService {
     }
   }
 
-  async createWallet(userId: string, dto: CreateWalletDto) {
+  async createWallet(user_id: string, dto: CreateWalletDto) {
     const currency = dto.currency || 'diamond';
 
     // Validate currency: chỉ cho phép 'diamond' (Diamond) hoặc 'vex' (VEX)
@@ -164,7 +164,7 @@ export class WalletService {
     if (normalizedCurrency === 'diamond') {
       exist = await this.prisma.resWallet.findFirst({
         where: {
-          user_id: userId,
+          user_id: user_id,
           currency: { in: ['diamond'] },
         },
       });
@@ -173,7 +173,7 @@ export class WalletService {
       exist = await this.prisma.resWallet.findUnique({
         where: {
           user_id_currency: {
-            user_id: userId,
+            user_id: user_id,
             currency: normalizedCurrency,
           },
         },
@@ -207,10 +207,10 @@ export class WalletService {
           }));
 
       // Invalidate cache khi update wallet
-      await this.cacheService.del(`wallet:${userId}:summary`);
-      await this.cacheService.del(`wallet:${userId}:vex:balance`);
-      await this.cacheService.del(`wallet:${userId}:diamond:balance`);
-      await this.cacheService.delPattern(`wallet:${userId}:*`);
+      await this.cacheService.del(`wallet:${user_id}:summary`);
+      await this.cacheService.del(`wallet:${user_id}:vex:balance`);
+      await this.cacheService.del(`wallet:${user_id}:diamond:balance`);
+      await this.cacheService.delPattern(`wallet:${user_id}:*`);
 
       return updatedWallet;
     }
@@ -218,7 +218,7 @@ export class WalletService {
     // Tạo wallet mới với dữ liệu từ DTO
     const newWallet = await this.prisma.resWallet.create({
       data: {
-        user_id: userId,
+        user_id: user_id,
         currency: normalizedCurrency,
         balance:
           dto.balance !== undefined && dto.balance !== null
@@ -228,21 +228,21 @@ export class WalletService {
     });
 
     // Invalidate cache khi tạo wallet mới
-    await this.cacheService.del(`wallet:${userId}:summary`);
-    await this.cacheService.del(`wallet:${userId}:vex:balance`);
-    await this.cacheService.del(`wallet:${userId}:diamond:balance`);
-    await this.cacheService.delPattern(`wallet:${userId}:*`);
+    await this.cacheService.del(`wallet:${user_id}:summary`);
+    await this.cacheService.del(`wallet:${user_id}:vex:balance`);
+    await this.cacheService.del(`wallet:${user_id}:diamond:balance`);
+    await this.cacheService.delPattern(`wallet:${user_id}:*`);
 
     return newWallet;
   }
 
-  async updateWallet(userId: string, dto: UpdateWalletDto) {
+  async updateWallet(user_id: string, dto: UpdateWalletDto) {
     // Nếu không có currency, tìm diamond wallet mặc định
     if (!dto.currency) {
       // Tìm diamond wallet (diamond, gem, hoặc gold - sẽ migrate sang diamond)
       const diamondWallet = await this.prisma.resWallet.findFirst({
         where: {
-          user_id: userId,
+          user_id: user_id,
           currency: { in: ['diamond', 'gem', 'gold'] },
         },
       });
@@ -269,10 +269,10 @@ export class WalletService {
       });
 
       // Invalidate cache khi update wallet
-      await this.cacheService.del(`wallet:${userId}:summary`);
-      await this.cacheService.del(`wallet:${userId}:vex:balance`);
-      await this.cacheService.del(`wallet:${userId}:diamond:balance`);
-      await this.cacheService.delPattern(`wallet:${userId}:*`);
+      await this.cacheService.del(`wallet:${user_id}:summary`);
+      await this.cacheService.del(`wallet:${user_id}:vex:balance`);
+      await this.cacheService.del(`wallet:${user_id}:diamond:balance`);
+      await this.cacheService.delPattern(`wallet:${user_id}:*`);
 
       return updatedWallet;
     }
@@ -293,7 +293,7 @@ export class WalletService {
       // Tìm wallet với diamond, gem, hoặc gold
       existing = await this.prisma.resWallet.findFirst({
         where: {
-          user_id: userId,
+          user_id: user_id,
           currency: { in: ['diamond', 'gem', 'gold'] },
         },
       });
@@ -302,7 +302,7 @@ export class WalletService {
       existing = await this.prisma.resWallet.findUnique({
         where: {
           user_id_currency: {
-            user_id: userId,
+            user_id: user_id,
             currency: normalizedCurrency,
           },
         },
@@ -313,7 +313,7 @@ export class WalletService {
     if (!existing) {
       const newWallet = await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: normalizedCurrency,
           balance:
             dto.balance !== undefined ? new Prisma.Decimal(dto.balance) : new Prisma.Decimal(0),
@@ -321,10 +321,10 @@ export class WalletService {
       });
 
       // Invalidate cache khi tạo wallet mới
-      await this.cacheService.del(`wallet:${userId}:summary`);
-      await this.cacheService.del(`wallet:${userId}:vex:balance`);
-      await this.cacheService.del(`wallet:${userId}:diamond:balance`);
-      await this.cacheService.delPattern(`wallet:${userId}:*`);
+      await this.cacheService.del(`wallet:${user_id}:summary`);
+      await this.cacheService.del(`wallet:${user_id}:vex:balance`);
+      await this.cacheService.del(`wallet:${user_id}:diamond:balance`);
+      await this.cacheService.delPattern(`wallet:${user_id}:*`);
 
       return newWallet;
     }
@@ -340,10 +340,10 @@ export class WalletService {
       });
 
       // Invalidate cache khi update wallet
-      await this.cacheService.del(`wallet:${userId}:summary`);
-      await this.cacheService.del(`wallet:${userId}:vex:balance`);
-      await this.cacheService.del(`wallet:${userId}:diamond:balance`);
-      await this.cacheService.delPattern(`wallet:${userId}:*`);
+      await this.cacheService.del(`wallet:${user_id}:summary`);
+      await this.cacheService.del(`wallet:${user_id}:vex:balance`);
+      await this.cacheService.del(`wallet:${user_id}:diamond:balance`);
+      await this.cacheService.delPattern(`wallet:${user_id}:*`);
 
       return updatedWallet;
     } catch (error) {
@@ -354,8 +354,8 @@ export class WalletService {
     }
   }
 
-  async deleteWallet(userId: string) {
-    await this.prisma.resWallet.deleteMany({ where: { user_id: userId } });
+  async deleteWallet(user_id: string) {
+    await this.prisma.resWallet.deleteMany({ where: { user_id: user_id } });
     return { message: 'Wallet deleted' };
   }
 }

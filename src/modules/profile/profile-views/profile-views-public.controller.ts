@@ -23,8 +23,8 @@ export class ProfileViewsPublicController {
       },
     },
   })
-  async getProfileViews(@Param('user_id') userId: string) {
-    const views = await this.profileViewsService.getProfileViews(userId, false);
+  async getProfileViews(@Param('user_id') user_id: string) {
+    const views = await this.profileViewsService.getProfileViews(user_id, false);
     // Chỉ trả về tổng số lượt xem
     return {
       total_views: Array.isArray(views) ? views.length : 0,

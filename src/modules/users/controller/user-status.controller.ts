@@ -16,26 +16,26 @@ export class UserStatusController {
     private readonly websocketGateway: WebSocketGateway,
   ) {}
 
-  @Get(':userId/status')
+  @Get(':user_id/status')
   @ApiOperation({ summary: 'Lấy user status' })
-  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiOkResponse({
     description: 'User status',
     schema: {
       type: 'object',
       properties: {
-        userId: { type: 'string', example: 'user-123' },
+        user_id: { type: 'string', example: 'user-123' },
         isOnline: { type: 'boolean', example: true },
         status: { type: 'string', example: 'Active' },
         lastSeen: { type: 'string', example: '2025-01-15T19:02:00Z' },
       },
     },
   })
-  async getUserStatus(@Param('userId') userId: string, @Req() req: AuthenticatedRequest) {
-    const isOnline = this.websocketGateway.isUserOnline(userId);
+  async getUserStatus(@Param('user_id') user_id: string, @Req() req: AuthenticatedRequest) {
+    const isOnline = this.websocketGateway.isUserOnline(user_id);
 
     return {
-      userId,
+      user_id,
       isOnline,
       status: isOnline ? 'Online' : 'Offline',
       lastSeen: new Date().toISOString(),

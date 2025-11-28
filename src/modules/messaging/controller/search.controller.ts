@@ -70,7 +70,7 @@ export class SearchController {
           items: {
             type: 'object',
             properties: {
-              userId: { type: 'string', example: 'user-1' },
+              user_id: { type: 'string', example: 'user-1' },
               nickname: { type: 'string', example: 'Loc' },
               avatar: { type: 'string', nullable: true },
               preview: { type: 'string', example: 'Đã gửi một hình ảnh' },

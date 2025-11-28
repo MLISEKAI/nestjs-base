@@ -90,9 +90,9 @@ export class TokenService {
     };
   }
 
-  async generateAccessToken(userId: string, role: UserBasicRole): Promise<AccessTokenPayload> {
+  async generateAccessToken(user_id: string, role: UserBasicRole): Promise<AccessTokenPayload> {
     const jti = randomUUID();
-    const payload = { sub: userId, role, jti };
+    const payload = { sub: user_id, role, jti };
     const expiresAt = new Date(Date.now() + this.accessTtlSeconds * 1000);
     const token = await this.jwtService.signAsync(payload, {
       secret: this.jwtSecret,
@@ -108,8 +108,8 @@ export class TokenService {
     };
   }
 
-  async generateTwoFactorToken(userId: string): Promise<TwoFactorTokenPayload> {
-    const payload = { sub: userId, purpose: '2fa' as const };
+  async generateTwoFactorToken(user_id: string): Promise<TwoFactorTokenPayload> {
+    const payload = { sub: user_id, purpose: '2fa' as const };
     const ttlSeconds = 5 * 60;
     const token = await this.jwtService.signAsync(payload, {
       secret: this.jwtSecret,
@@ -122,14 +122,14 @@ export class TokenService {
     };
   }
 
-  async createRefreshToken(userId: string, ipAddress?: string) {
+  async createRefreshToken(user_id: string, ipAddress?: string) {
     const token = randomBytes(48).toString('hex');
     const hash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + this.refreshTtlMs);
 
     const record = await this.prisma.resRefreshToken.create({
       data: {
-        user_id: userId,
+        user_id: user_id,
         token_hash: hash,
         expires_at: expiresAt,
         created_by_ip: ipAddress,
@@ -166,7 +166,7 @@ export class TokenService {
     });
   }
 
-  async blacklistAccessToken(token: string | null | undefined, userId: string, reason?: string) {
+  async blacklistAccessToken(token: string | null | undefined, user_id: string, reason?: string) {
     if (!token) return;
     try {
       const payload = await this.jwtService.verifyAsync<{ jti?: string; exp?: number }>(token, {
@@ -187,11 +187,11 @@ export class TokenService {
         update: {
           expires_at: expiresAt,
           reason,
-          user_id: userId,
+          user_id: user_id,
         },
         create: {
           jti: payload.jti,
-          user_id: userId,
+          user_id: user_id,
           reason,
           expires_at: expiresAt,
         },
@@ -210,7 +210,7 @@ export class TokenService {
     return value;
   }
 
-  async verifyTwoFactorToken(tempToken: string): Promise<{ userId: string }> {
+  async verifyTwoFactorToken(tempToken: string): Promise<{ user_id: string }> {
     try {
       const payload = await this.jwtService.verifyAsync<{ sub?: string; purpose?: string }>(
         tempToken,
@@ -224,7 +224,7 @@ export class TokenService {
         throw new UnauthorizedException('Invalid 2FA token');
       }
 
-      return { userId: payload.sub };
+      return { user_id: payload.sub };
     } catch {
       throw new UnauthorizedException('Invalid 2FA token');
     }

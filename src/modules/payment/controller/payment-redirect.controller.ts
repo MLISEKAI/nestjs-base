@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, Logger } from '@nestjs/common';
+import { Controller, Get, Query, Res, Logger, Redirect } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { PayPalService } from '../service/paypal.service';
@@ -6,14 +6,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import type { Response } from 'express';
 
-/**
- * PaymentRedirectController - Handle redirect từ PayPal về mobile app
- * 
- * Flow:
- * 1. PayPal redirect về: https://yourapp.com/payment-redirect/success?transactionId=TX123&token=XXX
- * 2. Controller này render HTML page với JavaScript để redirect về deep link
- * 3. JavaScript redirect về: jt291://payment/success?transactionId=TX123&token=XXX
- */
 @ApiTags('Payment Redirect')
 @Controller('payment-redirect')
 export class PaymentRedirectController {
@@ -26,43 +18,27 @@ export class PaymentRedirectController {
   ) {}
 
   @Get('success')
-  @ApiOperation({ summary: 'PayPal success redirect to mobile app' })
+  @ApiOperation({ summary: 'PayPal success redirect' })
   @ApiExcludeEndpoint()
   async paymentSuccess(@Query() query: any, @Res() res: Response) {
-    const mobileDeepLink = this.configService.get<string>('MOBILE_DEEP_LINK') || 'jt291://';
     const transactionId = query.transactionId || '';
     const token = query.token || '';
     const payerId = query.PayerID || '';
 
-    this.logger.log(
-      `Payment redirect success. TransactionId: ${transactionId}, Token: ${token}, PayerID: ${payerId}`,
-    );
+    this.logger.log(`Payment redirect success. TransactionId: ${transactionId}, Token: ${token}`);
 
-    // Auto-capture payment trước khi redirect
+    // Auto-capture payment
     let captureSuccess = false;
-    let captureMessage = '';
     try {
-      // 1. Capture payment từ PayPal
       const captureResult = await this.paypalService.captureOrder(token);
-      this.logger.log(
-        `PayPal capture successful. OrderId: ${captureResult.orderId}, Status: ${captureResult.status}`,
-      );
+      this.logger.log(`PayPal capture successful. OrderId: ${captureResult.orderId}`);
 
-      // 2. Tìm transaction trong database
       const transaction = await this.prisma.resWalletTransaction.findFirst({
         where: { reference_id: transactionId },
         include: { wallet: true },
       });
 
-      if (!transaction) {
-        this.logger.error(`Transaction not found: ${transactionId}`);
-        captureMessage = 'Transaction not found';
-      } else if (transaction.status === 'success') {
-        this.logger.warn(`Transaction ${transactionId} already completed`);
-        captureSuccess = true;
-        captureMessage = 'Payment already processed';
-      } else {
-        // 3. Cập nhật transaction status và cộng tiền vào wallet
+      if (transaction && transaction.status !== 'success') {
         const amount = Number(transaction.amount);
         const currentBalance = Number(transaction.wallet.balance);
         const newBalance = currentBalance + amount;
@@ -82,36 +58,49 @@ export class PaymentRedirectController {
           });
         });
 
-        this.logger.log(
-          `Payment captured successfully. Transaction: ${transactionId}, Amount: ${amount}, New Balance: ${newBalance}`,
-        );
+        this.logger.log(`Payment captured. Amount: ${amount}, New Balance: ${newBalance}`);
         captureSuccess = true;
-        captureMessage = `Payment successful! +${amount} ${transaction.wallet.currency}`;
+      } else if (transaction?.status === 'success') {
+        captureSuccess = true;
       }
     } catch (error) {
-      this.logger.error(`Failed to capture payment: ${error.message}`, error.stack);
-      captureMessage = `Error: ${error.message}`;
+      this.logger.error(`Failed to capture payment: ${error.message}`);
     }
 
-    // Build deep link URL
-    const deepLinkUrl = `${mobileDeepLink}payment/success?transactionId=${transactionId}&token=${token}&PayerID=${payerId}&captured=${captureSuccess}`;
+    // Determine redirect URL
+    const mobileDeepLink = this.configService.get<string>('MOBILE_DEEP_LINK');
+    const webFrontendUrl = this.configService.get<string>('WEB_FRONTEND_URL');
+    const appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3001';
 
-    // Return HTML page với JavaScript để redirect về mobile app
-    const html = `
-<!DOCTYPE html>
-<html>
+    let redirectUrl = '';
+    if (mobileDeepLink) {
+      redirectUrl = `${mobileDeepLink}payment/success?transactionId=${transactionId}&token=${token}&captured=${captureSuccess}`;
+    } else {
+      const webUrl = webFrontendUrl || appUrl;
+      redirectUrl = `${webUrl}/payment/success?transactionId=${transactionId}&token=${token}&captured=${captureSuccess}`;
+    }
+
+    // Return HTML page with success animation
+    const html = this.buildSuccessPage(transactionId, captureSuccess, redirectUrl);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
+
+  private buildSuccessPage(transactionId: string, captureSuccess: boolean, redirectUrl: string): string {
+    return `<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Success - Redirecting...</title>
+  <title>Payment Successful</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      margin: 0;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
@@ -121,26 +110,72 @@ export class PaymentRedirectController {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       backdrop-filter: blur(10px);
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      max-width: 400px;
+      width: 90%;
     }
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
+    .checkmark-circle {
+      width: 80px;
+      height: 80px;
+      position: relative;
+      display: inline-block;
+      vertical-align: top;
+      margin-bottom: 1rem;
+    }
+    .checkmark {
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      border-top: 4px solid white;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
+      display: block;
+      stroke-width: 3;
+      stroke: #4CAF50;
+      stroke-miterlimit: 10;
+      box-shadow: inset 0px 0px 0px #4CAF50;
+      animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .checkmark-circle-bg {
+      width: 80px;
+      height: 80px;
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      top: 0;
+      left: 0;
     }
-    h1 { margin: 0 0 1rem; font-size: 1.5rem; }
-    p { margin: 0.5rem 0; opacity: 0.9; }
+    .checkmark-check {
+      transform-origin: 50% 50%;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke {
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes scale {
+      0%, 100% { transform: none; }
+      50% { transform: scale3d(1.1, 1.1, 1); }
+    }
+    @keyframes fill {
+      100% { box-shadow: inset 0px 0px 0px 40px #4CAF50; }
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 1rem 0 0.5rem;
+      font-weight: 600;
+    }
+    p {
+      margin: 0.5rem 0;
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+    .transaction-id {
+      font-size: 0.85rem;
+      opacity: 0.7;
+      margin-top: 1rem;
+      word-break: break-all;
+    }
     .button {
       display: inline-block;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
       padding: 0.75rem 1.5rem;
       background: white;
       color: #667eea;
@@ -156,64 +191,66 @@ export class PaymentRedirectController {
 </head>
 <body>
   <div class="container">
-    <div class="spinner"></div>
-    <h1>✅ Payment Successful!</h1>
-    <p>${captureMessage || 'Processing payment...'}</p>
-    <p style="font-size: 0.875rem; margin-top: 1rem;">
-      Transaction ID: ${transactionId}
-    </p>
-    <p style="font-size: 0.875rem; opacity: 0.8;">
-      ${captureSuccess ? '✅ Payment captured' : '⏳ Capturing payment...'}
-    </p>
-    <a href="${deepLinkUrl}" class="button" id="manualLink">
-      Open App Manually
-    </a>
+    <div class="checkmark-circle">
+      <div class="checkmark-circle-bg"></div>
+      <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+      </svg>
+    </div>
+    <h1>Payment Successful!</h1>
+    <p>${captureSuccess ? '✅ Payment captured successfully' : '⏳ Processing payment...'}</p>
+    <p class="transaction-id">Transaction ID: ${transactionId}</p>
+    <a href="${redirectUrl}" class="button">Continue</a>
   </div>
-
   <script>
-    // Attempt to redirect to mobile app
-    window.location.href = '${deepLinkUrl}';
-    
-    // Fallback: If app doesn't open after 3 seconds, show manual link
     setTimeout(function() {
-      document.getElementById('manualLink').style.display = 'inline-block';
+      window.location.href = '${redirectUrl}';
     }, 3000);
   </script>
 </body>
-</html>
-    `;
+</html>`;
+  }
 
+  @Get('cancel')
+  @ApiOperation({ summary: 'PayPal cancel redirect' })
+  @ApiExcludeEndpoint()
+  paymentCancel(@Query() query: any, @Res() res: Response) {
+    const transactionId = query.transactionId || '';
+    const token = query.token || '';
+
+    const mobileDeepLink = this.configService.get<string>('MOBILE_DEEP_LINK');
+    const webFrontendUrl = this.configService.get<string>('WEB_FRONTEND_URL');
+    const appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3001';
+
+    let redirectUrl = '';
+    if (mobileDeepLink) {
+      redirectUrl = `${mobileDeepLink}payment/cancel?transactionId=${transactionId}&token=${token}`;
+    } else {
+      const webUrl = webFrontendUrl || appUrl;
+      redirectUrl = `${webUrl}/payment/cancel?transactionId=${transactionId}&token=${token}`;
+    }
+
+    const html = this.buildCancelPage(transactionId, redirectUrl);
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
   }
 
-  @Get('cancel')
-  @ApiOperation({ summary: 'PayPal cancel redirect to mobile app' })
-  @ApiExcludeEndpoint()
-  paymentCancel(@Query() query: any, @Res() res: Response) {
-    const mobileDeepLink = this.configService.get<string>('MOBILE_DEEP_LINK') || 'jt291://';
-    const transactionId = query.transactionId || '';
-    const token = query.token || '';
-
-    // Build deep link URL
-    const deepLinkUrl = `${mobileDeepLink}payment/cancel?transactionId=${transactionId}&token=${token}`;
-
-    // Return HTML page với JavaScript để redirect về mobile app
-    const html = `
-<!DOCTYPE html>
-<html>
+  private buildCancelPage(transactionId: string, redirectUrl: string): string {
+    return `<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment Cancelled</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      margin: 0;
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
     }
@@ -223,13 +260,32 @@ export class PaymentRedirectController {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       backdrop-filter: blur(10px);
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      max-width: 400px;
+      width: 90%;
     }
-    h1 { margin: 0 0 1rem; font-size: 1.5rem; }
-    p { margin: 0.5rem 0; opacity: 0.9; }
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin: 1rem 0 0.5rem;
+      font-weight: 600;
+    }
+    p {
+      margin: 0.5rem 0;
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+    .transaction-id {
+      font-size: 0.85rem;
+      opacity: 0.7;
+      margin-top: 1rem;
+      word-break: break-all;
+    }
     .button {
       display: inline-block;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
       padding: 0.75rem 1.5rem;
       background: white;
       color: #f5576c;
@@ -245,25 +301,18 @@ export class PaymentRedirectController {
 </head>
 <body>
   <div class="container">
-    <h1>❌ Payment Cancelled</h1>
+    <div class="icon">❌</div>
+    <h1>Payment Cancelled</h1>
     <p>Your payment was cancelled.</p>
-    <p style="font-size: 0.875rem; margin-top: 1rem;">
-      Transaction ID: ${transactionId}
-    </p>
-    <a href="${deepLinkUrl}" class="button">
-      Return to App
-    </a>
+    <p class="transaction-id">Transaction ID: ${transactionId}</p>
+    <a href="${redirectUrl}" class="button">Return to App</a>
   </div>
-
   <script>
-    // Attempt to redirect to mobile app
-    window.location.href = '${deepLinkUrl}';
+    setTimeout(function() {
+      window.location.href = '${redirectUrl}';
+    }, 3000);
   </script>
 </body>
-</html>
-    `;
-
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
+</html>`;
   }
 }

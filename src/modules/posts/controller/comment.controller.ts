@@ -274,8 +274,8 @@ export class CommentController {
     @Req() req: AuthenticatedRequest,
   ) {
     // Lấy user_id từ JWT token
-    const userId = req.user.id;
-    return this.commentService.createComment(userId, postId, dto);
+    const user_id = req.user.id;
+    return this.commentService.createComment(user_id, postId, dto);
   }
 
   @Patch(':comment_id')
@@ -361,8 +361,8 @@ export class CommentController {
     @Req() req: AuthenticatedRequest,
   ) {
     // Lấy user_id từ JWT token
-    const userId = req.user.id;
-    return this.commentService.updateComment(userId, commentId, dto);
+    const user_id = req.user.id;
+    return this.commentService.updateComment(user_id, commentId, dto);
   }
 
   @Delete(':comment_id')
@@ -378,8 +378,8 @@ export class CommentController {
     @Req() req: AuthenticatedRequest,
   ) {
     // Lấy user_id từ JWT token
-    const userId = req.user.id;
-    return this.commentService.deleteComment(userId, commentId);
+    const user_id = req.user.id;
+    return this.commentService.deleteComment(user_id, commentId);
   }
 }
 

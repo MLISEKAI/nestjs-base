@@ -48,63 +48,63 @@ export class ResUserService {
     return this.profile.searchUsers({ search, page, limit, sort });
   }
 
-  async getStats(userId: string) {
-    return this.connections.getStats(userId);
+  async getStats(user_id: string) {
+    return this.connections.getStats(user_id);
   }
 
-  async followUser(userId: string, targetId: string) {
-    return this.connections.followUser(userId, targetId);
+  async followUser(user_id: string, targetId: string) {
+    return this.connections.followUser(user_id, targetId);
   }
 
-  async unfollowUser(userId: string, targetId: string) {
-    return this.connections.unfollowUser(userId, targetId);
+  async unfollowUser(user_id: string, targetId: string) {
+    return this.connections.unfollowUser(user_id, targetId);
   }
 
-  async removeFollower(userId: string, followerId: string) {
-    return this.connections.removeFollower(userId, followerId);
+  async removeFollower(user_id: string, followerId: string) {
+    return this.connections.removeFollower(user_id, followerId);
   }
 
-  async unfriend(userId: string, friendId: string) {
-    return this.connections.unfriend(userId, friendId);
+  async unfriend(user_id: string, friendId: string) {
+    return this.connections.unfriend(user_id, friendId);
   }
 
-  async getFollowing(userId: string) {
-    return this.connections.getFollowing(userId);
+  async getFollowing(user_id: string) {
+    return this.connections.getFollowing(user_id);
   }
 
-  async getFollowers(userId: string) {
-    return this.connections.getFollowers(userId);
+  async getFollowers(user_id: string) {
+    return this.connections.getFollowers(user_id);
   }
 
-  async getFriends(userId: string) {
-    return this.connections.getFriends(userId);
+  async getFriends(user_id: string) {
+    return this.connections.getFriends(user_id);
   }
 
   async getConnections(
-    userId: string,
+    user_id: string,
     type: 'followers' | 'following' | 'friends',
     search?: string,
   ) {
-    return this.connections.getConnections(userId, type, search);
+    return this.connections.getConnections(user_id, type, search);
   }
 
-  async uploadAvatar(userId: string, fileUrl: string) {
-    return this.profile.uploadAvatar(userId, fileUrl);
+  async uploadAvatar(user_id: string, fileUrl: string) {
+    return this.profile.uploadAvatar(user_id, fileUrl);
   }
 
-  async getAlbums(userId: string) {
-    return this.albums.getAlbums(userId);
+  async getAlbums(user_id: string) {
+    return this.albums.getAlbums(user_id);
   }
 
-  async getAlbumPhotos(userId: string, albumId: string) {
-    return this.albums.getAlbumPhotos(userId, albumId);
+  async getAlbumPhotos(user_id: string, albumId: string) {
+    return this.albums.getAlbumPhotos(user_id, albumId);
   }
 
-  async addPhotoToAlbum(userId: string, albumId: string, imageUrl: string) {
-    return this.albums.addPhotoToAlbum(userId, albumId, imageUrl);
+  async addPhotoToAlbum(user_id: string, albumId: string, imageUrl: string) {
+    return this.albums.addPhotoToAlbum(user_id, albumId, imageUrl);
   }
 
-  async deletePhotoFromAlbum(userId: string, albumId: string, photoId: string) {
-    return this.albums.deletePhotoFromAlbum(userId, albumId, photoId);
+  async deletePhotoFromAlbum(user_id: string, albumId: string, photoId: string) {
+    return this.albums.deletePhotoFromAlbum(user_id, albumId, photoId);
   }
 }

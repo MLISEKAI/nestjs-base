@@ -22,8 +22,8 @@ export class ProfilePublicController {
   @ApiOkResponse({
     description: 'Public profile của user (read-only)',
   })
-  getProfile(@Param('user_id') userId: string) {
-    return this.userProfile.getProfile(userId);
+  getProfile(@Param('user_id') user_id: string) {
+    return this.userProfile.getProfile(user_id);
   }
 
   @Get('stats')
@@ -41,23 +41,23 @@ export class ProfilePublicController {
       },
     },
   })
-  getStats(@Param('user_id') userId: string, @Query() query: StatsQueryDto) {
-    return this.userProfile.getStats(userId, query);
+  getStats(@Param('user_id') user_id: string, @Query() query: StatsQueryDto) {
+    return this.userProfile.getStats(user_id, query);
   }
 
   @Get('interests')
   @ApiOperation({ summary: '[PUBLIC] Xem sở thích của user (không cần đăng nhập)' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Danh sách sở thích' })
-  getUserInterests(@Param('user_id') userId: string) {
-    return this.service.getUserInterests(userId);
+  getUserInterests(@Param('user_id') user_id: string) {
+    return this.service.getUserInterests(user_id);
   }
 
   @Get('contribution')
   @ApiOperation({ summary: '[PUBLIC] Xem đóng góp của user (không cần đăng nhập)' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Thông tin đóng góp của user' })
-  getUserContribution(@Param('user_id') userId: string) {
-    return this.service.getUserContribution(userId);
+  getUserContribution(@Param('user_id') user_id: string) {
+    return this.service.getUserContribution(user_id);
   }
 }

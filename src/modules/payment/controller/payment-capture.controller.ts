@@ -55,11 +55,11 @@ export class PaymentCaptureController {
     @Req() req: AuthenticatedRequest,
     @Body() body: { token: string; transactionId: string },
   ) {
-    const userId = req.user.id;
+    const user_id = req.user.id;
     const { token, transactionId } = body;
 
     this.logger.log(
-      `User ${userId} attempting to capture payment. Token: ${token}, TransactionId: ${transactionId}`,
+      `User ${user_id} attempting to capture payment. Token: ${token}, TransactionId: ${transactionId}`,
     );
 
     try {
@@ -74,7 +74,7 @@ export class PaymentCaptureController {
       const transaction = await this.prisma.resWalletTransaction.findFirst({
         where: {
           reference_id: transactionId,
-          user_id: userId,
+          user_id: user_id,
         },
         include: {
           wallet: true,
@@ -82,7 +82,7 @@ export class PaymentCaptureController {
       });
 
       if (!transaction) {
-        this.logger.error(`Transaction not found: ${transactionId} for user ${userId}`);
+        this.logger.error(`Transaction not found: ${transactionId} for user ${user_id}`);
         throw new Error('Transaction not found');
       }
 
@@ -120,7 +120,7 @@ export class PaymentCaptureController {
       });
 
       this.logger.log(
-        `Payment captured successfully. User: ${userId}, Transaction: ${transactionId}, Amount: ${amount}, New Balance: ${newBalance}`,
+        `Payment captured successfully. User: ${user_id}, Transaction: ${transactionId}, Amount: ${amount}, New Balance: ${newBalance}`,
       );
 
       return {

@@ -23,8 +23,8 @@ export class StoryController {
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách stories của user' })
   @ApiOkResponse({ description: 'Danh sách stories với pagination' })
-  getStories(@Param('user_id') userId: string, @Query() query?: BaseQueryDto) {
-    return this.storyService.getStories(userId, query);
+  getStories(@Param('user_id') user_id: string, @Query() query?: BaseQueryDto) {
+    return this.storyService.getStories(user_id, query);
   }
 
   @Get('active')
@@ -38,14 +38,14 @@ export class StoryController {
   @ApiOperation({ summary: 'Tạo story mới' })
   @ApiBody({ type: CreateStoryDto })
   @ApiCreatedResponse({ description: 'Story đã được tạo' })
-  createStory(@Param('user_id') userId: string, @Body() dto: CreateStoryDto) {
-    return this.storyService.createStory(userId, dto);
+  createStory(@Param('user_id') user_id: string, @Body() dto: CreateStoryDto) {
+    return this.storyService.createStory(user_id, dto);
   }
 
   @Delete(':story_id')
   @ApiOperation({ summary: 'Xóa story' })
   @ApiOkResponse({ description: 'Story đã được xóa' })
-  deleteStory(@Param('user_id') userId: string, @Param('story_id') storyId: string) {
-    return this.storyService.deleteStory(userId, storyId);
+  deleteStory(@Param('user_id') user_id: string, @Param('story_id') storyId: string) {
+    return this.storyService.deleteStory(user_id, storyId);
   }
 }

@@ -80,8 +80,8 @@ export class CommunityFeedController {
     @Query() query?: BaseQueryDto & { nocache?: string },
     @Req() req?: AuthenticatedRequest,
   ) {
-    const userId = req?.user?.id;
-    return this.communityFeedService.getPosts(categoryId, query, userId);
+    const user_id = req?.user?.id;
+    return this.communityFeedService.getPosts(categoryId, query, user_id);
   }
 
   @Get('posts/:posts_id')
@@ -89,7 +89,7 @@ export class CommunityFeedController {
   @ApiParam({ name: 'posts_id', description: 'Posts ID' })
   @ApiOkResponse({ description: 'Chi tiết post' })
   getPost(@Param('posts_id') postsId: string, @Req() req?: AuthenticatedRequest) {
-    const userId = req?.user?.id;
-    return this.communityFeedService.getPost(postsId, userId);
+    const user_id = req?.user?.id;
+    return this.communityFeedService.getPost(postsId, user_id);
   }
 }

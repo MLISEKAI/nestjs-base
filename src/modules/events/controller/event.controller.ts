@@ -31,23 +31,23 @@ export class EventController {
   @Get(':event_id')
   @ApiOperation({ summary: 'Lấy thông tin event' })
   @ApiOkResponse({ description: 'Thông tin event' })
-  getEvent(@Param('event_id') eventId: string, @Query('user_id') userId?: string) {
-    return this.eventService.getEvent(eventId, userId);
+  getEvent(@Param('event_id') eventId: string, @Query('user_id') user_id?: string) {
+    return this.eventService.getEvent(eventId, user_id);
   }
 
   @Get('user/:user_id')
   @ApiOperation({ summary: 'Lấy danh sách events của user' })
   @ApiOkResponse({ description: 'Danh sách events user tham gia' })
-  getUserEvents(@Param('user_id') userId: string, @Query() query?: BaseQueryDto) {
-    return this.eventService.getUserEvents(userId, query);
+  getUserEvents(@Param('user_id') user_id: string, @Query() query?: BaseQueryDto) {
+    return this.eventService.getUserEvents(user_id, query);
   }
 
   @Post()
   @ApiOperation({ summary: 'Tạo event mới' })
   @ApiBody({ type: CreateEventDto })
   @ApiCreatedResponse({ description: 'Event đã được tạo' })
-  createEvent(@Param('user_id') userId: string, @Body() dto: CreateEventDto) {
-    return this.eventService.createEvent(userId, dto);
+  createEvent(@Param('user_id') user_id: string, @Body() dto: CreateEventDto) {
+    return this.eventService.createEvent(user_id, dto);
   }
 
   @Patch(':event_id')
@@ -55,18 +55,18 @@ export class EventController {
   @ApiBody({ type: UpdateEventDto })
   @ApiOkResponse({ description: 'Event đã được cập nhật' })
   updateEvent(
-    @Param('user_id') userId: string,
+    @Param('user_id') user_id: string,
     @Param('event_id') eventId: string,
     @Body() dto: UpdateEventDto,
   ) {
-    return this.eventService.updateEvent(userId, eventId, dto);
+    return this.eventService.updateEvent(user_id, eventId, dto);
   }
 
   @Delete(':event_id')
   @ApiOperation({ summary: 'Xóa event' })
   @ApiOkResponse({ description: 'Event đã được xóa' })
-  deleteEvent(@Param('user_id') userId: string, @Param('event_id') eventId: string) {
-    return this.eventService.deleteEvent(userId, eventId);
+  deleteEvent(@Param('user_id') user_id: string, @Param('event_id') eventId: string) {
+    return this.eventService.deleteEvent(user_id, eventId);
   }
 
   @Post(':event_id/join')
@@ -74,18 +74,18 @@ export class EventController {
   @ApiBody({ type: JoinEventDto })
   @ApiOkResponse({ description: 'Đã tham gia event' })
   joinEvent(
-    @Param('user_id') userId: string,
+    @Param('user_id') user_id: string,
     @Param('event_id') eventId: string,
     @Body() dto: JoinEventDto,
   ) {
-    return this.eventService.joinEvent(userId, eventId, dto);
+    return this.eventService.joinEvent(user_id, eventId, dto);
   }
 
   @Delete(':event_id/leave')
   @ApiOperation({ summary: 'Rời event' })
   @ApiOkResponse({ description: 'Đã rời event' })
-  leaveEvent(@Param('user_id') userId: string, @Param('event_id') eventId: string) {
-    return this.eventService.leaveEvent(userId, eventId);
+  leaveEvent(@Param('user_id') user_id: string, @Param('event_id') eventId: string) {
+    return this.eventService.leaveEvent(user_id, eventId);
   }
 
   @Get(':event_id/participants')

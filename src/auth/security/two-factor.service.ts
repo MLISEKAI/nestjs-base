@@ -54,8 +54,8 @@ export class TwoFactorService {
     return { secret, otpauthUrl };
   }
 
-  async enableTwoFactor(userId: string, code: string) {
-    const record = await this.getTwoFactorRecord(userId);
+  async enableTwoFactor(user_id: string, code: string) {
+    const record = await this.getTwoFactorRecord(user_id);
     if (!record) {
       throw new BadRequestException('Two-factor secret not generated');
     }
@@ -67,7 +67,7 @@ export class TwoFactorService {
     const { codes, hashes } = this.generateBackupCodes();
 
     await this.prisma.resTwoFactor.update({
-      where: { user_id: userId },
+      where: { user_id: user_id },
       data: {
         enabled: true,
         verified_at: new Date(),
@@ -78,8 +78,8 @@ export class TwoFactorService {
     return { backupCodes: codes };
   }
 
-  async disableTwoFactor(userId: string, code: string) {
-    const record = await this.getTwoFactorRecord(userId);
+  async disableTwoFactor(user_id: string, code: string) {
+    const record = await this.getTwoFactorRecord(user_id);
     if (!record?.enabled) {
       throw new BadRequestException('Two-factor authentication is not enabled');
     }
@@ -89,7 +89,7 @@ export class TwoFactorService {
     }
 
     await this.prisma.resTwoFactor.update({
-      where: { user_id: userId },
+      where: { user_id: user_id },
       data: {
         enabled: false,
         backup_codes: [],
@@ -97,13 +97,13 @@ export class TwoFactorService {
     });
   }
 
-  async isEnabled(userId: string) {
-    const record = await this.getTwoFactorRecord(userId);
+  async isEnabled(user_id: string) {
+    const record = await this.getTwoFactorRecord(user_id);
     return Boolean(record?.enabled);
   }
 
-  async verifyLoginCode(userId: string, code: string) {
-    const record = await this.getTwoFactorRecord(userId);
+  async verifyLoginCode(user_id: string, code: string) {
+    const record = await this.getTwoFactorRecord(user_id);
     if (!record?.enabled) {
       throw new UnauthorizedException('Two-factor authentication is not enabled');
     }
@@ -133,8 +133,8 @@ export class TwoFactorService {
     return true;
   }
 
-  private async getTwoFactorRecord(userId: string) {
-    return this.prisma.resTwoFactor.findUnique({ where: { user_id: userId } });
+  private async getTwoFactorRecord(user_id: string) {
+    return this.prisma.resTwoFactor.findUnique({ where: { user_id: user_id } });
   }
 
   private verifyTotp(secret: string, code: string) {

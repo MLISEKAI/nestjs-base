@@ -61,7 +61,7 @@ export class WalletSummaryService {
   /**
    * Lấy wallet summary: Diamond balance, VEX balance, Monthly card status
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @returns WalletSummaryResponseDto chứa totalDiamondBalance, vexBalance, monthlyCardStatus
    *
    * Quy trình:
@@ -73,13 +73,13 @@ export class WalletSummaryService {
    * 6. Cache kết quả và return
    *
    * Lưu ý:
-   * - Cache key: `wallet:{userId}:summary`
+   * - Cache key: `wallet:{user_id}:summary`
    * - Cache TTL: 1 phút (60 seconds) - balance thay đổi thường xuyên
    * - Tự động tạo VEX wallet nếu chưa có
    * - Monthly card status dựa trên VIP status và expiry date
    */
-  async getWalletSummary(userId: string): Promise<WalletSummaryResponseDto> {
-    const cacheKey = `wallet:${userId}:summary`;
+  async getWalletSummary(user_id: string): Promise<WalletSummaryResponseDto> {
+    const cacheKey = `wallet:${user_id}:summary`;
     const cacheTtl = 60; // 1 phút (balance thay đổi thường xuyên)
 
     return this.cacheService.getOrSet(
@@ -89,7 +89,7 @@ export class WalletSummaryService {
         // Đồng bộ currency: chỉ dùng 'diamond' cho Diamond và 'vex' cho VEX
         const diamondWallet = await this.prisma.resWallet.findFirst({
           where: {
-            user_id: userId,
+            user_id: user_id,
             currency: 'diamond',
           },
         });
@@ -97,7 +97,7 @@ export class WalletSummaryService {
         // Lấy hoặc tạo VEX wallet
         let vexWallet = await this.prisma.resWallet.findFirst({
           where: {
-            user_id: userId,
+            user_id: user_id,
             currency: 'vex',
           },
         });
@@ -105,7 +105,7 @@ export class WalletSummaryService {
         if (!vexWallet) {
           vexWallet = await this.prisma.resWallet.create({
             data: {
-              user_id: userId,
+              user_id: user_id,
               currency: 'vex',
               balance: new Prisma.Decimal(0),
             },
@@ -114,7 +114,7 @@ export class WalletSummaryService {
 
         // Lấy subscription status (có thể dùng VIP status hoặc tạo model riêng)
         const vipStatus = await this.prisma.resVipStatus.findUnique({
-          where: { user_id: userId },
+          where: { user_id: user_id },
         });
 
         const monthlyCardStatus =
@@ -136,8 +136,8 @@ export class WalletSummaryService {
    * Get VEX wallet balance with exchange rate and daily limits
    * Cached for 1 minute (balance thay đổi thường xuyên)
    */
-  async getVexBalance(userId: string): Promise<VexBalanceResponseDto> {
-    const cacheKey = `wallet:${userId}:vex:balance`;
+  async getVexBalance(user_id: string): Promise<VexBalanceResponseDto> {
+    const cacheKey = `wallet:${user_id}:vex:balance`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -146,7 +146,7 @@ export class WalletSummaryService {
         // Lấy hoặc tạo VEX wallet
         let vexWallet = await this.prisma.resWallet.findFirst({
           where: {
-            user_id: userId,
+            user_id: user_id,
             currency: 'vex',
           },
         });
@@ -154,7 +154,7 @@ export class WalletSummaryService {
         if (!vexWallet) {
           vexWallet = await this.prisma.resWallet.create({
             data: {
-              user_id: userId,
+              user_id: user_id,
               currency: 'vex',
               balance: new Prisma.Decimal(0),
             },
@@ -173,7 +173,7 @@ export class WalletSummaryService {
         // Tính tổng deposit VEX trong ngày
         const todayDeposits = await this.prisma.resWalletTransaction.aggregate({
           where: {
-            user_id: userId,
+            user_id: user_id,
             wallet_id: vexWallet.id,
             type: 'deposit',
             status: 'success',
@@ -190,7 +190,7 @@ export class WalletSummaryService {
         // Tính tổng withdraw VEX trong ngày
         const todayWithdraws = await this.prisma.resWalletTransaction.aggregate({
           where: {
-            user_id: userId,
+            user_id: user_id,
             wallet_id: vexWallet.id,
             type: 'withdraw',
             status: 'success',
@@ -207,7 +207,7 @@ export class WalletSummaryService {
         // Tính tổng transfer VEX trong ngày (chỉ outgoing)
         const todayTransfers = await this.prisma.resWalletTransaction.aggregate({
           where: {
-            user_id: userId,
+            user_id: user_id,
             wallet_id: vexWallet.id,
             type: 'transfer',
             status: 'success',
@@ -252,8 +252,8 @@ export class WalletSummaryService {
    * Get Diamond wallet balance
    * Cached for 1 minute (balance thay đổi thường xuyên)
    */
-  async getDiamondBalance(userId: string): Promise<DiamondBalanceResponseDto> {
-    const cacheKey = `wallet:${userId}:diamond:balance`;
+  async getDiamondBalance(user_id: string): Promise<DiamondBalanceResponseDto> {
+    const cacheKey = `wallet:${user_id}:diamond:balance`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -263,7 +263,7 @@ export class WalletSummaryService {
         // Đồng bộ currency: chỉ dùng 'diamond' cho Diamond và 'vex' cho VEX
         const diamondWallet = await this.prisma.resWallet.findFirst({
           where: {
-            user_id: userId,
+            user_id: user_id,
             currency: 'diamond',
           },
         });

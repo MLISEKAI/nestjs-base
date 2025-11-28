@@ -37,15 +37,15 @@ export class UserGiftWallService {
    * Get gift wall overview (header info)
    * Cached for 5 minutes
    */
-  async getGiftWall(userId: string) {
-    const cacheKey = `user:${userId}:gift-wall`;
+  async getGiftWall(user_id: string) {
+    const cacheKey = `user:${user_id}:gift-wall`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
         const user = await this.prisma.resUser.findUnique({
-          where: { id: userId },
+          where: { id: user_id },
           select: {
             id: true,
             nickname: true,
@@ -62,7 +62,7 @@ export class UserGiftWallService {
         // Giá trị daimon = sum(price * quantity) cho mỗi gift mà user đã tặng
         // total_diamond_value = tổng giá trị kim cương của tất cả quà đã TẶNG (sender)
         const giftsSent = await this.prisma.resGift.findMany({
-          where: { sender_id: userId },
+          where: { sender_id: user_id },
           select: {
             quantity: true,
             giftItem: {
@@ -77,7 +77,7 @@ export class UserGiftWallService {
         const totalDiamondValue = giftsSent.reduce((sum, gift) => {
           // Kiểm tra giftItem tồn tại và có price
           if (!gift.giftItem || !gift.giftItem.price) {
-            console.warn(`[GiftWall] Gift item missing or no price for userId: ${userId}`);
+            console.warn(`[GiftWall] Gift item missing or no price for user_id: ${user_id}`);
             return sum;
           }
           const giftValue = Number(gift.giftItem.price) * gift.quantity;
@@ -87,10 +87,10 @@ export class UserGiftWallService {
         // Debug logging (có thể xóa sau)
         if (giftsSent.length > 0) {
           console.log(
-            `[GiftWall] Found ${giftsSent.length} gifts sent by userId: ${userId}, totalDiamondValue: ${totalDiamondValue}`,
+            `[GiftWall] Found ${giftsSent.length} gifts sent by user_id: ${user_id}, totalDiamondValue: ${totalDiamondValue}`,
           );
         } else {
-          console.log(`[GiftWall] No gifts sent found for userId: ${userId}`);
+          console.log(`[GiftWall] No gifts sent found for user_id: ${user_id}`);
         }
 
         // Calculate level với xp_to_next_level tăng gấp đôi mỗi level
@@ -147,13 +147,13 @@ export class UserGiftWallService {
 
   /**
    * Lấy danh sách milestones với progress của user
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param milestoneId - Optional: ID của gift item (gift_item_id) để filter milestone cụ thể
    * @param query - Optional: Pagination query (page, limit)
    * @returns Danh sách milestones với progress
    */
   async getGiftWallMilestones(
-    userId: string,
+    user_id: string,
     milestoneId?: string,
     query?: { page?: number; limit?: number },
   ) {
@@ -162,8 +162,8 @@ export class UserGiftWallService {
     const skip = (page - 1) * limit;
 
     const cacheKey = milestoneId
-      ? `user:${userId}:gift-wall:milestones:${milestoneId}:${page}:${limit}`
-      : `user:${userId}:gift-wall:milestones:${page}:${limit}`;
+      ? `user:${user_id}:gift-wall:milestones:${milestoneId}:${page}:${limit}`
+      : `user:${user_id}:gift-wall:milestones:${page}:${limit}`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
@@ -187,7 +187,7 @@ export class UserGiftWallService {
 
         // Get all gifts received by user, grouped by gift_item_id
         const giftsReceived = await this.prisma.resGift.findMany({
-          where: { receiver_id: userId },
+          where: { receiver_id: user_id },
           select: {
             gift_item_id: true,
             quantity: true,
@@ -231,9 +231,9 @@ export class UserGiftWallService {
    * Get recent gifts with sender info
    * Cached for 1 minute
    */
-  async getRecentGifts(userId: string, page: number = 1, limit: number = 20) {
+  async getRecentGifts(user_id: string, page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-    const cacheKey = `user:${userId}:gift-wall:recent:page:${page}:limit:${limit}`;
+    const cacheKey = `user:${user_id}:gift-wall:recent:page:${page}:limit:${limit}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -241,7 +241,7 @@ export class UserGiftWallService {
       async () => {
         const [gifts, total] = await Promise.all([
           this.prisma.resGift.findMany({
-            where: { receiver_id: userId },
+            where: { receiver_id: user_id },
             take: limit,
             skip: skip,
             orderBy: { created_at: 'desc' },
@@ -262,7 +262,7 @@ export class UserGiftWallService {
               },
             },
           }),
-          this.prisma.resGift.count({ where: { receiver_id: userId } }),
+          this.prisma.resGift.count({ where: { receiver_id: user_id } }),
         ]);
 
         const items = gifts.map((gift) => ({

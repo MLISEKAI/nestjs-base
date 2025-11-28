@@ -89,9 +89,9 @@
 //     await this.touch(key, this.maxOtpFailures, 'otp', phone);
 //   }
 
-//   async checkTwoFactor(userId: string, ip?: string) {
-//     const key = this.getKey('2fa', [userId, ip]);
-//     await this.touch(key, this.maxTwoFactorFailures, '2fa', userId);
+//   async checkTwoFactor(user_id: string, ip?: string) {
+//     const key = this.getKey('2fa', [user_id, ip]);
+//     await this.touch(key, this.maxTwoFactorFailures, '2fa', user_id);
 //   }
 
 //   async resetCounter(key: string) {

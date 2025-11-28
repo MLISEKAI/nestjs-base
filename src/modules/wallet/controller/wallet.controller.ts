@@ -169,9 +169,9 @@ export class WalletController {
   getWallet(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
     // Lấy user_id từ JWT token (user đã được authenticate bởi AuthGuard)
     // req.user được set bởi JWT strategy sau khi verify token thành công
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để lấy danh sách wallets của user này với pagination
-    return this.walletService.getWallet(userId, query);
+    return this.walletService.getWallet(user_id, query);
   }
 
   // ========== 2. Wallet Balance & Summary ==========
@@ -186,8 +186,8 @@ export class WalletController {
     description: 'Thông tin tổng quan về wallet: Diamond balance, VEX balance, Monthly card status',
   })
   getWalletSummary(@Req() req: AuthenticatedRequest): Promise<WalletSummaryResponseDto> {
-    const userId = req.user.id;
-    return this.walletSummaryService.getWalletSummary(userId);
+    const user_id = req.user.id;
+    return this.walletSummaryService.getWalletSummary(user_id);
   }
 
   @Get('vex/balance')
@@ -202,8 +202,8 @@ export class WalletController {
       'Thông tin chi tiết VEX balance: số dư, giá trị USD, tỷ giá, và daily limits còn lại',
   })
   getVexBalance(@Req() req: AuthenticatedRequest): Promise<VexBalanceResponseDto> {
-    const userId = req.user.id;
-    return this.walletSummaryService.getVexBalance(userId);
+    const user_id = req.user.id;
+    return this.walletSummaryService.getVexBalance(user_id);
   }
 
   @Get('diamond/balance')
@@ -217,8 +217,8 @@ export class WalletController {
     description: 'Số dư Diamond hiện tại của user',
   })
   getDiamondBalance(@Req() req: AuthenticatedRequest): Promise<DiamondBalanceResponseDto> {
-    const userId = req.user.id;
-    return this.walletSummaryService.getDiamondBalance(userId);
+    const user_id = req.user.id;
+    return this.walletSummaryService.getDiamondBalance(user_id);
   }
 
   // ========== 3. Recharge & Packages ==========
@@ -272,8 +272,8 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: CheckoutRechargeDto,
   ): Promise<CheckoutRechargeResponseDto> {
-    const userId = req.user.id;
-    return this.rechargeService.checkoutRecharge(userId, dto);
+    const user_id = req.user.id;
+    return this.rechargeService.checkoutRecharge(user_id, dto);
   }
 
   // ========== 4. Subscription (Monthly Card) ==========
@@ -314,8 +314,8 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: PurchaseSubscriptionDto,
   ): Promise<PurchaseSubscriptionResponseDto> {
-    const userId = req.user.id;
-    return this.subscriptionService.purchaseSubscription(userId, dto);
+    const user_id = req.user.id;
+    return this.subscriptionService.purchaseSubscription(user_id, dto);
   }
 
   @Get('subscription/details')
@@ -334,8 +334,8 @@ export class WalletController {
   getSubscriptionDetails(
     @Req() req: AuthenticatedRequest,
   ): Promise<SubscriptionDetailsResponseDto> {
-    const userId = req.user.id;
-    return this.subscriptionService.getSubscriptionDetails(userId);
+    const user_id = req.user.id;
+    return this.subscriptionService.getSubscriptionDetails(user_id);
   }
 
   // ========== 5. VEX Operations ==========
@@ -373,8 +373,8 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: ConvertVexToDiamondDto,
   ): Promise<ConvertVexToDiamondResponseDto> {
-    const userId = req.user.id;
-    return this.convertService.convertVexToDiamond(userId, dto);
+    const user_id = req.user.id;
+    return this.convertService.convertVexToDiamond(user_id, dto);
   }
 
   @Post('vex/transfer')
@@ -400,8 +400,8 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: TransferVexDto,
   ): Promise<TransferVexResponseDto> {
-    const userId = req.user.id;
-    return this.transferService.transferVex(userId, dto);
+    const user_id = req.user.id;
+    return this.transferService.transferVex(user_id, dto);
   }
 
   // ========== 6. Deposit & Withdraw ==========
@@ -416,8 +416,8 @@ export class WalletController {
     description: 'Thông tin deposit address: deposit_address, qr_code, và network',
   })
   getDepositInfo(@Req() req: AuthenticatedRequest): Promise<DepositInfoResponseDto> {
-    const userId = req.user.id;
-    return this.depositService.getDepositInfo(userId);
+    const user_id = req.user.id;
+    return this.depositService.getDepositInfo(user_id);
   }
 
   @Patch('deposit/network')
@@ -438,8 +438,8 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateDepositNetworkDto,
   ): Promise<CreateDepositResponseDto> {
-    const userId = req.user.id;
-    return this.depositService.updateDepositNetwork(userId, dto);
+    const user_id = req.user.id;
+    return this.depositService.updateDepositNetwork(user_id, dto);
   }
 
   @Post('withdraw')
@@ -462,8 +462,8 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: WithdrawVexDto,
   ): Promise<WithdrawVexResponseDto> {
-    const userId = req.user.id;
-    return this.depositService.withdrawVex(userId, dto);
+    const user_id = req.user.id;
+    return this.depositService.withdrawVex(user_id, dto);
   }
 
   // ========== 7. Transaction History ==========
@@ -481,8 +481,8 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Query() query: BaseQueryDto,
   ): Promise<TransactionHistoryResponseDto> {
-    const userId = req.user.id;
-    return this.transactionService.getTransactionHistory(userId, query);
+    const user_id = req.user.id;
+    return this.transactionService.getTransactionHistory(user_id, query);
   }
 
   // ========== 8. In-App Purchase (IAP) ==========
@@ -506,7 +506,7 @@ export class WalletController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: IapVerifyReceiptDto,
   ): Promise<IapVerifyReceiptResponseDto> {
-    const userId = req.user.id;
-    return this.iapService.verifyIapReceipt(userId, dto);
+    const user_id = req.user.id;
+    return this.iapService.verifyIapReceipt(user_id, dto);
   }
 }

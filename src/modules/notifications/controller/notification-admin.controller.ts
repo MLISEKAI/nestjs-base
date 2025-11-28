@@ -53,23 +53,23 @@ export class NotificationAdminController {
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  getNotifications(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.notificationService.getUserNotifications(userId, query);
+  getNotifications(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.notificationService.getUserNotifications(user_id, query);
   }
 
   @Post()
   @ApiOperation({ summary: '[ADMIN] Tạo notification cho user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiBody({ type: CreateNotificationDto })
-  createNotification(@Param('user_id') userId: string, @Body() dto: CreateNotificationDto) {
-    return this.notificationService.createNotification({ ...dto, user_id: userId });
+  createNotification(@Param('user_id') user_id: string, @Body() dto: CreateNotificationDto) {
+    return this.notificationService.createNotification({ ...dto, user_id: user_id });
   }
 
   @Delete(':id')
   @ApiOperation({ summary: '[ADMIN] Xóa notification của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiParam({ name: 'id', description: 'Notification ID' })
-  deleteNotification(@Param('user_id') userId: string, @Param('id') id: string) {
-    return this.notificationService.deleteNotification(id, userId);
+  deleteNotification(@Param('user_id') user_id: string, @Param('id') id: string) {
+    return this.notificationService.deleteNotification(id, user_id);
   }
 }

@@ -54,11 +54,11 @@ export class FeedbackService {
 
   /**
    * Lấy danh sách feedback của user với pagination
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param query - Query parameters cho pagination (page, limit)
    * @returns Paginated list of feedbacks
    */
-  async getFeedback(userId: string, query?: BaseQueryDto) {
+  async getFeedback(user_id: string, query?: BaseQueryDto) {
     // Parse pagination parameters với default values
     const take = query?.limit && query.limit > 0 ? query.limit : 20; // Default 20 items per page
     const page = query?.page && query.page > 0 ? query.page : 1; // Default page 1
@@ -68,13 +68,13 @@ export class FeedbackService {
     const [feedbacks, total] = await Promise.all([
       // Lấy danh sách feedbacks của user
       this.prisma.resFeedback.findMany({
-        where: { user_id: userId }, // Chỉ lấy feedbacks của user này
+        where: { user_id: user_id }, // Chỉ lấy feedbacks của user này
         take, // Limit số lượng
         skip, // Offset cho pagination
         orderBy: { created_at: 'desc' }, // Sắp xếp theo thời gian tạo (mới nhất trước)
       }),
       // Đếm tổng số feedbacks của user
-      this.prisma.resFeedback.count({ where: { user_id: userId } }),
+      this.prisma.resFeedback.count({ where: { user_id: user_id } }),
     ]);
 
     // Build response với pagination metadata

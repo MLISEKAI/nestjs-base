@@ -79,16 +79,16 @@ export class ClanService {
 
   /**
    * Lấy danh sách clans mà user đã join (cached 5 phút)
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param query - Query parameters cho pagination
    * @returns Paginated list of user's clans với rank info
    */
-  async getClans(userId: string, query: BaseQueryDto) {
+  async getClans(user_id: string, query: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const cacheKey = `user:${userId}:clans:page:${page}:limit:${take}`;
+    const cacheKey = `user:${user_id}:clans:page:${page}:limit:${take}`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
@@ -97,13 +97,13 @@ export class ClanService {
         // Query user's clan memberships
         const [userClans, total] = await Promise.all([
           this.prisma.resUserClan.findMany({
-            where: { user_id: userId },
+            where: { user_id: user_id },
             include: { clan: true }, // Include clan info
             take,
             skip,
             orderBy: { id: 'desc' }, // Sắp xếp theo ID giảm dần (join mới nhất trước)
           }),
-          this.prisma.resUserClan.count({ where: { user_id: userId } }),
+          this.prisma.resUserClan.count({ where: { user_id: user_id } }),
         ]);
 
         return buildPaginatedResponse(userClans, total, page, take);
@@ -114,13 +114,13 @@ export class ClanService {
 
   /**
    * Tạo clan mới (user tự động trở thành Leader)
-   * @param userId - ID của user tạo clan
+   * @param user_id - ID của user tạo clan
    * @param dto - DTO chứa thông tin clan (name)
    * @returns Clan đã tạo
    * 
    * Lưu ý: User tự động được thêm vào clan với rank = Leader
    */
-  async createClan(userId: string, dto: CreateClanDto) {
+  async createClan(user_id: string, dto: CreateClanDto) {
     // Tạo clan mới
     const clan = await this.prisma.resClan.create({
       data: { name: dto.name },
@@ -128,67 +128,67 @@ export class ClanService {
     
     // Thêm user vào clan với rank = Leader
     await this.prisma.resUserClan.create({
-      data: { user_id: userId, clan_id: clan.id, rank: 'Leader' },
+      data: { user_id: user_id, clan_id: clan.id, rank: 'Leader' },
     });
 
     // Invalidate cache
     await this.cacheService.delPattern(`clans:all:*`); // Xóa cache danh sách clans
-    await this.cacheService.delPattern(`user:${userId}:clans:*`); // Xóa cache clans của user
-    await this.cacheService.del(`user:${userId}:clan:info`); // Xóa cache clan info
+    await this.cacheService.delPattern(`user:${user_id}:clans:*`); // Xóa cache clans của user
+    await this.cacheService.del(`user:${user_id}:clan:info`); // Xóa cache clan info
 
     return clan;
   }
 
   /**
    * Join clan (rank mặc định: Member)
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param clanId - ID của clan muốn join
    * @returns Membership record
    */
-  async joinClan(userId: string, clanId: string) {
+  async joinClan(user_id: string, clanId: string) {
     // Tạo membership mới với rank = Member
     const membership = await this.prisma.resUserClan.create({
-      data: { user_id: userId, clan_id: clanId, rank: 'Member' },
+      data: { user_id: user_id, clan_id: clanId, rank: 'Member' },
     });
 
     // Invalidate cache
-    await this.cacheService.delPattern(`user:${userId}:clans:*`);
-    await this.cacheService.del(`user:${userId}:clan:info`);
+    await this.cacheService.delPattern(`user:${user_id}:clans:*`);
+    await this.cacheService.del(`user:${user_id}:clan:info`);
 
     return membership;
   }
 
   /**
    * Leave clan (xóa membership)
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param clanId - ID của clan muốn leave
    * @returns Message xác nhận đã leave
    */
-  async leaveClan(userId: string, clanId: string) {
+  async leaveClan(user_id: string, clanId: string) {
     // Xóa membership (deleteMany vì có thể có nhiều records)
-    await this.prisma.resUserClan.deleteMany({ where: { user_id: userId, clan_id: clanId } });
+    await this.prisma.resUserClan.deleteMany({ where: { user_id: user_id, clan_id: clanId } });
 
     // Invalidate cache
-    await this.cacheService.delPattern(`user:${userId}:clans:*`);
-    await this.cacheService.del(`user:${userId}:clan:info`);
+    await this.cacheService.delPattern(`user:${user_id}:clans:*`);
+    await this.cacheService.del(`user:${user_id}:clan:info`);
 
     return { message: 'Left clan' };
   }
 
   /**
    * Update clan role/rank
-   * @param userId - ID của user cần update rank
+   * @param user_id - ID của user cần update rank
    * @param clanId - ID của clan
    * @param dto - DTO chứa rank mới (Leader, Admin, Member, etc.)
    * @returns Membership đã update
    * @throws NotFoundException nếu membership không tồn tại
    */
-  async updateClanRole(userId: string, clanId: string, dto: UpdateClanRankDto) {
+  async updateClanRole(user_id: string, clanId: string, dto: UpdateClanRankDto) {
     try {
       // Nếu không có rank trong dto, giữ nguyên rank hiện tại
       if (dto.rank === undefined) {
         const existing = await this.prisma.resUserClan.findFirst({
-          where: { user_id: userId, clan_id: clanId },
+          where: { user_id: user_id, clan_id: clanId },
           select: { id: true, rank: true },
         });
         if (!existing) throw new NotFoundException('Membership not found');
@@ -202,7 +202,7 @@ export class ClanService {
       
       // Tìm membership và update rank
       const existing = await this.prisma.resUserClan.findFirst({
-        where: { user_id: userId, clan_id: clanId },
+        where: { user_id: user_id, clan_id: clanId },
         select: { id: true },
       });
       
@@ -223,13 +223,13 @@ export class ClanService {
 
   /**
    * Lấy thông tin clan của user (cached 5 phút)
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @returns Clan info với rank của user
    * 
    * Lưu ý: Chỉ trả về clan đầu tiên nếu user join nhiều clans
    */
-  async getClanInfo(userId: string) {
-    const cacheKey = `user:${userId}:clan:info`;
+  async getClanInfo(user_id: string) {
+    const cacheKey = `user:${user_id}:clan:info`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
@@ -237,7 +237,7 @@ export class ClanService {
       async () => {
         // Lấy clan đầu tiên của user
         return this.prisma.resUserClan.findFirst({
-          where: { user_id: userId },
+          where: { user_id: user_id },
           include: { clan: true }, // Include clan info
         });
       },

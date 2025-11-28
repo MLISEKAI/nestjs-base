@@ -82,16 +82,16 @@ export class InventoryController {
     },
   })
   getInventory(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
-    return this.inventory.getInventory(userId, query);
+    const user_id = req.user.id;
+    return this.inventory.getInventory(user_id, query);
   }
 
   @Post()
   @ApiOperation({ summary: 'Thêm vật phẩm vào inventory của user hiện tại' })
   @ApiBody({ type: CreateInventoryItemDto })
   addInventoryItem(@Req() req: AuthenticatedRequest, @Body() dto: CreateInventoryItemDto) {
-    const userId = req.user.id;
-    return this.inventory.addInventoryItem(userId, dto);
+    const user_id = req.user.id;
+    return this.inventory.addInventoryItem(user_id, dto);
   }
 
   @Patch(':item_id')
@@ -102,14 +102,14 @@ export class InventoryController {
     @Param('item_id') itemId: string,
     @Body() dto: UpdateInventoryItemDto,
   ) {
-    const userId = req.user.id;
-    return this.inventory.updateInventoryItem(userId, itemId, dto);
+    const user_id = req.user.id;
+    return this.inventory.updateInventoryItem(user_id, itemId, dto);
   }
 
   @Delete(':item_id')
   @ApiOperation({ summary: 'Xóa vật phẩm inventory của user hiện tại' })
   deleteInventoryItem(@Req() req: AuthenticatedRequest, @Param('item_id') itemId: string) {
-    const userId = req.user.id;
-    return this.inventory.deleteInventoryItem(userId, itemId);
+    const user_id = req.user.id;
+    return this.inventory.deleteInventoryItem(user_id, itemId);
   }
 }

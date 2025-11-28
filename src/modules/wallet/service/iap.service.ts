@@ -36,7 +36,7 @@ export class IapService {
   /**
    * Verify IAP receipt (iOS/Android)
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param dto - IapVerifyReceiptDto chứa receipt, platform, productId
    * @returns IapVerifyReceiptResponseDto chứa thông tin verification
    *
@@ -55,10 +55,10 @@ export class IapService {
    * - TODO: Implement IAP verification
    */
   async verifyIapReceipt(
-    userId: string,
+    user_id: string,
     dto: IapVerifyReceiptDto,
   ): Promise<IapVerifyReceiptResponseDto> {
-    this.logger.log(`Verifying IAP receipt for user ${userId}, platform: ${dto.platform}`);
+    this.logger.log(`Verifying IAP receipt for user ${user_id}, platform: ${dto.platform}`);
 
     // TODO: Tích hợp với Apple App Store / Google Play Store API để verify receipt
     // Cần implement:

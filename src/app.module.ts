@@ -26,6 +26,7 @@ import { ClansModule } from './modules/clans/clans.module';
 import { GiftsModule } from './modules/gifts/gifts.module';
 import { SearchModule } from './modules/search/search.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
+import { RoomModule } from './modules/room/room.module';
 // Import common modules
 import { CacheModule } from './common/cache/cache.module';
 import { MonitoringModule } from './common/monitoring/monitoring.module';
@@ -45,7 +46,7 @@ import jwtConfig from './config/jwt.config';
  * - Import tất cả feature modules
  * - Configure global settings (ConfigModule, ThrottlerModule)
  * - Setup global guards (ThrottlerGuard)
- * - Import common modules (Cache, Monitoring, RateLimit)
+ * - Import common modules (Cache, RateLimit)
  *
  * Global Configuration:
  * - ConfigModule: Global config với database và JWT configs
@@ -86,6 +87,7 @@ import jwtConfig from './config/jwt.config';
     GiftsModule,
     SearchModule,
     MessagingModule,
+    RoomModule,
     CacheModule,
     MonitoringModule,
     RateLimitModule,

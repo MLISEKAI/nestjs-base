@@ -83,14 +83,14 @@ export class GroupService {
     };
   }
 
-  async getUserGroups(userId: string, query?: BaseQueryDto) {
+  async getUserGroups(user_id: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
     const [memberships, total] = await Promise.all([
       this.prisma.resGroupMember.findMany({
-        where: { user_id: userId },
+        where: { user_id: user_id },
         take,
         skip,
         orderBy: { joined_at: 'desc' },
@@ -107,7 +107,7 @@ export class GroupService {
         },
       }),
       this.prisma.resGroupMember.count({
-        where: { user_id: userId },
+        where: { user_id: user_id },
       }),
     ]);
 
@@ -122,30 +122,30 @@ export class GroupService {
     return buildPaginatedResponse(groups, total, page, take);
   }
 
-  async createGroup(userId: string, dto: CreateGroupDto) {
+  async createGroup(user_id: string, dto: CreateGroupDto) {
     const group = await this.prisma.resGroup.create({
       data: {
         name: dto.name,
         description: dto.description,
         avatar: dto.avatar,
         is_public: dto.is_public,
-        created_by: userId,
+        created_by: user_id,
         members: {
           create: {
-            user_id: userId,
+            user_id: user_id,
             role: 'admin', // First member is admin
           },
         },
         conversation: {
           create: {
             type: 'group',
-            created_by: userId,
+            created_by: user_id,
             settings: {
               create: {},
             },
             participants: {
               create: {
-                user_id: userId,
+                user_id: user_id,
               },
             },
           },
@@ -167,13 +167,13 @@ export class GroupService {
     };
   }
 
-  async updateGroup(userId: string, group_id: string, dto: UpdateGroupDto) {
+  async updateGroup(user_id: string, group_id: string, dto: UpdateGroupDto) {
     // Check if user is admin of the group
     const membership = await this.prisma.resGroupMember.findUnique({
       where: {
         group_id_user_id: {
           group_id: group_id,
-          user_id: userId,
+          user_id: user_id,
         },
       },
     });
@@ -213,13 +213,13 @@ export class GroupService {
     }
   }
 
-  async deleteGroup(userId: string, group_id: string) {
+  async deleteGroup(user_id: string, group_id: string) {
     // Check if user is admin of the group
     const membership = await this.prisma.resGroupMember.findUnique({
       where: {
         group_id_user_id: {
           group_id: group_id,
-          user_id: userId,
+          user_id: user_id,
         },
       },
     });
@@ -242,7 +242,7 @@ export class GroupService {
     }
   }
 
-  async joinGroup(userId: string, group_id: string) {
+  async joinGroup(user_id: string, group_id: string) {
     // Check if group exists
     const group = await this.prisma.resGroup.findUnique({
       where: { id: group_id },
@@ -256,7 +256,7 @@ export class GroupService {
     const existing = await this.prisma.resGroupMember.findFirst({
       where: {
         group_id: group_id,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -270,7 +270,7 @@ export class GroupService {
       where: {
         group_id_user_id: {
           group_id: group_id,
-          user_id: userId,
+          user_id: user_id,
         },
       },
     });
@@ -281,7 +281,7 @@ export class GroupService {
         where: {
           group_id_user_id: {
             group_id: group_id,
-            user_id: userId,
+            user_id: user_id,
           },
         },
         data: {
@@ -299,7 +299,7 @@ export class GroupService {
         const participant = await this.prisma.resConversationParticipant.findFirst({
           where: {
             conversation_id: conversation.id,
-            user_id: userId,
+            user_id: user_id,
           },
         });
 
@@ -314,7 +314,7 @@ export class GroupService {
           await this.prisma.resConversationParticipant.create({
             data: {
               conversation_id: conversation.id,
-              user_id: userId,
+              user_id: user_id,
             },
           });
         }
@@ -330,7 +330,7 @@ export class GroupService {
       membership = await this.prisma.resGroupMember.create({
         data: {
           group_id: group_id,
-          user_id: userId,
+          user_id: user_id,
           role: 'member',
         },
       });
@@ -343,7 +343,7 @@ export class GroupService {
           where: {
             group_id_user_id: {
               group_id: group_id,
-              user_id: userId,
+              user_id: user_id,
             },
           },
         });
@@ -358,7 +358,7 @@ export class GroupService {
             where: {
               group_id_user_id: {
                 group_id: group_id,
-                user_id: userId,
+                user_id: user_id,
               },
             },
             data: {
@@ -385,7 +385,7 @@ export class GroupService {
         await this.prisma.resConversationParticipant.create({
           data: {
             conversation_id: conversation.id,
-            user_id: userId,
+            user_id: user_id,
           },
         });
       } catch (error) {
@@ -399,13 +399,13 @@ export class GroupService {
     return membership;
   }
 
-  async leaveGroup(userId: string, group_id: string) {
+  async leaveGroup(user_id: string, group_id: string) {
     try {
       await this.prisma.resGroupMember.update({
         where: {
           group_id_user_id: {
             group_id: group_id,
-            user_id: userId,
+            user_id: user_id,
           },
         },
         data: { left_at: new Date() },
@@ -420,7 +420,7 @@ export class GroupService {
         const participant = await this.prisma.resConversationParticipant.findFirst({
           where: {
             conversation_id: conversation.id,
-            user_id: userId,
+            user_id: user_id,
             left_at: null,
           },
         });
@@ -505,13 +505,13 @@ export class GroupService {
     return buildPaginatedResponse(members, total, page, take);
   }
 
-  async sendGroupMessage(userId: string, group_id: string, dto: SendGroupMessageDto) {
+  async sendGroupMessage(user_id: string, group_id: string, dto: SendGroupMessageDto) {
     // Check if user is a member
     const membership = await this.prisma.resGroupMember.findUnique({
       where: {
         group_id_user_id: {
           group_id: group_id,
-          user_id: userId,
+          user_id: user_id,
         },
       },
     });
@@ -527,7 +527,7 @@ export class GroupService {
     const message = await this.prisma.resMessage.create({
       data: {
         conversation_id: conversation.id,
-        sender_id: userId,
+        sender_id: user_id,
         type: 'text',
         content: dto.content,
         is_read: false,
@@ -638,7 +638,7 @@ export class GroupService {
   /**
    * Get group settings
    */
-  async getGroupSettings(group_id: string, userId: string) {
+  async getGroupSettings(group_id: string, user_id: string) {
     const group = await this.prisma.resGroup.findUnique({
       where: { id: group_id },
       include: {
@@ -646,7 +646,7 @@ export class GroupService {
           include: {
             settings: true,
             participants: {
-              where: { user_id: userId },
+              where: { user_id: user_id },
             },
           },
         },
@@ -677,7 +677,7 @@ export class GroupService {
     };
   }
 
-  async updateGroupSettings(group_id: string, userId: string, dto: UpdateGroupSettingsDto) {
+  async updateGroupSettings(group_id: string, user_id: string, dto: UpdateGroupSettingsDto) {
     const requiresAdmin =
       dto.name !== undefined ||
       dto.introduction !== undefined ||
@@ -687,7 +687,7 @@ export class GroupService {
       dto.is_public !== undefined;
 
     if (requiresAdmin) {
-      await this.checkAdminPermission(group_id, userId);
+      await this.checkAdminPermission(group_id, user_id);
       await this.prisma.resGroup.update({
         where: { id: group_id },
         data: {
@@ -704,7 +704,7 @@ export class GroupService {
     if (dto.notifications_enabled !== undefined || dto.gift_sounds_enabled !== undefined) {
       const conversation = await this.getOrCreateGroupConversation(group_id);
       const participant = await this.prisma.resConversationParticipant.findFirst({
-        where: { conversation_id: conversation.id, user_id: userId, left_at: null },
+        where: { conversation_id: conversation.id, user_id: user_id, left_at: null },
       });
 
       if (!participant) {
@@ -727,14 +727,14 @@ export class GroupService {
       }
     }
 
-    return this.getGroupSettings(group_id, userId);
+    return this.getGroupSettings(group_id, user_id);
   }
 
   /**
    * Update group introduction
    */
-  async updateGroupIntroduction(group_id: string, userId: string, dto: UpdateGroupIntroductionDto) {
-    await this.checkAdminPermission(group_id, userId);
+  async updateGroupIntroduction(group_id: string, user_id: string, dto: UpdateGroupIntroductionDto) {
+    await this.checkAdminPermission(group_id, user_id);
 
     const group = await this.prisma.resGroup.update({
       where: { id: group_id },
@@ -747,8 +747,8 @@ export class GroupService {
   /**
    * Update group name
    */
-  async updateGroupName(group_id: string, userId: string, dto: UpdateGroupNameDto) {
-    await this.checkAdminPermission(group_id, userId);
+  async updateGroupName(group_id: string, user_id: string, dto: UpdateGroupNameDto) {
+    await this.checkAdminPermission(group_id, user_id);
 
     const group = await this.prisma.resGroup.update({
       where: { id: group_id },
@@ -761,8 +761,8 @@ export class GroupService {
   /**
    * Update group avatar
    */
-  async updateGroupAvatar(group_id: string, userId: string, dto: UpdateGroupAvatarDto) {
-    await this.checkAdminPermission(group_id, userId);
+  async updateGroupAvatar(group_id: string, user_id: string, dto: UpdateGroupAvatarDto) {
+    await this.checkAdminPermission(group_id, user_id);
 
     const group = await this.prisma.resGroup.update({
       where: { id: group_id },
@@ -777,14 +777,14 @@ export class GroupService {
    */
   async updateGroupNotifications(
     group_id: string,
-    userId: string,
+    user_id: string,
     dto: UpdateGroupNotificationsDto,
   ) {
     const conversation = await this.getOrCreateGroupConversation(group_id);
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversation.id,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -804,12 +804,12 @@ export class GroupService {
   /**
    * Update group gift effect
    */
-  async updateGroupGiftEffect(group_id: string, userId: string, dto: UpdateGroupGiftEffectDto) {
+  async updateGroupGiftEffect(group_id: string, user_id: string, dto: UpdateGroupGiftEffectDto) {
     const conversation = await this.getOrCreateGroupConversation(group_id);
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversation.id,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -843,10 +843,10 @@ export class GroupService {
    */
   async updateGroupClassification(
     group_id: string,
-    userId: string,
+    user_id: string,
     dto: UpdateGroupClassificationDto,
   ) {
-    await this.checkAdminPermission(group_id, userId);
+    await this.checkAdminPermission(group_id, user_id);
 
     const group = await this.prisma.resGroup.update({
       where: { id: group_id },
@@ -859,7 +859,7 @@ export class GroupService {
   /**
    * Report group
    */
-  async reportGroup(group_id: string, userId: string, dto: ReportGroupDto) {
+  async reportGroup(group_id: string, user_id: string, dto: ReportGroupDto) {
     const group = await this.prisma.resGroup.findUnique({
       where: { id: group_id },
     });
@@ -876,8 +876,8 @@ export class GroupService {
   /**
    * Add members to group
    */
-  async addGroupMembers(group_id: string, userId: string, dto: AddGroupMembersDto) {
-    await this.checkAdminPermission(group_id, userId);
+  async addGroupMembers(group_id: string, user_id: string, dto: AddGroupMembersDto) {
+    await this.checkAdminPermission(group_id, user_id);
 
     const group = await this.prisma.resGroup.findUnique({
       where: { id: group_id },
@@ -892,13 +892,13 @@ export class GroupService {
       where: { group_id: group_id, left_at: null },
     });
 
-    if (currentCount + dto.userIds.length > group.max_members) {
+    if (currentCount + dto.user_id.length > group.max_members) {
       throw new BadRequestException('Exceeds maximum members limit');
     }
 
     // Add members
     const members = [];
-    for (const memberId of dto.userIds) {
+    for (const memberId of dto.user_id) {
       try {
         const member = await this.prisma.resGroupMember.create({
           data: {
@@ -927,7 +927,7 @@ export class GroupService {
 
     // Add to conversation if exists
     const conversation = await this.getOrCreateGroupConversation(group_id);
-    for (const memberId of dto.userIds) {
+    for (const memberId of dto.user_id) {
       try {
         await this.prisma.resConversationParticipant.create({
           data: {
@@ -949,11 +949,11 @@ export class GroupService {
   /**
    * Remove member from group
    */
-  async removeGroupMember(group_id: string, userId: string, memberId: string) {
-    await this.checkAdminPermission(group_id, userId);
+  async removeGroupMember(group_id: string, user_id: string, memberId: string) {
+    await this.checkAdminPermission(group_id, user_id);
 
     // Cannot remove yourself
-    if (userId === memberId) {
+    if (user_id === memberId) {
       throw new BadRequestException('Cannot remove yourself. Use leave group instead.');
     }
 
@@ -1004,14 +1004,14 @@ export class GroupService {
    */
   async updateMemberRole(
     group_id: string,
-    userId: string,
+    user_id: string,
     memberId: string,
     dto: UpdateMemberRoleDto,
   ) {
-    await this.checkAdminPermission(group_id, userId);
+    await this.checkAdminPermission(group_id, user_id);
 
     // Cannot change your own role
-    if (userId === memberId) {
+    if (user_id === memberId) {
       throw new BadRequestException('Cannot change your own role');
     }
 
@@ -1074,12 +1074,12 @@ export class GroupService {
   /**
    * Helper: Check if user is admin
    */
-  private async checkAdminPermission(group_id: string, userId: string) {
+  private async checkAdminPermission(group_id: string, user_id: string) {
     const membership = await this.prisma.resGroupMember.findUnique({
       where: {
         group_id_user_id: {
           group_id: group_id,
-          user_id: userId,
+          user_id: user_id,
         },
       },
     });

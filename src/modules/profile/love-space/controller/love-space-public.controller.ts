@@ -29,7 +29,7 @@ export class LoveSpacePublicController {
       },
     },
   })
-  getLoveSpace(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.loveSpace.getLoveSpace(userId, query);
+  getLoveSpace(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.loveSpace.getLoveSpace(user_id, query);
   }
 }

@@ -57,8 +57,8 @@ export class GiftsPublicController {
       },
     },
   })
-  getGiftWall(@Param('user_id') userId: string) {
-    return this.giftWallService.getGiftWall(userId);
+  getGiftWall(@Param('user_id') user_id: string) {
+    return this.giftWallService.getGiftWall(user_id);
   }
 
   /**
@@ -118,8 +118,8 @@ export class GiftsPublicController {
       },
     },
   })
-  getGiftWallMilestonesAll(@Param('user_id') userId: string, @Query() query?: BaseQueryDto) {
-    return this.giftWallService.getGiftWallMilestones(userId, undefined, query);
+  getGiftWallMilestonesAll(@Param('user_id') user_id: string, @Query() query?: BaseQueryDto) {
+    return this.giftWallService.getGiftWallMilestones(user_id, undefined, query);
   }
 
   /**
@@ -186,10 +186,10 @@ export class GiftsPublicController {
     },
   })
   getGiftWallMilestonesById(
-    @Param('user_id') userId: string,
+    @Param('user_id') user_id: string,
     @Param('milestone_id') milestoneId: string,
     @Query() query?: BaseQueryDto,
   ) {
-    return this.giftWallService.getGiftWallMilestones(userId, milestoneId, query);
+    return this.giftWallService.getGiftWallMilestones(user_id, milestoneId, query);
   }
 }

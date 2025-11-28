@@ -59,7 +59,7 @@ export class FeedService {
   /**
    * Get friends feed
    */
-  async getFriendsFeed(userId: string, query?: BaseQueryDto & { since?: string }) {
+  async getFriendsFeed(user_id: string, query?: BaseQueryDto & { since?: string }) {
     const page = query?.page !== undefined && query.page >= 0 ? query.page : 0;
     const limit = query?.limit && query.limit > 0 && query.limit <= 50 ? query.limit : 20;
     const skip = page * limit;
@@ -67,7 +67,7 @@ export class FeedService {
     // Get user's friends
     const friends = await this.prisma.resFriend.findMany({
       where: {
-        OR: [{ user_a_id: userId }, { user_b_id: userId }],
+        OR: [{ user_a_id: user_id }, { user_b_id: user_id }],
       },
       select: {
         user_a_id: true,
@@ -75,8 +75,8 @@ export class FeedService {
       },
     });
 
-    const friendIds = friends.map((f) => (f.user_a_id === userId ? f.user_b_id : f.user_a_id));
-    friendIds.push(userId); // Include own posts
+    const friendIds = friends.map((f) => (f.user_a_id === user_id ? f.user_b_id : f.user_a_id));
+    friendIds.push(user_id); // Include own posts
 
     // Build where clause
     const where: PostWhereClause = {
@@ -120,7 +120,7 @@ export class FeedService {
               comments: true,
             },
           },
-          likes: userId ? { where: { user_id: userId }, select: { user_id: true } } : false,
+          likes: user_id ? { where: { user_id: user_id }, select: { user_id: true } } : false,
         },
         orderBy: { created_at: 'desc' },
         skip,
@@ -136,7 +136,7 @@ export class FeedService {
       code: 0,
       message: 'Success',
       data: {
-        items: posts.map((post) => this.formatPost(post, userId)),
+        items: posts.map((post) => this.formatPost(post, user_id)),
         meta: {
           item_count: posts.length,
           total_items: total,
@@ -152,7 +152,7 @@ export class FeedService {
   /**
    * Get latest feed (all posts)
    */
-  async getLatestFeed(userId: string, query?: BaseQueryDto & { since?: string }) {
+  async getLatestFeed(user_id: string, query?: BaseQueryDto & { since?: string }) {
     const page = query?.page !== undefined && query.page >= 0 ? query.page : 0;
     const limit = query?.limit && query.limit > 0 && query.limit <= 50 ? query.limit : 20;
     const skip = page * limit;
@@ -198,7 +198,7 @@ export class FeedService {
               comments: true,
             },
           },
-          likes: userId ? { where: { user_id: userId }, select: { user_id: true } } : false,
+          likes: user_id ? { where: { user_id: user_id }, select: { user_id: true } } : false,
         },
         orderBy: { created_at: 'desc' },
         skip,
@@ -214,7 +214,7 @@ export class FeedService {
       code: 0,
       message: 'Success',
       data: {
-        items: posts.map((post) => this.formatPost(post, userId)),
+        items: posts.map((post) => this.formatPost(post, user_id)),
         meta: {
           item_count: posts.length,
           total_items: total,
@@ -230,7 +230,7 @@ export class FeedService {
   /**
    * Get community feed with hot topics
    */
-  async getCommunityFeed(userId: string, query?: BaseQueryDto) {
+  async getCommunityFeed(user_id: string, query?: BaseQueryDto) {
     const page = query?.page !== undefined && query.page >= 0 ? query.page : 0;
     const limit = query?.limit && query.limit > 0 && query.limit <= 50 ? query.limit : 20;
     const skip = page * limit;
@@ -280,7 +280,7 @@ export class FeedService {
               comments: true,
             },
           },
-          likes: userId ? { where: { user_id: userId }, select: { user_id: true } } : false,
+          likes: user_id ? { where: { user_id: user_id }, select: { user_id: true } } : false,
         },
         orderBy: { created_at: 'desc' },
         skip,
@@ -307,7 +307,7 @@ export class FeedService {
       message: 'Success',
       data: {
         hot_topics: formattedHotTopics,
-        items: posts.map((post) => this.formatPost(post, userId)),
+        items: posts.map((post) => this.formatPost(post, user_id)),
         meta: {
           item_count: posts.length,
           total_items: total,

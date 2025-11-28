@@ -475,10 +475,10 @@ export class AuthController {
   @UseGuards(AuthGuard('account-auth'))
   link(@Body() body: LinkProviderDto, @Req() req: any) {
     // Lấy user_id từ JWT token (user đang đăng nhập)
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để link provider vào account
     // Service sẽ: tạo resAssociate record với provider và ref_id
-    return this.authService.linkProvider(userId, body.provider, body.ref_id, body.hash);
+    return this.authService.linkProvider(user_id, body.provider, body.ref_id, body.hash);
   }
 
   /**

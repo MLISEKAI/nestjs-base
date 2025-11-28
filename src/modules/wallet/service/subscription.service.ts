@@ -72,7 +72,7 @@ export class SubscriptionService {
   /**
    * Mua subscription (Monthly Card)
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param dto - PurchaseSubscriptionDto chứa cardId
    * @returns PurchaseSubscriptionResponseDto chứa thông tin subscription đã mua
    *
@@ -91,10 +91,10 @@ export class SubscriptionService {
    * - Subscription có thời hạn (duration), tính từ ngày mua
    */
   async purchaseSubscription(
-    userId: string,
+    user_id: string,
     dto: PurchaseSubscriptionDto,
   ): Promise<PurchaseSubscriptionResponseDto> {
-    this.logger.log(`User ${userId} attempting to purchase monthly card ${dto.cardId}`);
+    this.logger.log(`User ${user_id} attempting to purchase monthly card ${dto.cardId}`);
 
     // Query card từ DB
     const cardData = await this.prisma.resMonthlyCard.findUnique({
@@ -116,13 +116,13 @@ export class SubscriptionService {
 
     // Lấy hoặc tạo Diamond wallet
     let diamondWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: 'diamond' },
+      where: { user_id: user_id, currency: 'diamond' },
     });
 
     if (!diamondWallet) {
       diamondWallet = await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: 'diamond',
           balance: new Prisma.Decimal(0),
         },
@@ -130,13 +130,13 @@ export class SubscriptionService {
     }
 
     const currentBalance = Number(diamondWallet.balance);
-    this.logger.log(`User ${userId} current Diamond balance: ${currentBalance}`);
+    this.logger.log(`User ${user_id} current Diamond balance: ${currentBalance}`);
 
     // Kiểm tra số dư có đủ không
     if (currentBalance < cardPrice) {
       const insufficientAmount = cardPrice - currentBalance;
       this.logger.warn(
-        `Insufficient balance for user ${userId}. Required: $${cardPrice}, Current: $${currentBalance}, Missing: $${insufficientAmount}`,
+        `Insufficient balance for user ${user_id}. Required: $${cardPrice}, Current: $${currentBalance}, Missing: $${insufficientAmount}`,
       );
       throw new BadRequestException(
         `Số dư không đủ để đăng ký thẻ tháng. Cần: $${cardPrice.toFixed(2)} USD, Hiện có: $${currentBalance.toFixed(2)} USD, Thiếu: $${insufficientAmount.toFixed(2)} USD`,
@@ -162,7 +162,7 @@ export class SubscriptionService {
       await tx.resWalletTransaction.create({
         data: {
           wallet_id: diamondWallet.id,
-          user_id: userId,
+          user_id: user_id,
           type: 'subscription',
           amount: new Prisma.Decimal(-cardPrice), // Negative vì trừ tiền
           balance_before: diamondWallet.balance,
@@ -174,9 +174,9 @@ export class SubscriptionService {
 
       // Upsert VIP status
       await tx.resVipStatus.upsert({
-        where: { user_id: userId },
+        where: { user_id: user_id },
         create: {
-          user_id: userId,
+          user_id: user_id,
           is_vip: true,
           expiry: nextRenewal,
         },
@@ -188,7 +188,7 @@ export class SubscriptionService {
     });
 
     this.logger.log(
-      `Subscription purchased successfully for user ${userId}. Subscription ID: ${subscriptionId}, Price: $${cardPrice}, New balance: $${(currentBalance - cardPrice).toFixed(2)}`,
+      `Subscription purchased successfully for user ${user_id}. Subscription ID: ${subscriptionId}, Price: $${cardPrice}, New balance: $${(currentBalance - cardPrice).toFixed(2)}`,
     );
 
     return {
@@ -202,9 +202,9 @@ export class SubscriptionService {
   /**
    * Get subscription details
    */
-  async getSubscriptionDetails(userId: string): Promise<SubscriptionDetailsResponseDto> {
+  async getSubscriptionDetails(user_id: string): Promise<SubscriptionDetailsResponseDto> {
     const vipStatus = await this.prisma.resVipStatus.findUnique({
-      where: { user_id: userId },
+      where: { user_id: user_id },
     });
 
     if (!vipStatus) {
@@ -221,12 +221,12 @@ export class SubscriptionService {
     }
 
     const user = await this.prisma.resUser.findUnique({
-      where: { id: userId },
+      where: { id: user_id },
       select: { nickname: true },
     });
 
     return {
-      subscriptionId: `SUB-${userId}`,
+      subscriptionId: `SUB-${user_id}`,
       status: vipStatus.expiry && vipStatus.expiry > new Date() ? 'active' : 'expired',
       nextRenewal: vipStatus.expiry ? vipStatus.expiry.toISOString().split('T')[0] : '',
       username: user?.nickname || '',

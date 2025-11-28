@@ -34,11 +34,11 @@ export class TaskService {
 
   /**
    * Lấy danh sách tasks của user với pagination
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param query - Query parameters cho pagination (page, limit)
    * @returns Paginated list of tasks
    */
-  async getTaskSummary(userId: string, query?: BaseQueryDto) {
+  async getTaskSummary(user_id: string, query?: BaseQueryDto) {
     // Parse pagination parameters với default values
     const take = query?.limit && query.limit > 0 ? query.limit : 20; // Default 20 items per page
     const page = query?.page && query.page > 0 ? query.page : 1; // Default page 1
@@ -48,13 +48,13 @@ export class TaskService {
     const [tasks, total] = await Promise.all([
       // Lấy danh sách tasks của user
       this.prisma.resTask.findMany({
-        where: { user_id: userId }, // Chỉ lấy tasks của user này
+        where: { user_id: user_id }, // Chỉ lấy tasks của user này
         take, // Limit số lượng
         skip, // Offset cho pagination
         orderBy: { id: 'desc' }, // Sắp xếp theo ID giảm dần (task mới nhất trước)
       }),
       // Đếm tổng số tasks của user
-      this.prisma.resTask.count({ where: { user_id: userId } }),
+      this.prisma.resTask.count({ where: { user_id: user_id } }),
     ]);
 
     // Build response với pagination metadata
@@ -63,15 +63,15 @@ export class TaskService {
 
   /**
    * Tạo task mới cho user
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param dto - DTO chứa thông tin task (title, is_done)
    * @returns Task đã tạo
    */
-  async createTask(userId: string, dto: CreateTaskDto) {
+  async createTask(user_id: string, dto: CreateTaskDto) {
     // Tạo task mới trong database
     return this.prisma.resTask.create({
       data: {
-        user_id: userId, // ID của user sở hữu task
+        user_id: user_id, // ID của user sở hữu task
         title: dto.title, // Tiêu đề task
         is_done: dto.is_done ?? false, // Trạng thái hoàn thành (default: false)
       },
@@ -80,19 +80,19 @@ export class TaskService {
 
   /**
    * Cập nhật trạng thái task
-   * @param userId - ID của user (để verify ownership)
+   * @param user_id - ID của user (để verify ownership)
    * @param taskId - ID của task cần update
    * @param dto - DTO chứa trạng thái mới (is_done)
    * @returns Task đã update
    * @throws NotFoundException nếu task không tồn tại hoặc không thuộc về user
    */
-  async updateTask(userId: string, taskId: string, dto: UpdateTaskDto) {
+  async updateTask(user_id: string, taskId: string, dto: UpdateTaskDto) {
     try {
       // Nếu không có is_done trong dto, giữ nguyên giá trị hiện tại
       if (dto.is_done === undefined) {
         // Query task hiện tại để lấy giá trị is_done
         const existing = await this.prisma.resTask.findFirst({
-          where: { id: taskId, user_id: userId }, // Verify ownership
+          where: { id: taskId, user_id: user_id }, // Verify ownership
           select: { is_done: true },
         });
         
@@ -108,7 +108,7 @@ export class TaskService {
 
       // Update trạng thái is_done
       return await this.prisma.resTask.update({
-        where: { id: taskId, user_id: userId }, // Verify ownership
+        where: { id: taskId, user_id: user_id }, // Verify ownership
         data: { is_done: dto.is_done }, // Update trạng thái mới
       });
     } catch (error) {
@@ -122,16 +122,16 @@ export class TaskService {
 
   /**
    * Xóa task
-   * @param userId - ID của user (để verify ownership)
+   * @param user_id - ID của user (để verify ownership)
    * @param taskId - ID của task cần xóa
    * @returns Message xác nhận đã xóa
    * @throws NotFoundException nếu task không tồn tại hoặc không thuộc về user
    */
-  async deleteTask(userId: string, taskId: string) {
+  async deleteTask(user_id: string, taskId: string) {
     try {
       // Xóa task khỏi database
       await this.prisma.resTask.delete({
-        where: { id: taskId, user_id: userId }, // Verify ownership
+        where: { id: taskId, user_id: user_id }, // Verify ownership
       });
       
       // Trả về message xác nhận

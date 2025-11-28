@@ -53,8 +53,8 @@ export class VipAdminController {
       },
     },
   })
-  getVipStatus(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.vip.getVipStatus(userId, query);
+  getVipStatus(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.vip.getVipStatus(user_id, query);
   }
 
   @Post()
@@ -64,8 +64,8 @@ export class VipAdminController {
   @ApiCreatedResponse({
     description: 'VIP status được tạo theo schema Prisma',
   })
-  createVipStatus(@Param('user_id') userId: string, @Body() dto: CreateVipStatusDto) {
-    return this.vip.createVipStatus(userId, dto);
+  createVipStatus(@Param('user_id') user_id: string, @Body() dto: CreateVipStatusDto) {
+    return this.vip.createVipStatus(user_id, dto);
   }
 
   @Patch()
@@ -75,14 +75,14 @@ export class VipAdminController {
   @ApiOkResponse({
     description: 'VIP status sau cập nhật theo schema Prisma',
   })
-  updateVipStatus(@Param('user_id') userId: string, @Body() dto: UpdateVipStatusDto) {
-    return this.vip.updateVipStatus(userId, dto);
+  updateVipStatus(@Param('user_id') user_id: string, @Body() dto: UpdateVipStatusDto) {
+    return this.vip.updateVipStatus(user_id, dto);
   }
 
   @Delete()
   @ApiOperation({ summary: '[ADMIN] Xóa trạng thái VIP của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
-  deleteVipStatus(@Param('user_id') userId: string) {
-    return this.vip.deleteVipStatus(userId);
+  deleteVipStatus(@Param('user_id') user_id: string) {
+    return this.vip.deleteVipStatus(user_id);
   }
 }

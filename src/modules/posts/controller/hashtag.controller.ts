@@ -96,8 +96,8 @@ export class HashtagController {
   })
   @ApiOkResponse({ description: 'Chi tiết hashtag' })
   getHashtag(@Param('hashtag_id') hashtagId: string, @Req() req?: AuthenticatedRequest) {
-    const userId = req?.user?.id;
-    return this.hashtagService.getHashtag(hashtagId, userId);
+    const user_id = req?.user?.id;
+    return this.hashtagService.getHashtag(hashtagId, user_id);
   }
 
   @Get(':hashtag_id/posts')
@@ -123,8 +123,8 @@ export class HashtagController {
     @Query() query?: BaseQueryDto,
     @Req() req?: AuthenticatedRequest,
   ) {
-    const userId = req?.user?.id;
-    return this.hashtagService.getHashtagPosts(hashtagId, sort || 'latest', query, userId);
+    const user_id = req?.user?.id;
+    return this.hashtagService.getHashtagPosts(hashtagId, sort || 'latest', query, user_id);
   }
 
   @Post()

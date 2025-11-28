@@ -156,14 +156,14 @@ export class AuthService {
     // Tạo verification codes cho email và phone (nếu có)
     const emailVerification = dto.email
       ? await this.verificationService.createEmailCode({
-          userId: user.id,
+          user_id: user.id,
           target: dto.email,
           context: 'register',
         })
       : undefined;
     const phoneVerification = dto.phone_number
       ? await this.verificationService.createPhoneCode({
-          userId: user.id,
+          user_id: user.id,
           target: dto.phone_number,
           context: 'register',
         })
@@ -222,7 +222,7 @@ export class AuthService {
       this.logger.warn(`Login failed: invalid password`, {
         ref,
         ipAddress,
-        userId: associate.user.id,
+        user_id: associate.user.id,
       });
       throw new UnauthorizedException('Invalid password');
     }
@@ -259,7 +259,7 @@ export class AuthService {
    */
   async requestPhoneLoginOtp(phone: string) {
     // Tạo verification code với context 'login'
-    // Không cần userId vì có thể là user mới
+    // Không cần user_id vì có thể là user mới
     const verification = await this.verificationService.createPhoneCode({
       target: phone.trim(),
       context: 'login',
@@ -545,11 +545,11 @@ export class AuthService {
         throw new UnauthorizedException('Invalid or expired Facebook access token');
       }
 
-      const userId = verifyResponse.data.data.user_id;
+      const user_id = verifyResponse.data.data.user_id;
 
       // Lấy thông tin user
       const userResponse = await firstValueFrom(
-        this.httpService.get(`https://graph.facebook.com/${userId}`, {
+        this.httpService.get(`https://graph.facebook.com/${user_id}`, {
           params: {
             fields: 'id,name,email',
             access_token: accessToken,
@@ -575,7 +575,7 @@ export class AuthService {
   /**
    * Link provider (Google, Facebook, phone, password) vào account hiện có
    *
-   * @param userId - User ID của user đang đăng nhập
+   * @param user_id - User ID của user đang đăng nhập
    * @param provider - Provider type ('google', 'facebook', 'phone', 'password')
    * @param refId - Provider ID hoặc email/phone (tùy provider)
    * @param hash - Password hash (chỉ cần cho provider 'password')
@@ -588,7 +588,7 @@ export class AuthService {
    * - Cho phép link nhiều providers vào cùng 1 account
    */
   async linkProvider(
-    userId: string,
+    user_id: string,
     provider: 'google' | 'facebook' | 'phone' | 'password',
     refId: string,
     hash?: string,
@@ -598,7 +598,7 @@ export class AuthService {
     if (exists) throw new BadRequestException('Provider already linked to another account');
 
     // Build data object
-    const data: any = { user_id: userId, provider, ref_id: refId };
+    const data: any = { user_id: user_id, provider, ref_id: refId };
 
     // Nếu provider là 'password', cần hash và email
     if (provider === 'password') {
@@ -639,7 +639,7 @@ export class AuthService {
 
     // Tạo verification code với context 'resend'
     const verification = await this.verificationService.createEmailCode({
-      userId: associate.user_id,
+      user_id: associate.user_id,
       target: normalized,
       context: 'resend',
     });
@@ -701,7 +701,7 @@ export class AuthService {
     }
     // Tạo verification code với context 'resend'
     const verification = await this.verificationService.createPhoneCode({
-      userId: associate.user_id,
+      user_id: associate.user_id,
       target: phone.trim(),
       context: 'resend',
     });
@@ -775,7 +775,7 @@ export class AuthService {
 
     // Tạo verification code với context 'password-reset'
     const verification = await this.verificationService.createEmailCode({
-      userId: associate.user_id,
+      user_id: associate.user_id,
       target: normalized,
       context: 'password-reset',
     });
@@ -852,15 +852,15 @@ export class AuthService {
   /**
    * Tạo 2FA secret và QR code
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @returns Secret và QR code URL để user scan vào authenticator app
    *
    * Lưu ý:
    * - User phải đã đăng nhập
    * - Sau khi setup, user cần gọi enableTwoFactor() để kích hoạt
    */
-  async generateTwoFactorSecret(userId: string) {
-    const user = await this.prisma.resUser.findUnique({ where: { id: userId } });
+  async generateTwoFactorSecret(user_id: string) {
+    const user = await this.prisma.resUser.findUnique({ where: { id: user_id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -871,7 +871,7 @@ export class AuthService {
   /**
    * Kích hoạt 2FA sau khi xác thực mã
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @param code - 2FA code từ authenticator app
    * @returns { enabled: true, backupCodes: string[] }
    *
@@ -880,8 +880,8 @@ export class AuthService {
    * - Verify 2FA code từ authenticator app
    * - Trả về backup codes để user lưu lại (dùng khi mất device)
    */
-  async enableTwoFactor(userId: string, code: string) {
-    const result = await this.twoFactorService.enableTwoFactor(userId, code);
+  async enableTwoFactor(user_id: string, code: string) {
+    const result = await this.twoFactorService.enableTwoFactor(user_id, code);
     return {
       enabled: true,
       backupCodes: result.backupCodes, // Backup codes để user lưu lại
@@ -891,7 +891,7 @@ export class AuthService {
   /**
    * Vô hiệu hóa 2FA
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @param code - 2FA code từ authenticator app (hoặc backup code)
    * @returns { enabled: false }
    *
@@ -900,8 +900,8 @@ export class AuthService {
    * - Verify 2FA code để disable (bảo mật)
    * - Sau khi disable, user sẽ không cần nhập 2FA code khi đăng nhập
    */
-  async disableTwoFactor(userId: string, code: string) {
-    await this.twoFactorService.disableTwoFactor(userId, code);
+  async disableTwoFactor(user_id: string, code: string) {
+    await this.twoFactorService.disableTwoFactor(user_id, code);
     return { enabled: false };
   }
 
@@ -936,7 +936,7 @@ export class AuthService {
   /**
    * Đăng xuất và hủy token
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @param refreshToken - Refresh token (optional) để revoke
    * @param accessToken - Access token để blacklist
    * @returns { success: true }
@@ -950,14 +950,14 @@ export class AuthService {
    * - Refresh token sẽ được revoke (nếu có)
    * - Sau khi logout, cả 2 tokens sẽ không thể sử dụng được
    */
-  async logout(userId: string, refreshToken?: string, accessToken?: string) {
+  async logout(user_id: string, refreshToken?: string, accessToken?: string) {
     // Blacklist access token hiện tại (luôn luôn làm)
-    await this.tokenService.blacklistAccessToken(accessToken, userId, 'logout');
+    await this.tokenService.blacklistAccessToken(accessToken, user_id, 'logout');
 
     // Nếu có refresh token, revoke nó để ngăn tạo access token mới
     if (refreshToken) {
       try {
-        await this.tokenService.revokeRefreshToken(refreshToken, userId);
+        await this.tokenService.revokeRefreshToken(refreshToken, user_id);
       } catch (error) {
         // Nếu refresh token không hợp lệ hoặc đã revoked, không cần throw error
         // Vì mục đích chính là blacklist access token, đã hoàn thành
@@ -1028,7 +1028,7 @@ export class AuthService {
    * @returns JWT tokens
    *
    * Quy trình:
-   * 1. Verify temp_token để lấy userId
+   * 1. Verify temp_token để lấy user_id
    * 2. Verify 2FA code
    * 3. Tạo JWT tokens và trả về
    *
@@ -1037,13 +1037,13 @@ export class AuthService {
    * - temp_token được tạo từ login() khi user có 2FA enabled
    */
   async verifyLoginTwoFactor(dto: VerifyTwoFactorLoginDto, ipAddress?: string) {
-    // Verify temp_token để lấy userId
-    const { userId } = await this.tokenService.verifyTwoFactorToken(dto.temp_token);
+    // Verify temp_token để lấy user_id
+    const { user_id } = await this.tokenService.verifyTwoFactorToken(dto.temp_token);
     // Verify 2FA code
-    await this.twoFactorService.verifyLoginCode(userId, dto.code);
+    await this.twoFactorService.verifyLoginCode(user_id, dto.code);
 
     // Lấy user và tạo JWT tokens
-    const user = await this.prisma.resUser.findUnique({ where: { id: userId } });
+    const user = await this.prisma.resUser.findUnique({ where: { id: user_id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -1110,7 +1110,7 @@ export class AuthService {
    *
    * Lưu ý:
    * - Nếu user object đã được cung cấp (từ JWT strategy), sử dụng trực tiếp để tránh duplicate query
-   * - Nếu chỉ có userId, fetch full user với associates và albums
+   * - Nếu chỉ có user_id, fetch full user với associates và albums
    * - Optimize để tránh query database không cần thiết
    */
   async getCurrentUser(userIdOrUser: string | any) {
@@ -1159,10 +1159,10 @@ export class AuthService {
       };
     }
 
-    // If only userId is provided, fetch full user with associates and albums
-    const userId = userIdOrUser as string;
+    // If only user_id is provided, fetch full user with associates and albums
+    const user_id = userIdOrUser as string;
     const user = await this.prisma.resUser.findUnique({
-      where: { id: userId },
+      where: { id: user_id },
       include: {
         associates: {
           select: {

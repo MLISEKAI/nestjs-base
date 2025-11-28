@@ -18,7 +18,7 @@ export class SearchService {
    * Universal search - Tìm kiếm trong tất cả loại nội dung
    * Cached for 5 minutes
    */
-  async search(query: SearchQueryDto, userId?: string) {
+  async search(query: SearchQueryDto, user_id?: string) {
     const { q, type = SearchType.ALL, page = 1, limit = 20, from_date, to_date } = query;
     const take = Number(limit) > 0 ? Number(limit) : 20;
     const currentPage = Number(page) > 0 ? Number(page) : 1;
@@ -35,15 +35,15 @@ export class SearchService {
 
         // Nếu type cụ thể, chỉ search loại đó
         if (type === SearchType.USERS) {
-          return this.searchUsers(q, dateFilter, skip, take, currentPage, userId);
+          return this.searchUsers(q, dateFilter, skip, take, currentPage, user_id);
         }
 
         if (type === SearchType.POSTS) {
-          return this.searchPosts(q, dateFilter, skip, take, currentPage, userId);
+          return this.searchPosts(q, dateFilter, skip, take, currentPage, user_id);
         }
 
         if (type === SearchType.COMMENTS) {
-          return this.searchComments(q, dateFilter, skip, take, currentPage, userId);
+          return this.searchComments(q, dateFilter, skip, take, currentPage, user_id);
         }
 
         // type === ALL hoặc undefined: Search tất cả loại nội dung
@@ -52,13 +52,13 @@ export class SearchService {
 
         // Search all types in parallel, with error handling for comments
         const [users, posts, comments] = await Promise.all([
-          this.searchUsers(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
+          this.searchUsers(q, dateFilter, 0, itemsPerType, 1, user_id).catch(() =>
             buildPaginatedResponse([], 0, 1, itemsPerType),
           ),
-          this.searchPosts(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
+          this.searchPosts(q, dateFilter, 0, itemsPerType, 1, user_id).catch(() =>
             buildPaginatedResponse([], 0, 1, itemsPerType),
           ),
-          this.searchComments(q, dateFilter, 0, itemsPerType, 1, userId).catch(() =>
+          this.searchComments(q, dateFilter, 0, itemsPerType, 1, user_id).catch(() =>
             buildPaginatedResponse([], 0, 1, itemsPerType),
           ),
         ]);
@@ -90,7 +90,7 @@ export class SearchService {
     skip: number,
     take: number,
     page: number,
-    userId?: string,
+    user_id?: string,
   ) {
     // Sử dụng Prisma contains cho basic search
     // TODO: Upgrade lên PostgreSQL full-text search hoặc Elasticsearch
@@ -131,7 +131,7 @@ export class SearchService {
     skip: number,
     take: number,
     page: number,
-    userId?: string,
+    user_id?: string,
   ) {
     const where = {
       content: { contains: q, mode: 'insensitive' as const },
@@ -176,7 +176,7 @@ export class SearchService {
     skip: number,
     take: number,
     page: number,
-    userId?: string,
+    user_id?: string,
   ) {
     try {
       const where = {

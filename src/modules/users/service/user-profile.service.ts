@@ -176,15 +176,15 @@ export class UserProfileService {
     );
   }
 
-  async uploadAvatar(userId: string, fileUrl: string) {
+  async uploadAvatar(user_id: string, fileUrl: string) {
     const user = await this.prisma.resUser.update({
-      where: { id: userId },
+      where: { id: user_id },
       data: { avatar: fileUrl },
     });
 
     // Invalidate cache khi upload avatar
-    await this.cacheService.del(`user:${userId}:detail`);
-    await this.cacheService.delPattern(`profile:${userId}:*`);
+    await this.cacheService.del(`user:${user_id}:detail`);
+    await this.cacheService.delPattern(`profile:${user_id}:*`);
     await this.cacheService.delPattern(`users:search:*`); // Invalidate search results
 
     return { message: 'Avatar updated', avatar: user.avatar };

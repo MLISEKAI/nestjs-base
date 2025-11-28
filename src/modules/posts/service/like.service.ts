@@ -186,12 +186,12 @@ export class LikeService {
 
   /**
    * Like một bài viết
-   * @param userId - ID của user đang like
+   * @param user_id - ID của user đang like
    * @param postId - ID của bài viết được like
    * @param dto - DTO chứa reaction type (like, love, haha, etc.)
    * @returns Thông tin like đã tạo/cập nhật
    */
-  async likePost(userId: string, postId: string, dto: LikePostDto) {
+  async likePost(user_id: string, postId: string, dto: LikePostDto) {
     // Kiểm tra bài viết có tồn tại không
     // findUnique tìm 1 record duy nhất theo primary key hoặc unique field
     const post = await this.prisma.resPost.findUnique({
@@ -209,7 +209,7 @@ export class LikeService {
       where: {
         post_id_user_id: {
           post_id: postId, // ID của post
-          user_id: userId, // ID của user
+          user_id: user_id, // ID của user
         },
       },
     });
@@ -256,7 +256,7 @@ export class LikeService {
       like = await this.prisma.resPostLike.create({
         data: {
           post_id: postId,
-          user_id: userId,
+          user_id: user_id,
           reaction: dto.reaction,
         },
         include: {
@@ -277,12 +277,12 @@ export class LikeService {
 
     // Tự động tạo notification cho chủ bài viết (nếu không phải chủ bài viết tự like)
     // Kiểm tra: nếu user like không phải là chủ bài viết thì mới gửi notification
-    if (post.user_id !== userId) {
+    if (post.user_id !== user_id) {
       try {
         // Tạo notification cho chủ bài viết
         await this.notificationService.createNotification({
           user_id: post.user_id, // Chủ bài viết nhận notification
-          sender_id: userId, // Người like (user đang thực hiện hành động)
+          sender_id: user_id, // Người like (user đang thực hiện hành động)
           type: NotificationType.LIKE, // Loại notification là LIKE
           title: 'New Like', // Tiêu đề notification
           content: 'liked your post', // Content đơn giản, frontend sẽ ghép với sender.nickname
@@ -300,13 +300,13 @@ export class LikeService {
     return { ...like, liked: true };
   }
 
-  async unlikePost(userId: string, postId: string) {
+  async unlikePost(user_id: string, postId: string) {
     try {
       await this.prisma.resPostLike.delete({
         where: {
           post_id_user_id: {
             post_id: postId,
-            user_id: userId,
+            user_id: user_id,
           },
         },
       });
@@ -324,12 +324,12 @@ export class LikeService {
     }
   }
 
-  async checkUserLiked(userId: string, postId: string) {
+  async checkUserLiked(user_id: string, postId: string) {
     const like = await this.prisma.resPostLike.findUnique({
       where: {
         post_id_user_id: {
           post_id: postId,
-          user_id: userId,
+          user_id: user_id,
         },
       },
     });

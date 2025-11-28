@@ -61,8 +61,8 @@ export class ClanController {
     isArray: true,
   })
   getClans(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
-    return this.clans.getClans(userId, query);
+    const user_id = req.user.id;
+    return this.clans.getClans(user_id, query);
   }
 
   @Post()
@@ -73,8 +73,8 @@ export class ClanController {
     type: ClanDetailDto,
   })
   createClan(@Req() req: AuthenticatedRequest, @Body() dto: CreateClanDto) {
-    const userId = req.user.id;
-    return this.clans.createClan(userId, dto);
+    const user_id = req.user.id;
+    return this.clans.createClan(user_id, dto);
   }
 
   @Post(':clan_id/join')
@@ -89,8 +89,8 @@ export class ClanController {
     type: UserClanDto,
   })
   joinClan(@Req() req: AuthenticatedRequest, @Param('clan_id') clanId: string) {
-    const userId = req.user.id;
-    return this.clans.joinClan(userId, clanId);
+    const user_id = req.user.id;
+    return this.clans.joinClan(user_id, clanId);
   }
 
   @Delete(':clan_id/leave')
@@ -105,8 +105,8 @@ export class ClanController {
     schema: { type: 'object', properties: { message: { example: 'Left clan' } } },
   })
   leaveClan(@Req() req: AuthenticatedRequest, @Param('clan_id') clanId: string) {
-    const userId = req.user.id;
-    return this.clans.leaveClan(userId, clanId);
+    const user_id = req.user.id;
+    return this.clans.leaveClan(user_id, clanId);
   }
 
   @Patch(':clan_id/role')
@@ -139,8 +139,8 @@ export class ClanController {
     @Param('clan_id') clanId: string,
     @Body() dto: UpdateClanRankDto,
   ) {
-    const userId = req.user.id;
-    return this.clans.updateClanRole(userId, clanId, dto);
+    const user_id = req.user.id;
+    return this.clans.updateClanRole(user_id, clanId, dto);
   }
 
   @Get('info')
@@ -150,7 +150,7 @@ export class ClanController {
     type: UserClanDto,
   })
   getClanInfo(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.clans.getClanInfo(userId);
+    const user_id = req.user.id;
+    return this.clans.getClanInfo(user_id);
   }
 }

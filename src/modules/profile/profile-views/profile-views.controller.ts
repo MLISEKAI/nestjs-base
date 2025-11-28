@@ -107,8 +107,8 @@ export class ProfileViewsControllerDb {
     },
   })
   getProfileViews(@Req() req: AuthenticatedRequest, @Query('full') full?: string) {
-    const userId = req.user.id;
-    return this.profileViewsService.getProfileViews(userId, full === 'true');
+    const user_id = req.user.id;
+    return this.profileViewsService.getProfileViews(user_id, full === 'true');
   }
 
   // GET: Lấy thông tin các tính năng user hiện tại đã kích hoạt
@@ -132,12 +132,12 @@ export class ProfileViewsControllerDb {
     },
   })
   getUserFeatures(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
+    const user_id = req.user.id;
     const features = {
       profile_view_full: false,
       boost_post: false,
       invisible_mode: false,
     };
-    return { user_id: userId, features };
+    return { user_id: user_id, features };
   }
 }

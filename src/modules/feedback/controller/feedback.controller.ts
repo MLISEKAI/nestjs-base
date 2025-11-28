@@ -37,8 +37,8 @@ export class FeedbackController {
     type: FeedbackResponseDto,
     isArray: true,
   })
-  getFeedback(@Param('user_id') userId: string) {
-    return this.feedback.getFeedback(userId);
+  getFeedback(@Param('user_id') user_id: string) {
+    return this.feedback.getFeedback(user_id);
   }
 
   @Patch(':feedback_id')

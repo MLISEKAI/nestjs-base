@@ -29,22 +29,22 @@ export class ReferralAdminController {
   @Get()
   @ApiOperation({ summary: '[ADMIN] Danh sách referral của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
-  getReferrals(@Param('user_id') userId: string) {
-    return this.referral.getReferrals(userId);
+  getReferrals(@Param('user_id') user_id: string) {
+    return this.referral.getReferrals(user_id);
   }
 
   @Post()
   @ApiOperation({ summary: '[ADMIN] Thêm referral cho user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
-  addReferral(@Param('user_id') userId: string, @Body('referred_id') referredId: string) {
-    return this.referral.addReferral(userId, referredId);
+  addReferral(@Param('user_id') user_id: string, @Body('referred_id') referredId: string) {
+    return this.referral.addReferral(user_id, referredId);
   }
 
   @Delete(':referred_id')
   @ApiOperation({ summary: '[ADMIN] Xóa referral của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiParam({ name: 'referred_id', description: 'ID của referred user' })
-  removeReferral(@Param('user_id') userId: string, @Param('referred_id') referredId: string) {
-    return this.referral.removeReferral(userId, referredId);
+  removeReferral(@Param('user_id') user_id: string, @Param('referred_id') referredId: string) {
+    return this.referral.removeReferral(user_id, referredId);
   }
 }

@@ -110,9 +110,9 @@ export class NotificationController {
   getNotifications(@Req() req: AuthenticatedRequest, @Query() query?: NotificationQueryDto) {
     // Lấy user_id từ JWT token (user đã được authenticate bởi AuthGuard)
     // req.user được set bởi JWT strategy sau khi verify token thành công
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để lấy notifications của user này với filters (nếu có)
-    return this.notificationService.getUserNotifications(userId, query);
+    return this.notificationService.getUserNotifications(user_id, query);
   }
 
   /**

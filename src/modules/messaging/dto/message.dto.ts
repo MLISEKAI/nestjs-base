@@ -21,8 +21,8 @@ import type {
  * - text: chỉ cần content
  * - image/video/audio: cần mediaUrl, có thể có mediaThumbnail, mediaSize, mediaDuration
  * - audio: có thể có waveform (dữ liệu sóng âm để hiển thị)
- * - gift: cần giftId hoặc giftItemId
- * - business_card: cần userId và có thể có cardData
+ * - gift: cần gift_id hoặc giftItem_id
+ * - business_card: cần user_id và có thể có cardData
  */
 export class SendMessageDto {
   @ApiProperty({ enum: MessageType, description: 'Loại tin nhắn' })
@@ -62,7 +62,7 @@ export class SendMessageDto {
   @ApiPropertyOptional({ example: 'gift-123', description: 'Gift ID' })
   @IsString()
   @ValidateIf((o) => o.type === MessageType.GIFT)
-  giftId?: string;
+  gift_id?: string;
 
   @ApiPropertyOptional({ example: 101, description: 'Gift item ID' })
   @IsNumber()

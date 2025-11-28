@@ -49,16 +49,16 @@ export class UsersAdminController {
   @ApiOperation({ summary: '[ADMIN] Lấy thông tin chi tiết user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Thông tin user' })
-  async getUser(@Param('user_id') userId: string) {
-    return this.profileService.findOne(userId);
+  async getUser(@Param('user_id') user_id: string) {
+    return this.profileService.findOne(user_id);
   }
 
   @Put(':user_id')
   @ApiOperation({ summary: '[ADMIN] Cập nhật thông tin user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiBody({ type: UpdateUserDto })
-  async updateUser(@Param('user_id') userId: string, @Body() dto: UpdateUserDto) {
-    return this.profileService.updateProfile(userId, dto);
+  async updateUser(@Param('user_id') user_id: string, @Body() dto: UpdateUserDto) {
+    return this.profileService.updateProfile(user_id, dto);
   }
 
   @Delete(':user_id')
@@ -73,7 +73,7 @@ export class UsersAdminController {
       },
     },
   })
-  async deleteUser(@Param('user_id') userId: string) {
+  async deleteUser(@Param('user_id') user_id: string) {
     // TODO: Implement deleteUser method
     return { message: 'User deleted successfully' };
   }
@@ -82,7 +82,7 @@ export class UsersAdminController {
   @ApiOperation({ summary: '[ADMIN] Lấy thông tin cấp độ và XP của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ type: UserBalanceDto })
-  async getBalance(@Param('user_id') userId: string) {
-    return this.levelService.getUserBalance(userId);
+  async getBalance(@Param('user_id') user_id: string) {
+    return this.levelService.getUserBalance(user_id);
   }
 }

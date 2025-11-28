@@ -63,7 +63,7 @@ export class LatestFeedController {
   @ApiParam({ name: 'posts_id', description: 'Posts ID' })
   @ApiOkResponse({ description: 'Chi tiết post' })
   getPost(@Param('posts_id') postsId: string, @Req() req?: AuthenticatedRequest) {
-    const userId = req?.user?.id;
-    return this.latestFeedService.getPost(postsId, userId);
+    const user_id = req?.user?.id;
+    return this.latestFeedService.getPost(postsId, user_id);
   }
 }

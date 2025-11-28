@@ -3,7 +3,7 @@
  * Dùng trong tin nhắn loại business_card để chia sẻ thông tin người dùng
  */
 export interface BusinessCardData {
-  userId: string;
+  user_id: string;
   nickname?: string;
   avatar?: string;
   phone?: string;

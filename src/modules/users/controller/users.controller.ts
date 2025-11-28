@@ -143,8 +143,8 @@ export class UserController {
   @ApiOperation({ summary: 'Cập nhật thông tin cá nhân của user hiện tại' })
   @ApiBody({ type: UpdateUserDto })
   async updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateUserDto) {
-    const userId = req.user.id;
-    return this.profileService.updateProfile(userId, dto);
+    const user_id = req.user.id;
+    return this.profileService.updateProfile(user_id, dto);
   }
 
   @Post('me/avatar')
@@ -153,8 +153,8 @@ export class UserController {
   @ApiOperation({ summary: 'Upload avatar cho user hiện tại' })
   @ApiBody({ type: UploadAvatarDto })
   async uploadAvatar(@Req() req: AuthenticatedRequest, @Body() dto: UploadAvatarDto) {
-    const userId = req.user.id;
-    return this.profileService.uploadAvatar(userId, dto.fileUrl);
+    const user_id = req.user.id;
+    return this.profileService.uploadAvatar(user_id, dto.fileUrl);
   }
 
   @Get('me/balance')
@@ -163,7 +163,7 @@ export class UserController {
   @ApiOperation({ summary: 'Lấy thông tin cấp độ và XP của user hiện tại' })
   @ApiOkResponse({ type: UserBalanceDto })
   async getBalance(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.levelService.getUserBalance(userId);
+    const user_id = req.user.id;
+    return this.levelService.getUserBalance(user_id);
   }
 }

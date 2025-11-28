@@ -70,12 +70,12 @@ export class CommunityFeedService {
     };
   }
 
-  async getCommunityFeed(userId: string, query?: BaseQueryDto) {
+  async getCommunityFeed(user_id: string, query?: BaseQueryDto) {
     const take = Math.min(query?.limit && query.limit > 0 ? query.limit : 20, 50); // Max 50
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const cacheKey = `community:feed:${userId}:page:${page}:limit:${take}`;
+    const cacheKey = `community:feed:${user_id}:page:${page}:limit:${take}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -127,11 +127,11 @@ export class CommunityFeedService {
         // Check if user liked each post
         const postIds = posts.map((p) => p.id);
         let userLikes: string[] = [];
-        if (userId && postIds.length > 0) {
+        if (user_id && postIds.length > 0) {
           const likes = await this.prisma.resPostLike.findMany({
             where: {
               post_id: { in: postIds },
-              user_id: userId,
+              user_id: user_id,
             },
             select: { post_id: true },
           });
@@ -172,7 +172,7 @@ export class CommunityFeedService {
   async getPosts(
     categoryId?: string,
     query?: BaseQueryDto & { nocache?: string },
-    userId?: string,
+    user_id?: string,
   ) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
@@ -245,11 +245,11 @@ export class CommunityFeedService {
         // Check if user liked each post
         const postIds = posts.map((p) => p.id);
         let userLikes: string[] = [];
-        if (userId && postIds.length > 0) {
+        if (user_id && postIds.length > 0) {
           const likes = await this.prisma.resPostLike.findMany({
             where: {
               post_id: { in: postIds },
-              user_id: userId,
+              user_id: user_id,
             },
             select: { post_id: true },
           });
@@ -287,7 +287,7 @@ export class CommunityFeedService {
     );
   }
 
-  async getPost(id: string, userId?: string) {
+  async getPost(id: string, user_id?: string) {
     const post = await this.prisma.resPost.findUnique({
       where: { id },
       include: {
@@ -339,12 +339,12 @@ export class CommunityFeedService {
 
     // Check if user liked
     let isLiked = false;
-    if (userId) {
+    if (user_id) {
       const like = await this.prisma.resPostLike.findUnique({
         where: {
           post_id_user_id: {
             post_id: id,
-            user_id: userId,
+            user_id: user_id,
           },
         },
       });

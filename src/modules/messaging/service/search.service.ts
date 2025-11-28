@@ -10,7 +10,7 @@ import { SearchType } from 'src/common/enums/search';
 import { MessageType } from 'src/common/enums';
 
 type SuggestionItem = {
-  userId: string;
+  user_id: string;
   nickname: string;
   avatar: string | null;
   preview: string | null;
@@ -29,13 +29,13 @@ export class MessagingSearchService {
   /**
    * Tìm kiếm người dùng để bắt đầu cuộc trò chuyện + gợi ý nhanh
    */
-  async searchPeople(userId: string, query: SearchMessagesDto) {
+  async searchPeople(user_id: string, query: SearchMessagesDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const keyword = query?.search?.trim();
     const suggestionLimit = query?.suggestions && query.suggestions > 0 ? query.suggestions : 8;
 
-    const suggestions = await this.buildSuggestions(userId, suggestionLimit);
+    const suggestions = await this.buildSuggestions(user_id, suggestionLimit);
     let results: IPaginatedResponse<any> = buildPaginatedResponse([], 0, page, take);
 
     if (keyword) {
@@ -45,7 +45,7 @@ export class MessagingSearchService {
         page,
         limit: take,
       };
-      const searchResponse = await this.discoverySearchService.search(payload, userId);
+      const searchResponse = await this.discoverySearchService.search(payload, user_id);
       results = searchResponse as IPaginatedResponse<any>;
     }
 
@@ -55,9 +55,9 @@ export class MessagingSearchService {
     };
   }
 
-  async getSuggestions(userId: string, type?: 'message' | 'group', limit = 8) {
+  async getSuggestions(user_id: string, type?: 'message' | 'group', limit = 8) {
     if (type === 'message' || !type) {
-      const users = await this.buildSuggestions(userId, limit);
+      const users = await this.buildSuggestions(user_id, limit);
       return {
         users,
       };
@@ -94,7 +94,7 @@ export class MessagingSearchService {
     }
   }
 
-  private async buildSuggestions(userId: string, limit: number): Promise<SuggestionItem[]> {
+  private async buildSuggestions(user_id: string, limit: number): Promise<SuggestionItem[]> {
     if (limit <= 0) {
       return [];
     }
@@ -103,14 +103,14 @@ export class MessagingSearchService {
       where: {
         deleted_at: null,
         participants: {
-          some: { user_id: userId, left_at: null },
+          some: { user_id: user_id, left_at: null },
         },
       },
       orderBy: { updated_at: 'desc' },
       take: limit * 2, // lấy dư để bỏ trùng
       include: {
         participants: {
-          where: { user_id: { not: userId }, left_at: null },
+          where: { user_id: { not: user_id }, left_at: null },
           include: {
             user: {
               select: {
@@ -153,7 +153,7 @@ export class MessagingSearchService {
         }
 
         suggestionMap.set(user.id, {
-          userId: user.id,
+          user_id: user.id,
           nickname: user.nickname,
           avatar: user.avatar,
           preview: preview ?? user.bio ?? null,
@@ -169,7 +169,7 @@ export class MessagingSearchService {
 
     if (suggestionMap.size < limit) {
       const needed = limit - suggestionMap.size;
-      const recommended = (await this.recommendationService.getRecommendedUsers(userId, {
+      const recommended = (await this.recommendationService.getRecommendedUsers(user_id, {
         limit: needed,
       })) as Array<Record<string, any>>;
 
@@ -178,7 +178,7 @@ export class MessagingSearchService {
           continue;
         }
         suggestionMap.set(user.id, {
-          userId: user.id,
+          user_id: user.id,
           nickname: user.nickname,
           avatar: user.avatar,
           preview: user.bio ?? 'Người dùng được đề xuất',

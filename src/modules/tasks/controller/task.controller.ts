@@ -49,16 +49,16 @@ export class TaskController {
     },
   })
   getTaskSummary(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
-    return this.tasks.getTaskSummary(userId, query);
+    const user_id = req.user.id;
+    return this.tasks.getTaskSummary(user_id, query);
   }
 
   @Post()
   @ApiOperation({ summary: 'Tạo nhiệm vụ cho user hiện tại' })
   @ApiBody({ type: CreateTaskDto })
   createTask(@Req() req: AuthenticatedRequest, @Body() dto: CreateTaskDto) {
-    const userId = req.user.id;
-    return this.tasks.createTask(userId, dto);
+    const user_id = req.user.id;
+    return this.tasks.createTask(user_id, dto);
   }
 
   @Patch(':task_id')
@@ -69,14 +69,14 @@ export class TaskController {
     @Param('task_id') taskId: string,
     @Body() dto: UpdateTaskDto,
   ) {
-    const userId = req.user.id;
-    return this.tasks.updateTask(userId, taskId, dto);
+    const user_id = req.user.id;
+    return this.tasks.updateTask(user_id, taskId, dto);
   }
 
   @Delete(':task_id')
   @ApiOperation({ summary: 'Xóa nhiệm vụ của user hiện tại' })
   deleteTask(@Req() req: AuthenticatedRequest, @Param('task_id') taskId: string) {
-    const userId = req.user.id;
-    return this.tasks.deleteTask(userId, taskId);
+    const user_id = req.user.id;
+    return this.tasks.deleteTask(user_id, taskId);
   }
 }

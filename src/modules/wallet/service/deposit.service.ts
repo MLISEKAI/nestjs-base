@@ -51,7 +51,7 @@ export class DepositService {
   /**
    * Tạo deposit address (generate blockchain wallet address cho VEX deposit)
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param dto - CreateDepositDto chứa network (optional, mặc định: 'Ethereum')
    * @returns CreateDepositResponseDto chứa deposit_address, qr_code, network
    *
@@ -67,12 +67,12 @@ export class DepositService {
    * - QR code được generate tự động từ address
    * - TODO: Implement blockchain service integration
    */
-  async createDeposit(userId: string, dto?: CreateDepositDto): Promise<CreateDepositResponseDto> {
+  async createDeposit(user_id: string, dto?: CreateDepositDto): Promise<CreateDepositResponseDto> {
     const network = dto?.network || 'Ethereum';
 
     // Kiểm tra xem đã có deposit address chưa
     const existing = await this.prisma.resDepositAddress.findUnique({
-      where: { user_id: userId },
+      where: { user_id: user_id },
     });
 
     if (existing) {
@@ -100,7 +100,7 @@ export class DepositService {
   /**
    * Update deposit network (thay đổi blockchain network)
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param dto - UpdateDepositNetworkDto chứa network mới
    * @returns CreateDepositResponseDto chứa deposit_address, qr_code, network
    *
@@ -113,11 +113,11 @@ export class DepositService {
    * - Hỗ trợ nhiều networks: Ethereum, BSC, Polygon, etc.
    */
   async updateDepositNetwork(
-    userId: string,
+    user_id: string,
     dto: UpdateDepositNetworkDto,
   ): Promise<CreateDepositResponseDto> {
     // Tạo hoặc update deposit với network mới
-    return this.createDeposit(userId, { network: dto.network });
+    return this.createDeposit(user_id, { network: dto.network });
   }
 
   private generateQrCode(address: string): string {
@@ -127,7 +127,7 @@ export class DepositService {
   /**
    * Withdraw VEX về PayPal
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param dto - WithdrawVexDto chứa amount và paypalEmail
    * @returns WithdrawVexResponseDto chứa thông tin withdrawal
    *
@@ -145,20 +145,20 @@ export class DepositService {
    * - Daily withdrawal limit: 2000 VEX (có thể config)
    * - Transaction status ban đầu là 'pending', sẽ update thành 'completed' sau khi PayPal payout thành công
    */
-  async withdrawVex(userId: string, dto: WithdrawVexDto): Promise<WithdrawVexResponseDto> {
+  async withdrawVex(user_id: string, dto: WithdrawVexDto): Promise<WithdrawVexResponseDto> {
     this.logger.log(
-      `User ${userId} requesting VEX withdrawal: ${dto.amount} VEX to ${dto.paypalEmail}`,
+      `User ${user_id} requesting VEX withdrawal: ${dto.amount} VEX to ${dto.paypalEmail}`,
     );
 
     // Lấy hoặc tạo VEX wallet
     let vexWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: 'vex' },
+      where: { user_id: user_id, currency: 'vex' },
     });
 
     if (!vexWallet) {
       vexWallet = await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: 'vex',
           balance: new Prisma.Decimal(0),
         },
@@ -168,7 +168,7 @@ export class DepositService {
     const vexBalance = Number(vexWallet.balance);
     if (vexBalance < dto.amount) {
       this.logger.warn(
-        `Insufficient VEX balance for user ${userId}. Required: ${dto.amount}, Current: ${vexBalance}`,
+        `Insufficient VEX balance for user ${user_id}. Required: ${dto.amount}, Current: ${vexBalance}`,
       );
       throw new BadRequestException(
         `Số dư VEX không đủ. Cần: ${dto.amount} VEX, Hiện có: ${vexBalance} VEX`,
@@ -202,7 +202,7 @@ export class DepositService {
         await tx.resWalletTransaction.create({
           data: {
             wallet_id: vexWallet.id,
-            user_id: userId,
+            user_id: user_id,
             type: 'withdraw',
             amount: new Prisma.Decimal(-dto.amount), // Negative vì trừ tiền
             balance_before: vexWallet.balance,
@@ -214,7 +214,7 @@ export class DepositService {
       });
 
       this.logger.log(
-        `VEX withdrawal successful for user ${userId}. Amount: ${dto.amount} VEX ($${amountInUsd} USD) to ${dto.paypalEmail}. Payout ID: ${payoutResult.payoutId}`,
+        `VEX withdrawal successful for user ${user_id}. Amount: ${dto.amount} VEX ($${amountInUsd} USD) to ${dto.paypalEmail}. Payout ID: ${payoutResult.payoutId}`,
       );
 
       return {
@@ -223,13 +223,13 @@ export class DepositService {
         message: `VEX withdrawal processed. $${amountInUsd} USD has been sent to ${dto.paypalEmail}`,
       };
     } catch (error) {
-      this.logger.error(`Failed to process VEX withdrawal for user ${userId}`, error);
+      this.logger.error(`Failed to process VEX withdrawal for user ${user_id}`, error);
 
       // Tạo transaction với status failed
       await this.prisma.resWalletTransaction.create({
         data: {
           wallet_id: vexWallet.id,
-          user_id: userId,
+          user_id: user_id,
           type: 'withdraw',
           amount: new Prisma.Decimal(-dto.amount),
           balance_before: vexWallet.balance,
@@ -248,15 +248,15 @@ export class DepositService {
    * Get deposit info
    * Cached for 30 minutes (deposit address ít thay đổi)
    */
-  async getDepositInfo(userId: string): Promise<DepositInfoResponseDto> {
-    const cacheKey = `wallet:${userId}:deposit:info`;
+  async getDepositInfo(user_id: string): Promise<DepositInfoResponseDto> {
+    const cacheKey = `wallet:${user_id}:deposit:info`;
     const cacheTtl = 1800; // 30 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
         // Lấy từ DB nếu đã có, nếu chưa có thì tạo mới
-        const deposit = await this.createDeposit(userId);
+        const deposit = await this.createDeposit(user_id);
 
         return {
           deposit_address: deposit.deposit_address,

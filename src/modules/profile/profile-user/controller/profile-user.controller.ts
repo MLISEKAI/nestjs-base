@@ -47,8 +47,8 @@ export class UserProfileController {
     description: 'Hồ sơ user theo schema Prisma',
   })
   getMyProfile(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.userProfile.getProfile(userId, userId);
+    const user_id = req.user.id;
+    return this.userProfile.getProfile(user_id, user_id);
   }
 
   @Patch('me')
@@ -57,8 +57,8 @@ export class UserProfileController {
   @ApiOperation({ summary: 'Cập nhật hồ sơ của user hiện tại' })
   @ApiBody({ type: UpdateUserProfileDto })
   updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateUserProfileDto) {
-    const userId = req.user.id;
-    return this.userProfile.updateProfile(userId, dto);
+    const user_id = req.user.id;
+    return this.userProfile.updateProfile(user_id, dto);
   }
 
   @Delete('me')
@@ -66,8 +66,8 @@ export class UserProfileController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Xóa hồ sơ của user hiện tại' })
   deleteProfile(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.userProfile.deleteProfile(userId);
+    const user_id = req.user.id;
+    return this.userProfile.deleteProfile(user_id);
   }
 
   // @Get('me/stats') - Đã gộp vào GET /connections/stats
@@ -95,8 +95,8 @@ export class UserProfileController {
     },
   })
   getRoomStatus(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.userProfile.getRoomStatus(userId);
+    const user_id = req.user.id;
+    return this.userProfile.getRoomStatus(user_id);
   }
 
   @Get('me/interests')
@@ -118,8 +118,8 @@ export class UserProfileController {
     },
   })
   getUserInterests(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.service.getUserInterests(userId);
+    const user_id = req.user.id;
+    return this.service.getUserInterests(user_id);
   }
 
   @Get('me/contribution')
@@ -139,7 +139,7 @@ export class UserProfileController {
     },
   })
   getUserContribution(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.service.getUserContribution(userId);
+    const user_id = req.user.id;
+    return this.service.getUserContribution(user_id);
   }
 }

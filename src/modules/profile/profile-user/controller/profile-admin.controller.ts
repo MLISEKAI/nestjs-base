@@ -39,23 +39,23 @@ export class ProfileAdminController {
     type: String,
   })
   @ApiOkResponse({ description: 'Hồ sơ user theo schema Prisma' })
-  getProfile(@Param('user_id') userId: string, @Query('current_user_id') currentUserId?: string) {
-    return this.userProfile.getProfile(userId, currentUserId);
+  getProfile(@Param('user_id') user_id: string, @Query('current_user_id') currentuser_id?: string) {
+    return this.userProfile.getProfile(user_id, currentuser_id);
   }
 
   @Patch()
   @ApiOperation({ summary: '[ADMIN] Cập nhật profile của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiBody({ type: UpdateUserProfileDto })
-  updateProfile(@Param('user_id') userId: string, @Body() dto: UpdateUserProfileDto) {
-    return this.userProfile.updateProfile(userId, dto);
+  updateProfile(@Param('user_id') user_id: string, @Body() dto: UpdateUserProfileDto) {
+    return this.userProfile.updateProfile(user_id, dto);
   }
 
   @Delete()
   @ApiOperation({ summary: '[ADMIN] Xóa profile của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
-  deleteProfile(@Param('user_id') userId: string) {
-    return this.userProfile.deleteProfile(userId);
+  deleteProfile(@Param('user_id') user_id: string) {
+    return this.userProfile.deleteProfile(user_id);
   }
 
   @Get('stats')
@@ -64,31 +64,31 @@ export class ProfileAdminController {
   @ApiOkResponse({
     description: 'Thống kê user theo schema Prisma',
   })
-  getStats(@Param('user_id') userId: string, @Query() query: StatsQueryDto) {
-    return this.userProfile.getStats(userId, query);
+  getStats(@Param('user_id') user_id: string, @Query() query: StatsQueryDto) {
+    return this.userProfile.getStats(user_id, query);
   }
 
   @Get('room/status')
   @ApiOperation({ summary: '[ADMIN] Trạng thái phòng của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Trạng thái phòng hiện tại của user' })
-  getRoomStatus(@Param('user_id') userId: string) {
-    return this.userProfile.getRoomStatus(userId);
+  getRoomStatus(@Param('user_id') user_id: string) {
+    return this.userProfile.getRoomStatus(user_id);
   }
 
   @Get('interests')
   @ApiOperation({ summary: '[ADMIN] Danh sách sở thích của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Danh sách sở thích' })
-  getUserInterests(@Param('user_id') userId: string) {
-    return this.service.getUserInterests(userId);
+  getUserInterests(@Param('user_id') user_id: string) {
+    return this.service.getUserInterests(user_id);
   }
 
   @Get('contribution')
   @ApiOperation({ summary: '[ADMIN] Lấy đóng góp của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Thông tin đóng góp của user' })
-  getUserContribution(@Param('user_id') userId: string) {
-    return this.service.getUserContribution(userId);
+  getUserContribution(@Param('user_id') user_id: string) {
+    return this.service.getUserContribution(user_id);
   }
 }

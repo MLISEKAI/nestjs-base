@@ -11,13 +11,13 @@ export class FriendsFeedService {
     private cacheService: CacheService,
   ) {}
 
-  async getFeed(userId: string, query?: BaseQueryDto) {
+  async getFeed(user_id: string, query?: BaseQueryDto) {
     const take = Math.min(query?.limit && query.limit > 0 ? query.limit : 20, 50); // Max 50
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
     const sinceKey = query?.since ? `:since:${query.since.getTime()}` : '';
-    const cacheKey = `friends:feed:${userId}:page:${page}:limit:${take}${sinceKey}`;
+    const cacheKey = `friends:feed:${user_id}:page:${page}:limit:${take}${sinceKey}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -26,7 +26,7 @@ export class FriendsFeedService {
         // Lấy danh sách bạn bè (friends)
         const friends = await this.prisma.resFriend.findMany({
           where: {
-            OR: [{ user_a_id: userId }, { user_b_id: userId }],
+            OR: [{ user_a_id: user_id }, { user_b_id: user_id }],
           },
           select: {
             user_a_id: true,
@@ -34,7 +34,7 @@ export class FriendsFeedService {
           },
         });
 
-        const friendIds = friends.map((f) => (f.user_a_id === userId ? f.user_b_id : f.user_a_id));
+        const friendIds = friends.map((f) => (f.user_a_id === user_id ? f.user_b_id : f.user_a_id));
 
         // Nếu không có bạn bè, trả về empty
         if (friendIds.length === 0) {
@@ -95,7 +95,7 @@ export class FriendsFeedService {
         const likes = await this.prisma.resPostLike.findMany({
           where: {
             post_id: { in: postIds },
-            user_id: userId,
+            user_id: user_id,
           },
           select: { post_id: true },
         });
@@ -132,7 +132,7 @@ export class FriendsFeedService {
     );
   }
 
-  async getPost(id: string, userId: string) {
+  async getPost(id: string, user_id: string) {
     const post = await this.prisma.resPost.findUnique({
       where: { id },
       include: {
@@ -176,8 +176,8 @@ export class FriendsFeedService {
     const isFriend = await this.prisma.resFriend.findFirst({
       where: {
         OR: [
-          { user_a_id: userId, user_b_id: post.user_id },
-          { user_a_id: post.user_id, user_b_id: userId },
+          { user_a_id: user_id, user_b_id: post.user_id },
+          { user_a_id: post.user_id, user_b_id: user_id },
         ],
       },
     });
@@ -192,7 +192,7 @@ export class FriendsFeedService {
       where: {
         post_id_user_id: {
           post_id: id,
-          user_id: userId,
+          user_id: user_id,
         },
       },
     });

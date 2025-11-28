@@ -98,10 +98,10 @@ export class EventService {
   /**
    * Lấy chi tiết event với user participation status
    * @param eventId - ID của event
-   * @param userId - ID của user (optional, để check participation status)
+   * @param user_id - ID của user (optional, để check participation status)
    * @returns Event details với user_status
    */
-  async getEvent(eventId: string, userId?: string) {
+  async getEvent(eventId: string, user_id?: string) {
     // Query event với creator info và participants count
     const event = await this.prisma.resEvent.findUnique({
       where: { id: eventId },
@@ -125,14 +125,14 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
 
-    // Nếu có userId, check participation status
+    // Nếu có user_id, check participation status
     let userStatus = null;
-    if (userId) {
+    if (user_id) {
       const participation = await this.prisma.resEventParticipant.findUnique({
         where: {
           event_id_user_id: {
             event_id: eventId,
-            user_id: userId,
+            user_id: user_id,
           },
         },
       });
@@ -149,11 +149,11 @@ export class EventService {
 
   /**
    * Lấy danh sách events mà user đã tham gia
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param query - Query parameters cho pagination
    * @returns Paginated list of user's events
    */
-  async getUserEvents(userId: string, query?: BaseQueryDto) {
+  async getUserEvents(user_id: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
@@ -161,7 +161,7 @@ export class EventService {
     // Query participations của user
     const [participations, total] = await Promise.all([
       this.prisma.resEventParticipant.findMany({
-        where: { user_id: userId },
+        where: { user_id: user_id },
         take,
         skip,
         orderBy: { joined_at: 'desc' }, // Sắp xếp theo thời gian join (mới nhất trước)
@@ -178,7 +178,7 @@ export class EventService {
         },
       }),
       this.prisma.resEventParticipant.count({
-        where: { user_id: userId },
+        where: { user_id: user_id },
       }),
     ]);
 
@@ -195,12 +195,12 @@ export class EventService {
 
   /**
    * Tạo event mới
-   * @param userId - ID của user tạo event (creator)
+   * @param user_id - ID của user tạo event (creator)
    * @param dto - DTO chứa thông tin event
    * @returns Event đã tạo
    * @throws BadRequestException nếu end_time <= start_time
    */
-  async createEvent(userId: string, dto: CreateEventDto) {
+  async createEvent(user_id: string, dto: CreateEventDto) {
     // Parse dates từ string
     const startTime = new Date(dto.start_time);
     const endTime = dto.end_time ? new Date(dto.end_time) : null;
@@ -213,7 +213,7 @@ export class EventService {
     // Tạo event mới
     const event = await this.prisma.resEvent.create({
       data: {
-        created_by: userId, // Creator của event
+        created_by: user_id, // Creator của event
         title: dto.title,
         description: dto.description,
         location: dto.location,
@@ -240,7 +240,7 @@ export class EventService {
 
   /**
    * Cập nhật thông tin event
-   * @param userId - ID của user (để verify creator)
+   * @param user_id - ID của user (để verify creator)
    * @param eventId - ID của event cần update
    * @param dto - DTO chứa thông tin mới
    * @returns Event đã update
@@ -248,7 +248,7 @@ export class EventService {
    * @throws ForbiddenException nếu user không phải creator
    * @throws BadRequestException nếu end_time <= start_time
    */
-  async updateEvent(userId: string, eventId: string, dto: UpdateEventDto) {
+  async updateEvent(user_id: string, eventId: string, dto: UpdateEventDto) {
     // Check if user is the creator
     const event = await this.prisma.resEvent.findUnique({
       where: { id: eventId },
@@ -258,7 +258,7 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
 
-    if (event.created_by !== userId) {
+    if (event.created_by !== user_id) {
       throw new ForbiddenException('Only event creator can update event');
     }
 
@@ -305,13 +305,13 @@ export class EventService {
 
   /**
    * Xóa event
-   * @param userId - ID của user (để verify creator)
+   * @param user_id - ID của user (để verify creator)
    * @param eventId - ID của event cần xóa
    * @returns Message xác nhận đã xóa
    * @throws NotFoundException nếu event không tồn tại
    * @throws ForbiddenException nếu user không phải creator
    */
-  async deleteEvent(userId: string, eventId: string) {
+  async deleteEvent(user_id: string, eventId: string) {
     // Check if user is the creator
     const event = await this.prisma.resEvent.findUnique({
       where: { id: eventId },
@@ -321,7 +321,7 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
 
-    if (event.created_by !== userId) {
+    if (event.created_by !== user_id) {
       throw new ForbiddenException('Only event creator can delete event');
     }
 
@@ -341,14 +341,14 @@ export class EventService {
 
   /**
    * Join event với status (going/maybe/not_going)
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param eventId - ID của event
    * @param dto - DTO chứa status (going, maybe, not_going)
    * @returns Participation record
    * @throws NotFoundException nếu event không tồn tại
    * @throws BadRequestException nếu event đã full (max_participants reached)
    */
-  async joinEvent(userId: string, eventId: string, dto: JoinEventDto) {
+  async joinEvent(user_id: string, eventId: string, dto: JoinEventDto) {
     // Check if event exists
     const event = await this.prisma.resEvent.findUnique({
       where: { id: eventId },
@@ -377,12 +377,12 @@ export class EventService {
       where: {
         event_id_user_id: {
           event_id: eventId,
-          user_id: userId,
+          user_id: user_id,
         },
       },
       create: {
         event_id: eventId,
-        user_id: userId,
+        user_id: user_id,
         status: dto.status, // going, maybe, not_going
       },
       update: {
@@ -395,18 +395,18 @@ export class EventService {
 
   /**
    * Leave event (xóa participation)
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param eventId - ID của event
    * @returns Message xác nhận đã leave
    * @throws NotFoundException nếu participation không tồn tại
    */
-  async leaveEvent(userId: string, eventId: string) {
+  async leaveEvent(user_id: string, eventId: string) {
     try {
       await this.prisma.resEventParticipant.delete({
         where: {
           event_id_user_id: {
             event_id: eventId,
-            user_id: userId,
+            user_id: user_id,
           },
         },
       });

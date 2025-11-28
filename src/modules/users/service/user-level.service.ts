@@ -38,8 +38,8 @@ export class UserLevelService {
    * XP to next level = 10 - XP
    * Cached for 5 minutes (level thay đổi khi nhận gift)
    */
-  async getUserBalance(userId: string) {
-    const cacheKey = `user:${userId}:balance`;
+  async getUserBalance(user_id: string) {
+    const cacheKey = `user:${user_id}:balance`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
@@ -47,7 +47,7 @@ export class UserLevelService {
       async () => {
         // Get total gifts received
         const totalGifts = await this.prisma.resGift.count({
-          where: { receiver_id: userId },
+          where: { receiver_id: user_id },
         });
 
         // Calculate level (every 10 gifts = 1 level, starting from level 1)

@@ -58,7 +58,7 @@
 2. **send_notification**
    ```json
    {
-     "userId": "user-id",
+     "user_id": "user-id",
      "notification": { ... }
    }
    ```

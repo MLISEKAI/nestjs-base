@@ -16,7 +16,7 @@ export class UsersPublicController {
   @ApiOperation({ summary: '[PUBLIC] Xem public profile của user (không cần đăng nhập)' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ type: UserResponseDto, description: 'Public profile của user (read-only)' })
-  async getPublicProfile(@Param('user_id') userId: string) {
-    return this.profileService.findOne(userId);
+  async getPublicProfile(@Param('user_id') user_id: string) {
+    return this.profileService.findOne(user_id);
   }
 }

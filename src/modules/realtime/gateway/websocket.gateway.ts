@@ -13,7 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 interface AuthenticatedSocket extends Socket {
-  userId?: string;
+  user_id?: string;
 }
 
 @WSGateway({
@@ -28,7 +28,7 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   server: Server;
 
   private readonly logger = new Logger(WebSocketGateway.name);
-  private readonly connectedUsers = new Map<string, string>(); // userId -> socketId
+  private readonly connectedUsers = new Map<string, string>(); // user_id -> socketId
 
   constructor(
     private readonly jwtService: JwtService,
@@ -49,18 +49,18 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         secret: this.configService.get<string>('JWT_SECRET'),
       });
 
-      client.userId = payload.sub;
-      this.connectedUsers.set(client.userId, client.id);
+      client.user_id = payload.sub;
+      this.connectedUsers.set(client.user_id, client.id);
 
       // Join room cho user để có thể gửi notification đến user cụ thể
-      await client.join(`user:${client.userId}`);
+      await client.join(`user:${client.user_id}`);
 
-      this.logger.log(`User connected: ${client.userId} (socket: ${client.id})`);
+      this.logger.log(`User connected: ${client.user_id} (socket: ${client.id})`);
       this.logger.log(`Total connected users: ${this.connectedUsers.size}`);
 
       // Emit connection status
-      this.server.to(`user:${client.userId}`).emit('connected', {
-        userId: client.userId,
+      this.server.to(`user:${client.user_id}`).emit('connected', {
+        user_id: client.user_id,
         socketId: client.id,
       });
     } catch (error) {
@@ -70,9 +70,9 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   handleDisconnect(client: AuthenticatedSocket) {
-    if (client.userId) {
-      this.connectedUsers.delete(client.userId);
-      this.logger.log(`User disconnected: ${client.userId}`);
+    if (client.user_id) {
+      this.connectedUsers.delete(client.user_id);
+      this.logger.log(`User disconnected: ${client.user_id}`);
       this.logger.log(`Total connected users: ${this.connectedUsers.size}`);
     }
   }
@@ -110,15 +110,15 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     @MessageBody() data: { receiverId: string; content: string; messageId?: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId) {
+    if (!client.user_id) {
       return { error: 'Unauthorized' };
     }
 
-    this.logger.log(`Message from ${client.userId} to ${data.receiverId}`);
+    this.logger.log(`Message from ${client.user_id} to ${data.receiverId}`);
 
     // Emit message đến receiver
     this.server.to(`user:${data.receiverId}`).emit('new_message', {
-      senderId: client.userId,
+      senderId: client.user_id,
       receiverId: data.receiverId,
       content: data.content,
       messageId: data.messageId,
@@ -137,17 +137,17 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
    */
   @SubscribeMessage('send_notification')
   async handleSendNotification(
-    @MessageBody() data: { userId: string; notification: any },
+    @MessageBody() data: { user_id: string; notification: any },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId) {
+    if (!client.user_id) {
       return { error: 'Unauthorized' };
     }
 
-    this.logger.log(`Notification to ${data.userId} from ${client.userId}`);
+    this.logger.log(`Notification to ${data.user_id} from ${client.user_id}`);
 
     // Emit notification đến user
-    this.server.to(`user:${data.userId}`).emit('new_notification', data.notification);
+    this.server.to(`user:${data.user_id}`).emit('new_notification', data.notification);
 
     return { success: true };
   }
@@ -160,12 +160,12 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     @MessageBody() data: { receiverId: string; isTyping: boolean },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId) {
+    if (!client.user_id) {
       return { error: 'Unauthorized' };
     }
 
     this.server.to(`user:${data.receiverId}`).emit('user_typing', {
-      userId: client.userId,
+      user_id: client.user_id,
       isTyping: data.isTyping,
     });
 
@@ -180,12 +180,12 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     @MessageBody() data: { roomId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId) {
+    if (!client.user_id) {
       return { error: 'Unauthorized' };
     }
 
     await client.join(`room:${data.roomId}`);
-    this.logger.log(`User ${client.userId} joined room ${data.roomId}`);
+    this.logger.log(`User ${client.user_id} joined room ${data.roomId}`);
 
     return { success: true, roomId: data.roomId };
   }
@@ -198,12 +198,12 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     @MessageBody() data: { roomId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    if (!client.userId) {
+    if (!client.user_id) {
       return { error: 'Unauthorized' };
     }
 
     await client.leave(`room:${data.roomId}`);
-    this.logger.log(`User ${client.userId} left room ${data.roomId}`);
+    this.logger.log(`User ${client.user_id} left room ${data.roomId}`);
 
     return { success: true, roomId: data.roomId };
   }
@@ -211,8 +211,8 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   /**
    * Public method để emit notification từ service
    */
-  emitNotification(userId: string, notification: any) {
-    this.server.to(`user:${userId}`).emit('new_notification', notification);
+  emitNotification(user_id: string, notification: any) {
+    this.server.to(`user:${user_id}`).emit('new_notification', notification);
   }
 
   /**
@@ -227,25 +227,25 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   /**
    * Public method để emit message đến user (for direct notifications)
-   * @param userId - User ID
+   * @param user_id - User ID
    * @param message - Message data
    */
-  emitMessageToUser(userId: string, message: any) {
-    // Emit đến user room (clients subscribe to user:${userId})
-    this.server.to(`user:${userId}`).emit('new_message', message);
+  emitMessageToUser(user_id: string, message: any) {
+    // Emit đến user room (clients subscribe to user:${user_id})
+    this.server.to(`user:${user_id}`).emit('new_message', message);
   }
 
   /**
    * Public method để emit live update (post, like, comment)
    */
-  emitLiveUpdate(userId: string, update: any) {
-    this.server.to(`user:${userId}`).emit('live_update', update);
+  emitLiveUpdate(user_id: string, update: any) {
+    this.server.to(`user:${user_id}`).emit('live_update', update);
   }
 
   /**
    * Public method để emit typing indicator
    */
-  emitTyping(conversationId: string, data: { userId: string; isTyping: boolean }) {
+  emitTyping(conversationId: string, data: { user_id: string; isTyping: boolean }) {
     this.server.to(`room:${conversationId}`).emit('user_typing', data);
   }
 
@@ -254,7 +254,7 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
    */
   emitMessageRead(
     conversationId: string,
-    data: { messageId: string; userId: string; readAt: Date },
+    data: { messageId: string; user_id: string; readAt: Date },
   ) {
     this.server.to(`room:${conversationId}`).emit('message_read', data);
   }
@@ -262,15 +262,15 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   /**
    * Public method để emit user status update
    */
-  emitUserStatus(userId: string, status: { isOnline: boolean; lastSeen?: Date }) {
-    this.server.to(`user:${userId}`).emit('user_status', { userId, ...status });
+  emitUserStatus(user_id: string, status: { isOnline: boolean; lastSeen?: Date }) {
+    this.server.to(`user:${user_id}`).emit('user_status', { user_id, ...status });
   }
 
   /**
    * Check if user is online
    */
-  isUserOnline(userId: string): boolean {
-    return this.connectedUsers.has(userId);
+  isUserOnline(user_id: string): boolean {
+    return this.connectedUsers.has(user_id);
   }
 
   /**

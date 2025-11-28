@@ -43,7 +43,7 @@ export class TransactionService {
   /**
    * Lấy lịch sử giao dịch với pagination (format tương thích Flutter)
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param query - BaseQueryDto chứa pagination parameters
    * @returns TransactionHistoryResponseDto chứa danh sách transactions và pagination metadata
    *
@@ -55,25 +55,25 @@ export class TransactionService {
    * 5. Cache kết quả và return
    *
    * Lưu ý:
-   * - Cache key: `wallet:{userId}:transactions:page:{page}:limit:{limit}`
+   * - Cache key: `wallet:{user_id}:transactions:page:{page}:limit:{limit}`
    * - Cache TTL: 1 phút (60 seconds) - transactions thay đổi thường xuyên
    * - Format response tương thích với Flutter app
    */
   async getTransactionHistory(
-    userId: string,
+    user_id: string,
     query?: BaseQueryDto,
   ): Promise<TransactionHistoryResponseDto> {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const cacheKey = `wallet:${userId}:transactions:page:${page}:limit:${take}`;
+    const cacheKey = `wallet:${user_id}:transactions:page:${page}:limit:${take}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
-        return this.fetchTransactionHistory(userId, take, skip, page);
+        return this.fetchTransactionHistory(user_id, take, skip, page);
       },
       cacheTtl,
     );
@@ -82,7 +82,7 @@ export class TransactionService {
   /**
    * Fetch transaction history từ database (format tương thích Flutter)
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @param take - Số lượng transactions cần lấy
    * @param skip - Số lượng transactions cần bỏ qua (pagination offset)
    * @param page - Trang hiện tại
@@ -99,14 +99,14 @@ export class TransactionService {
    * - Format response tương thích với Flutter app
    */
   private async fetchTransactionHistory(
-    userId: string,
+    user_id: string,
     take: number,
     skip: number,
     page: number,
   ): Promise<TransactionHistoryResponseDto> {
     // Lấy tất cả wallets của user với currency info
     const wallets = await this.prisma.resWallet.findMany({
-      where: { user_id: userId },
+      where: { user_id: user_id },
       select: { id: true, currency: true },
     });
 
@@ -115,7 +115,7 @@ export class TransactionService {
 
     const [transactions, total] = await Promise.all([
       this.prisma.resWalletTransaction.findMany({
-        where: { user_id: userId, wallet_id: { in: walletIds } },
+        where: { user_id: user_id, wallet_id: { in: walletIds } },
         take,
         skip,
         orderBy: { created_at: 'desc' },
@@ -124,7 +124,7 @@ export class TransactionService {
         },
       }),
       this.prisma.resWalletTransaction.count({
-        where: { user_id: userId, wallet_id: { in: walletIds } },
+        where: { user_id: user_id, wallet_id: { in: walletIds } },
       }),
     ]);
 
@@ -156,7 +156,7 @@ export class TransactionService {
       convertReferenceIds.length > 0
         ? await this.prisma.resWalletTransaction.findMany({
             where: {
-              user_id: userId,
+              user_id: user_id,
               type: 'convert',
               reference_id: { in: convertReferenceIds },
               wallet: { currency: 'vex' },
@@ -179,7 +179,7 @@ export class TransactionService {
         ? await this.prisma.resWalletTransaction.findMany({
             where: {
               reference_id: { in: transferReferenceIds },
-              user_id: { not: userId },
+              user_id: { not: user_id },
             },
             include: {
               user: { select: { id: true, nickname: true, avatar: true } },
@@ -205,7 +205,7 @@ export class TransactionService {
           // Determine if gift sent or received
           const gift = giftMap.get(tx.reference_id || '');
           if (gift) {
-            isGiftSent = gift.sender_id === userId;
+            isGiftSent = gift.sender_id === user_id;
             transactionType = isGiftSent
               ? TransactionType.gift_sent
               : TransactionType.gift_received;

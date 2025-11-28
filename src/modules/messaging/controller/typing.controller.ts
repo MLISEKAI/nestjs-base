@@ -45,7 +45,7 @@ export class TypingController {
     example: {
       message: 'Typing indicator sent successfully',
       conversationId: 'conv-1',
-      userId: 'user-1',
+      user_id: 'user-1',
       isTyping: true,
     },
   })

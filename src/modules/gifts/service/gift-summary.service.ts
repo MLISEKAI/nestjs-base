@@ -42,7 +42,7 @@ export class GiftSummaryService {
   /**
    * Lấy tổng quan gifts (overview) với items mẫu và total count
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @param type - Filter theo gift type (optional)
    * @param limit - Số lượng items mẫu cần lấy (mặc định: 3)
    * @returns Object chứa items mẫu và total_count
@@ -55,11 +55,11 @@ export class GiftSummaryService {
    * Lưu ý:
    * - Items chỉ cần id, name, image_url để hiển thị icon quà
    * - Khác với GET /gifts/items (trả về tất cả items), endpoint này chỉ trả về một số items mẫu
-   * - Cache key: `user:{userId}:gifts:overview:{limit}:{type || 'all'}`
+   * - Cache key: `user:{user_id}:gifts:overview:{limit}:{type || 'all'}`
    * - Cache TTL: 1 phút (60 seconds)
    */
-  async getGiftsOverview(userId: string, type?: string, limit: number = 3) {
-    const cacheKey = `user:${userId}:gifts:overview:${limit}:${type || 'all'}`;
+  async getGiftsOverview(user_id: string, type?: string, limit: number = 3) {
+    const cacheKey = `user:${user_id}:gifts:overview:${limit}:${type || 'all'}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -68,7 +68,7 @@ export class GiftSummaryService {
         // Gọi 2 service methods song song để tối ưu performance
         const [items, totalCount] = await Promise.all([
           this.catalogService.getGiftItemsSample(limit, type), // Chỉ lấy limit items mẫu
-          this.crudService.getCount(userId),
+          this.crudService.getCount(user_id),
         ]);
 
         return {
@@ -83,7 +83,7 @@ export class GiftSummaryService {
   /**
    * Lấy top supporters (người tặng quà nhiều nhất)
    *
-   * @param userId - User ID
+   * @param user_id - User ID
    * @returns Array of top supporters (tối đa 5 người)
    *
    * Quy trình:
@@ -94,19 +94,19 @@ export class GiftSummaryService {
    * 5. Cache kết quả và return
    *
    * Lưu ý:
-   * - Cache key: `user:{userId}:gifts:top-supporters`
+   * - Cache key: `user:{user_id}:gifts:top-supporters`
    * - Cache TTL: 5 phút (300 seconds)
    * - Chỉ trả về top 5 supporters
    */
-  async getTopSupporters(userId: string) {
-    const cacheKey = `user:${userId}:gifts:top-supporters`;
+  async getTopSupporters(user_id: string) {
+    const cacheKey = `user:${user_id}:gifts:top-supporters`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
         const supporters = await this.prisma.resSupporter.findMany({
-          where: { user_id: userId },
+          where: { user_id: user_id },
           orderBy: { amount: 'desc' },
           take: 5,
         });

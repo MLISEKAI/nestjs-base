@@ -26,8 +26,8 @@ export class VipPublicController {
       },
     },
   })
-  getVipStatus(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.vip.getVipStatus(userId, query).then((status) => {
+  getVipStatus(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.vip.getVipStatus(user_id, query).then((status) => {
       // Chỉ trả về thông tin public
       if (status) {
         return {

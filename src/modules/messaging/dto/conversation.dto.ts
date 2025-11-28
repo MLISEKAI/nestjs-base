@@ -23,7 +23,7 @@ export class CreateConversationDto {
   type: ConversationType;
 
   @ApiPropertyOptional({
-    example: ['otherUserId'],
+    example: ['otherUser_id'],
     description:
       'ID người khác muốn nhắn tin (bắt buộc nếu type = "direct") - ID của người bạn muốn nhắn tin trực tiếp. KHÔNG phải ID của bạn (ID của bạn tự động lấy từ JWT token)',
   })

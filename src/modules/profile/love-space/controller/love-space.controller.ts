@@ -54,8 +54,8 @@ export class LoveSpaceController {
     },
   })
   getLoveSpace(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
-    return this.loveSpace.getLoveSpace(userId, query);
+    const user_id = req.user.id;
+    return this.loveSpace.getLoveSpace(user_id, query);
   }
 
   @Post()
@@ -75,8 +75,8 @@ export class LoveSpaceController {
     },
   })
   createLoveSpace(@Req() req: AuthenticatedRequest, @Body() dto: CreateLoveSpaceDto) {
-    const userId = req.user.id;
-    return this.loveSpace.createLoveSpace(userId, dto);
+    const user_id = req.user.id;
+    return this.loveSpace.createLoveSpace(user_id, dto);
   }
 
   @Patch()
@@ -96,8 +96,8 @@ export class LoveSpaceController {
     },
   })
   updateLoveSpace(@Req() req: AuthenticatedRequest, @Body() dto: UpdateLoveSpaceDto) {
-    const userId = req.user.id;
-    return this.loveSpace.updateLoveSpace(userId, dto);
+    const user_id = req.user.id;
+    return this.loveSpace.updateLoveSpace(user_id, dto);
   }
 
   @Delete()
@@ -107,7 +107,7 @@ export class LoveSpaceController {
     schema: { type: 'object', properties: { message: { example: 'Love Space deleted' } } },
   })
   deleteLoveSpace(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.loveSpace.deleteLoveSpace(userId);
+    const user_id = req.user.id;
+    return this.loveSpace.deleteLoveSpace(user_id);
   }
 }

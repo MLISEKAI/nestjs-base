@@ -30,14 +30,14 @@ export class MessageService {
    */
   async getMessages(
     conversationId: string,
-    userId: string,
+    user_id: string,
     query?: BaseQueryDto,
   ): Promise<IPaginatedResponse<any>> {
     // Kiểm tra user có trong conversation không
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -136,12 +136,12 @@ export class MessageService {
   /**
    * Gửi message
    */
-  async sendMessage(conversationId: string, userId: string, dto: SendMessageDto) {
+  async sendMessage(conversationId: string, user_id: string, dto: SendMessageDto) {
     // Kiểm tra user có trong conversation không
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -164,11 +164,11 @@ export class MessageService {
       throw new BadRequestException('mediaUrl is required for media messages');
     }
 
-    if (dto.type === MessageType.GIFT && !dto.giftId && !dto.giftItemId) {
-      throw new BadRequestException('giftId or giftItemId is required for gift messages');
+    if (dto.type === MessageType.GIFT && !dto.gift_id && !dto.giftItemId) {
+      throw new BadRequestException('gift_id or giftItem_id is required for gift messages');
     }
 
-    const businessCardUserId = userId;
+    const businessCardUserId = user_id;
 
     if (dto.type === MessageType.BUSINESS_CARD) {
       const businessCardUser = await this.prisma.resUser.findUnique({
@@ -182,7 +182,7 @@ export class MessageService {
     }
 
     // Tạo gift nếu là gift message
-    let giftId: string | null = null;
+    let gift_id: string | null = null;
     if (dto.type === MessageType.GIFT && dto.giftItemId) {
       // Lấy conversation để biết receiver
       const conversation = await this.prisma.resConversation.findUnique({
@@ -190,7 +190,7 @@ export class MessageService {
         include: {
           participants: {
             where: {
-              user_id: { not: userId },
+              user_id: { not: user_id },
               left_at: null,
             },
           },
@@ -201,13 +201,13 @@ export class MessageService {
         const receiverId = conversation.participants[0].user_id;
         const gift = await this.prisma.resGift.create({
           data: {
-            sender_id: userId,
+            sender_id: user_id,
             receiver_id: receiverId,
             gift_item_id: dto.giftItemId.toString(),
             message: dto.content,
           },
         });
-        giftId = gift.id;
+        gift_id = gift.id;
       }
     }
 
@@ -215,7 +215,7 @@ export class MessageService {
     const message = await this.prisma.resMessage.create({
       data: {
         conversation_id: conversationId,
-        sender_id: userId,
+        sender_id: user_id,
         type: dto.type,
         content: dto.content,
         media_url: dto.mediaUrl,
@@ -223,7 +223,7 @@ export class MessageService {
         media_size: dto.mediaSize,
         media_duration: dto.mediaDuration,
         waveform: dto.waveform ? JSON.stringify(dto.waveform) : null,
-        gift_id: giftId,
+        gift_id: gift_id,
         business_card_user_id: dto.type === MessageType.BUSINESS_CARD ? businessCardUserId : null,
         is_read: false,
       },
@@ -260,7 +260,7 @@ export class MessageService {
     const participants = await this.prisma.resConversationParticipant.findMany({
       where: {
         conversation_id: conversationId,
-        user_id: { not: userId },
+        user_id: { not: user_id },
         left_at: null,
         is_muted: false,
       },
@@ -270,7 +270,7 @@ export class MessageService {
     await Promise.all(
       participants.map((p) =>
         this.notificationService
-          .createMessageNotification(p.user_id, userId, message.id)
+          .createMessageNotification(p.user_id, user_id, message.id)
           .catch(console.error),
       ),
     );
@@ -329,7 +329,7 @@ export class MessageService {
 
       // Trả về thông tin đầy đủ
       responseData.businessCard = {
-        userId: businessCardUser.id,
+        user_id: businessCardUser.id,
         nickname: businessCardUser.nickname,
         avatar: businessCardUser.avatar,
         bio: businessCardUser.bio,
@@ -348,7 +348,7 @@ export class MessageService {
   /**
    * Xóa message (soft delete)
    */
-  async deleteMessage(messageId: string, userId: string) {
+  async deleteMessage(messageId: string, user_id: string) {
     const message = await this.prisma.resMessage.findUnique({
       where: { id: messageId },
     });
@@ -358,7 +358,7 @@ export class MessageService {
     }
 
     // Chỉ cho phép xóa message của chính mình
-    if (message.sender_id !== userId) {
+    if (message.sender_id !== user_id) {
       throw new BadRequestException('You can only delete your own messages');
     }
 
@@ -373,7 +373,7 @@ export class MessageService {
   /**
    * Forward messages
    */
-  async forwardMessages(userId: string, dto: ForwardMessageDto) {
+  async forwardMessages(user_id: string, dto: ForwardMessageDto) {
     // Lấy messages cần forward
     const messages = await this.prisma.resMessage.findMany({
       where: {
@@ -406,7 +406,7 @@ export class MessageService {
           participants: {
             every: {
               user_id: {
-                in: [userId, recipientId],
+                in: [user_id, recipientId],
               },
             },
           },
@@ -417,9 +417,9 @@ export class MessageService {
         conversation = await this.prisma.resConversation.create({
           data: {
             type: 'direct',
-            created_by: userId,
+            created_by: user_id,
             participants: {
-              create: [{ user_id: userId }, { user_id: recipientId }],
+              create: [{ user_id: user_id }, { user_id: recipientId }],
             },
             settings: {
               create: {},
@@ -433,7 +433,7 @@ export class MessageService {
         const forwarded = await this.prisma.resMessage.create({
           data: {
             conversation_id: conversation.id,
-            sender_id: userId,
+            sender_id: user_id,
             type: msg.type,
             content: msg.content,
             media_url: msg.media_url,
@@ -502,7 +502,7 @@ export class MessageService {
         try {
           await this.notificationService.createMessageNotification(
             recipientId,
-            userId,
+            user_id,
             forwarded.id,
           );
         } catch (error) {
@@ -533,11 +533,11 @@ export class MessageService {
   /**
    * Lấy media gallery của conversation
    */
-  async getMediaGallery(conversationId: string, userId: string, query?: BaseQueryDto) {
+  async getMediaGallery(conversationId: string, user_id: string, query?: BaseQueryDto) {
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });

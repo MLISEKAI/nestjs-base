@@ -165,12 +165,12 @@ export class BlockUserService {
 
   /**
    * Get list of users blocked by a user
-   * @param userId - ID of user
+   * @param user_id - ID of user
    */
-  async getBlockedUsers(userId: string) {
+  async getBlockedUsers(user_id: string) {
     const blocks = await this.prisma.resBlock.findMany({
       where: {
-        blocker_id: userId,
+        blocker_id: user_id,
       },
       include: {
         blocked: {
@@ -198,12 +198,12 @@ export class BlockUserService {
 
   /**
    * Get list of users who blocked a user
-   * @param userId - ID of user
+   * @param user_id - ID of user
    */
-  async getBlockedByUsers(userId: string) {
+  async getBlockedByUsers(user_id: string) {
     const blocks = await this.prisma.resBlock.findMany({
       where: {
-        blocked_id: userId,
+        blocked_id: user_id,
       },
       include: {
         blocker: {

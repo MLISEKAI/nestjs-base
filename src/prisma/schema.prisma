@@ -112,6 +112,17 @@ model ResUser {
   notificationsSent    ResNotification[]     @relation("NotificationSender")
   notificationsRecv    ResNotification[]     @relation("NotificationReceiver")
 
+  // Room relations
+  roomsHosted          Room[]                @relation("RoomHost")
+  roomParticipants     RoomParticipant[]     @relation("RoomParticipants")
+  roomMessages         RoomMessage[]         @relation("RoomMessages")
+  roomGiftsSent        RoomGift[]            @relation("GiftsSent")
+  roomGiftsReceived    RoomGift[]            @relation("GiftsReceived")
+  roomSeats            RoomSeat[]            @relation("RoomSeats")
+  roomBlacklist        RoomBlacklist[]       @relation("RoomBlacklist")
+  roomManagers         RoomManager[]         @relation("RoomManagers")
+  roomBoosts           RoomBoostHistory[]    @relation("RoomBoosts")
+
   @@index([union_id, deleted_at])
   @@index([union_id])
   @@map("res_user")
@@ -1158,4 +1169,179 @@ model ResTwoFactor {
 enum VerificationCodeType {
   email
   phone
+}
+
+// ==================== ROOM MODELS ====================
+
+model Room {
+  id                   String   @id
+  title                String
+  mode                 String
+  labels               String[]
+  is_protected         Boolean  @default(false)
+  password_hash        String?
+  status               String   @default("active")
+  host_id              String
+  max_participants     Int      @default(10)
+  current_participants Int      @default(0)
+  layout_id            String   @default("layout_1")
+  background_id        String?
+  theme                String   @default("default")
+  cover_url            String?
+  description          String?
+  notice               String?
+  settings             Json?
+  stats                Json?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  closed_at            DateTime?
+
+  host         ResUser            @relation("RoomHost", fields: [host_id], references: [id])
+  participants RoomParticipant[]
+  messages     RoomMessage[]
+  gifts        RoomGift[]
+  seats        RoomSeat[]
+  blacklist    RoomBlacklist[]
+  managers     RoomManager[]
+  challenge    RoomChallenge?
+  boostHistory RoomBoostHistory[]
+
+  @@index([host_id])
+  @@index([status])
+  @@index([mode])
+  @@index([created_at])
+  @@map("rooms")
+}
+
+model RoomParticipant {
+  id           BigInt    @id @default(autoincrement())
+  room_id      String
+  user_id      String
+  seat_id      Int?
+  role         String    @default("listener")
+  is_muted     Boolean   @default(false)
+  is_camera_on Boolean   @default(false)
+  joined_at    DateTime  @default(now())
+  left_at      DateTime?
+
+  room Room    @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user ResUser @relation("RoomParticipants", fields: [user_id], references: [id])
+
+  @@unique([room_id, user_id])
+  @@index([room_id])
+  @@index([user_id])
+  @@map("room_participants")
+}
+
+model RoomMessage {
+  id         BigInt   @id @default(autoincrement())
+  room_id    String
+  user_id    String?
+  type       String
+  content    String
+  metadata   Json?
+  created_at DateTime @default(now())
+
+  room Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user ResUser? @relation("RoomMessages", fields: [user_id], references: [id])
+
+  @@index([room_id])
+  @@index([created_at])
+  @@map("room_messages")
+}
+
+model RoomGift {
+  id           BigInt   @id @default(autoincrement())
+  room_id      String
+  sender_id    String
+  recipient_id String
+  gift_id      String
+  quantity     Int      @default(1)
+  total_cost   Int
+  created_at   DateTime @default(now())
+
+  room      Room    @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  sender    ResUser @relation("GiftsSent", fields: [sender_id], references: [id])
+  recipient ResUser @relation("GiftsReceived", fields: [recipient_id], references: [id])
+
+  @@index([room_id])
+  @@index([sender_id])
+  @@index([recipient_id])
+  @@index([created_at])
+  @@map("room_gifts")
+}
+
+model RoomSeat {
+  id      BigInt  @id @default(autoincrement())
+  room_id String
+  seat_id Int
+  user_id String?
+  locked  Boolean @default(false)
+
+  room Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user ResUser? @relation("RoomSeats", fields: [user_id], references: [id])
+
+  @@unique([room_id, seat_id])
+  @@index([room_id])
+  @@map("room_seats")
+}
+
+model RoomBlacklist {
+  id         BigInt   @id @default(autoincrement())
+  room_id    String
+  user_id    String
+  reason     String?
+  created_at DateTime @default(now())
+
+  room Room    @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user ResUser @relation("RoomBlacklist", fields: [user_id], references: [id])
+
+  @@unique([room_id, user_id])
+  @@index([room_id])
+  @@map("room_blacklist")
+}
+
+model RoomManager {
+  id         BigInt   @id @default(autoincrement())
+  room_id    String
+  user_id    String
+  created_at DateTime @default(now())
+
+  room Room    @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user ResUser @relation("RoomManagers", fields: [user_id], references: [id])
+
+  @@unique([room_id, user_id])
+  @@index([room_id])
+  @@map("room_managers")
+}
+
+model RoomChallenge {
+  id              BigInt   @id @default(autoincrement())
+  room_id         String   @unique
+  level           Int      @default(1)
+  current_points  Int      @default(0)
+  required_points Int      @default(100000)
+  status          String   @default("active")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  room Room @relation(fields: [room_id], references: [id], onDelete: Cascade)
+
+  @@map("room_challenges")
+}
+
+model RoomBoostHistory {
+  id               BigInt    @id @default(autoincrement())
+  room_id          String
+  user_id          String
+  boost_type       String
+  duration_minutes Int
+  started_at       DateTime  @default(now())
+  ended_at         DateTime?
+
+  room Room    @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user ResUser @relation("RoomBoosts", fields: [user_id], references: [id])
+
+  @@index([room_id])
+  @@map("room_boost_history")
 }

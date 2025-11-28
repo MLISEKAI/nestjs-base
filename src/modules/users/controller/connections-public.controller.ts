@@ -25,8 +25,8 @@ export class ConnectionsPublicController {
       },
     },
   })
-  async getStats(@Param('user_id') userId: string) {
-    const stats = await this.connectionsService.getStats(userId);
+  async getStats(@Param('user_id') user_id: string) {
+    const stats = await this.connectionsService.getStats(user_id);
     // Chỉ trả về public info (không có friends_count)
     return {
       followers_count: stats.followers_count,
@@ -45,8 +45,8 @@ export class ConnectionsPublicController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách followers với pagination' })
-  async getFollowers(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.connectionsService.getFollowers(userId, query.page || 1, query.limit || 20);
+  async getFollowers(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.connectionsService.getFollowers(user_id, query.page || 1, query.limit || 20);
   }
 
   @Get('following')
@@ -60,7 +60,7 @@ export class ConnectionsPublicController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách following với pagination' })
-  async getFollowing(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.connectionsService.getFollowing(userId, query.page || 1, query.limit || 20);
+  async getFollowing(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.connectionsService.getFollowing(user_id, query.page || 1, query.limit || 20);
   }
 }

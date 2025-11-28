@@ -136,10 +136,10 @@ export class GroupMemberController {
     return this.groupService.addGroupMembers(group_id, req.user.id, dto);
   }
 
-  @Delete(':userId')
+  @Delete(':user_id')
   @ApiOperation({ summary: 'Remove member from group' })
   @ApiParam({ name: 'group_id', description: 'Group ID' })
-  @ApiParam({ name: 'userId', description: 'User ID to remove' })
+  @ApiParam({ name: 'user_id', description: 'User ID to remove' })
   @ApiOkResponse({
     description: 'Member removed successfully',
     example: {
@@ -148,16 +148,16 @@ export class GroupMemberController {
   })
   async removeMember(
     @Param('group_id') group_id: string,
-    @Param('userId') userId: string,
+    @Param('user_id') user_id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.groupService.removeGroupMember(group_id, req.user.id, userId);
+    return this.groupService.removeGroupMember(group_id, req.user.id, user_id);
   }
 
-  @Patch(':userId/role')
+  @Patch(':user_id/role')
   @ApiOperation({ summary: 'Update member role' })
   @ApiParam({ name: 'group_id', description: 'Group ID' })
-  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiParam({ name: 'user_id', description: 'User ID' })
   @ApiBody({ type: UpdateMemberRoleDto })
   @ApiOkResponse({
     description: 'Member role updated successfully',
@@ -170,10 +170,10 @@ export class GroupMemberController {
   })
   async updateRole(
     @Param('group_id') group_id: string,
-    @Param('userId') userId: string,
+    @Param('user_id') user_id: string,
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateMemberRoleDto,
   ) {
-    return this.groupService.updateMemberRole(group_id, req.user.id, userId, dto);
+    return this.groupService.updateMemberRole(group_id, req.user.id, user_id, dto);
   }
 }

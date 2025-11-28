@@ -7,26 +7,26 @@ import { CreateVipStatusDto, UpdateVipStatusDto } from '../dto/vip.dto';
 export class VipService {
   constructor(private prisma: PrismaService) {}
 
-  async getVipStatus(userId: string, query: BaseQueryDto) {
-    const vip = await this.prisma.resVipStatus.findUnique({ where: { user_id: userId } });
+  async getVipStatus(user_id: string, query: BaseQueryDto) {
+    const vip = await this.prisma.resVipStatus.findUnique({ where: { user_id: user_id } });
     if (!vip) throw new NotFoundException('VIP status not found');
     return vip;
   }
 
-  async createVipStatus(userId: string, dto: CreateVipStatusDto) {
+  async createVipStatus(user_id: string, dto: CreateVipStatusDto) {
     return this.prisma.resVipStatus.create({
-      data: { user_id: userId, is_vip: dto.is_vip, expiry: dto.expiry },
+      data: { user_id: user_id, is_vip: dto.is_vip, expiry: dto.expiry },
     });
   }
 
-  async updateVipStatus(userId: string, dto: UpdateVipStatusDto) {
+  async updateVipStatus(user_id: string, dto: UpdateVipStatusDto) {
     // Tối ưu: Nếu có cả is_vip và expiry, update trực tiếp
     if (dto.is_vip !== undefined && dto.expiry) {
       const tmpDate = new Date(dto.expiry);
       if (isNaN(tmpDate.getTime())) throw new BadRequestException('Invalid expiry date');
       try {
         return await this.prisma.resVipStatus.update({
-          where: { user_id: userId },
+          where: { user_id: user_id },
           data: { is_vip: dto.is_vip, expiry: tmpDate },
         });
       } catch (error) {
@@ -38,7 +38,7 @@ export class VipService {
     }
 
     // Nếu thiếu một trong hai, query để lấy giá trị hiện tại
-    const existing = await this.prisma.resVipStatus.findUnique({ where: { user_id: userId } });
+    const existing = await this.prisma.resVipStatus.findUnique({ where: { user_id: user_id } });
     if (!existing) throw new NotFoundException('VIP status not found');
 
     let expiryDate = existing.expiry;
@@ -49,13 +49,13 @@ export class VipService {
     }
 
     return this.prisma.resVipStatus.update({
-      where: { user_id: userId },
+      where: { user_id: user_id },
       data: { is_vip: dto.is_vip ?? existing.is_vip, expiry: expiryDate },
     });
   }
 
-  async deleteVipStatus(userId: string) {
-    await this.prisma.resVipStatus.deleteMany({ where: { user_id: userId } });
+  async deleteVipStatus(user_id: string) {
+    await this.prisma.resVipStatus.deleteMany({ where: { user_id: user_id } });
     return { message: 'VIP status deleted' };
   }
 }

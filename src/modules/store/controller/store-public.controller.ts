@@ -35,7 +35,7 @@ export class StorePublicController {
       },
     },
   })
-  getStore(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.store.getStore(userId, query);
+  getStore(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.store.getStore(user_id, query);
   }
 }

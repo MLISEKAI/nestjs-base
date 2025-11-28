@@ -53,8 +53,8 @@ export class VipController {
     },
   })
   getVipStatus(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
-    return this.vip.getVipStatus(userId, query);
+    const user_id = req.user.id;
+    return this.vip.getVipStatus(user_id, query);
   }
 
   @Post()
@@ -73,8 +73,8 @@ export class VipController {
     },
   })
   createVipStatus(@Req() req: AuthenticatedRequest, @Body() dto: CreateVipStatusDto) {
-    const userId = req.user.id;
-    return this.vip.createVipStatus(userId, dto);
+    const user_id = req.user.id;
+    return this.vip.createVipStatus(user_id, dto);
   }
 
   @Patch()
@@ -93,14 +93,14 @@ export class VipController {
     },
   })
   updateVipStatus(@Req() req: AuthenticatedRequest, @Body() dto: UpdateVipStatusDto) {
-    const userId = req.user.id;
-    return this.vip.updateVipStatus(userId, dto);
+    const user_id = req.user.id;
+    return this.vip.updateVipStatus(user_id, dto);
   }
 
   @Delete()
   @ApiOperation({ summary: 'Xóa trạng thái VIP của user hiện tại' })
   deleteVipStatus(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.vip.deleteVipStatus(userId);
+    const user_id = req.user.id;
+    return this.vip.deleteVipStatus(user_id);
   }
 }

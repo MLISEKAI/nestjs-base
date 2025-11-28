@@ -105,9 +105,9 @@ export class TrendingService {
           take: limit,
         });
 
-        const userIds = recentFollows.map((f) => f.following_id);
+        const user_ids = recentFollows.map((f) => f.following_id);
 
-        if (userIds.length === 0) {
+        if (user_ids.length === 0) {
           return [];
         }
 
@@ -115,7 +115,7 @@ export class TrendingService {
         const [users, allFollowersCounts] = await Promise.all([
           this.prisma.resUser.findMany({
             where: {
-              id: { in: userIds },
+              id: { in: user_ids },
             },
             select: {
               id: true,
@@ -128,7 +128,7 @@ export class TrendingService {
           this.prisma.resFollow.groupBy({
             by: ['following_id'],
             where: {
-              following_id: { in: userIds },
+              following_id: { in: user_ids },
             },
             _count: {
               following_id: true,

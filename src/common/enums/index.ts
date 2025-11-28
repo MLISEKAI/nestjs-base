@@ -9,3 +9,5 @@ export * from './conversation-type.enum';
 export * from './message-type.enum';
 export * from './group-classification.enum';
 export * from './member-role.enum';
+export * from './room-mode.enum';
+export * from './room-label.enum';

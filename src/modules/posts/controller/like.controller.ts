@@ -109,10 +109,10 @@ export class LikeController {
   @ApiOkResponse({ description: 'Trạng thái like của user', type: CheckUserLikedDto })
   checkUserLiked(@Param('post_id') postId: string, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token (user đang kiểm tra)
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để kiểm tra user đã like chưa
     // Trả về: { liked: boolean, reaction: string | null }
-    return this.likeService.checkUserLiked(userId, postId);
+    return this.likeService.checkUserLiked(user_id, postId);
   }
 
   /**
@@ -134,13 +134,13 @@ export class LikeController {
     @Req() req: AuthenticatedRequest,
   ) {
     // Lấy user_id từ JWT token (user đang like)
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để like post
     // Logic: Nếu đã like với cùng reaction => unlike (toggle)
     //        Nếu đã like với reaction khác => update reaction
     //        Nếu chưa like => tạo like mới
     //        Tự động tạo notification cho chủ bài viết
-    return this.likeService.likePost(userId, postId, dto);
+    return this.likeService.likePost(user_id, postId, dto);
   }
 
   /**
@@ -156,9 +156,9 @@ export class LikeController {
   @ApiOkResponse({ description: 'Post đã được unlike' })
   unlikePost(@Param('post_id') postId: string, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token (user đang unlike)
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để unlike post
     // Xóa like record khỏi database
-    return this.likeService.unlikePost(userId, postId);
+    return this.likeService.unlikePost(user_id, postId);
   }
 }

@@ -14,16 +14,16 @@ export class UserProfileService {
     private blockUserService: BlockUserService,
   ) {}
 
-  async getProfile(userId: string, currentUserId?: string) {
-    // Cache key: profile:{userId}:{currentUserId} để cache theo viewer
-    const cacheKey = `profile:${userId}:${currentUserId || 'public'}`;
+  async getProfile(user_id: string, currentuser_id?: string) {
+    // Cache key: profile:{user_id}:{currentuser_id} để cache theo viewer
+    const cacheKey = `profile:${user_id}:${currentuser_id || 'public'}`;
     const cacheTtl = 1800; // 30 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
         const user = await this.prisma.resUser.findUnique({
-          where: { id: userId },
+          where: { id: user_id },
           include: {
             albums: { include: { photos: true } },
             wallets: true,
@@ -35,12 +35,12 @@ export class UserProfileService {
         // Check if account is locked
         const isAccountLocked = user.is_blocked || false;
 
-        // Check block status if currentUserId is provided
+        // Check block status if currentuser_id is provided
         let isBlockedByMe = false;
         let hasBlockedMe = false;
 
-        if (currentUserId && currentUserId !== userId) {
-          const blockStatus = await this.blockUserService.getBlockStatus(currentUserId, userId);
+        if (currentuser_id && currentuser_id !== user_id) {
+          const blockStatus = await this.blockUserService.getBlockStatus(currentuser_id, user_id);
           isBlockedByMe = blockStatus.isBlockedByMe;
           hasBlockedMe = blockStatus.hasBlockedMe;
         }
@@ -58,11 +58,11 @@ export class UserProfileService {
     );
   }
 
-  async updateProfile(userId: string, dto: UpdateUserProfileDto) {
+  async updateProfile(user_id: string, dto: UpdateUserProfileDto) {
     // Tối ưu: Dùng update trực tiếp, Prisma sẽ throw NotFoundException nếu user không tồn tại
     try {
       const updated = await this.prisma.resUser.update({
-        where: { id: userId },
+        where: { id: user_id },
         data: {
           nickname: dto.nickname,
           avatar: dto.avatar,
@@ -92,7 +92,7 @@ export class UserProfileService {
       });
 
       // Invalidate cache
-      await this.cacheService.delPattern(`profile:${userId}:*`);
+      await this.cacheService.delPattern(`profile:${user_id}:*`);
 
       return updated;
     } catch (error) {
@@ -104,22 +104,22 @@ export class UserProfileService {
     }
   }
 
-  async deleteProfile(userId: string) {
-    await this.prisma.resUser.delete({ where: { id: userId } });
+  async deleteProfile(user_id: string) {
+    await this.prisma.resUser.delete({ where: { id: user_id } });
     return { message: 'Profile deleted' };
   }
 
-  async getStats(userId: string, query: StatsQueryDto) {
-    const cacheKey = `profile:${userId}:stats`;
+  async getStats(user_id: string, query: StatsQueryDto) {
+    const cacheKey = `profile:${user_id}:stats`;
     const cacheTtl = 300; // 5 phút (stats thay đổi thường xuyên)
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
         const [posts, followers, following] = await Promise.all([
-          this.prisma.resPost.count({ where: { user_id: userId } }),
-          this.prisma.resFollow.count({ where: { following_id: userId } }),
-          this.prisma.resFollow.count({ where: { follower_id: userId } }),
+          this.prisma.resPost.count({ where: { user_id: user_id } }),
+          this.prisma.resFollow.count({ where: { following_id: user_id } }),
+          this.prisma.resFollow.count({ where: { follower_id: user_id } }),
         ]);
         return {
           posts,
@@ -132,7 +132,7 @@ export class UserProfileService {
     );
   }
 
-  async getRoomStatus(userId: string) {
-    return this.prisma.resRoomStatus.findUnique({ where: { user_id: userId } });
+  async getRoomStatus(user_id: string) {
+    return this.prisma.resRoomStatus.findUnique({ where: { user_id: user_id } });
   }
 }

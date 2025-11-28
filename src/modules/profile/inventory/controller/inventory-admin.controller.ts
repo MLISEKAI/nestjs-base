@@ -49,16 +49,16 @@ export class InventoryAdminController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách vật phẩm với pagination' })
-  getInventory(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.inventory.getInventory(userId, query);
+  getInventory(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.inventory.getInventory(user_id, query);
   }
 
   @Post()
   @ApiOperation({ summary: '[ADMIN] Thêm vật phẩm vào inventory của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiBody({ type: CreateInventoryItemDto })
-  addInventoryItem(@Param('user_id') userId: string, @Body() dto: CreateInventoryItemDto) {
-    return this.inventory.addInventoryItem(userId, dto);
+  addInventoryItem(@Param('user_id') user_id: string, @Body() dto: CreateInventoryItemDto) {
+    return this.inventory.addInventoryItem(user_id, dto);
   }
 
   @Patch(':item_id')
@@ -67,18 +67,18 @@ export class InventoryAdminController {
   @ApiParam({ name: 'item_id', description: 'ID của item' })
   @ApiBody({ type: UpdateInventoryItemDto })
   updateInventoryItem(
-    @Param('user_id') userId: string,
+    @Param('user_id') user_id: string,
     @Param('item_id') itemId: string,
     @Body() dto: UpdateInventoryItemDto,
   ) {
-    return this.inventory.updateInventoryItem(userId, itemId, dto);
+    return this.inventory.updateInventoryItem(user_id, itemId, dto);
   }
 
   @Delete(':item_id')
   @ApiOperation({ summary: '[ADMIN] Xóa vật phẩm inventory của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiParam({ name: 'item_id', description: 'ID của item' })
-  deleteInventoryItem(@Param('user_id') userId: string, @Param('item_id') itemId: string) {
-    return this.inventory.deleteInventoryItem(userId, itemId);
+  deleteInventoryItem(@Param('user_id') user_id: string, @Param('item_id') itemId: string) {
+    return this.inventory.deleteInventoryItem(user_id, itemId);
   }
 }

@@ -11,7 +11,7 @@ import { createHash, randomInt, timingSafeEqual } from 'crypto';
  * VerificationRequest - Interface cho verification code request
  */
 interface VerificationRequest {
-  userId?: string;
+  user_id?: string;
   target: string;
   context?: string;
 }
@@ -134,7 +134,7 @@ export class VerificationService {
 
     await this.prisma.resVerificationCode.create({
       data: {
-        user_id: params.userId,
+        user_id: params.user_id,
         target: params.target,
         type: params.type,
         code: this.hashCode(code),

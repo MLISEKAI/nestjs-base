@@ -36,11 +36,11 @@ export class StoryService {
 
   /**
    * Lấy stories của user (chỉ stories chưa hết hạn)
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param query - Query parameters cho pagination (page, limit)
    * @returns Paginated list of active stories
    */
-  async getStories(userId: string, query?: BaseQueryDto) {
+  async getStories(user_id: string, query?: BaseQueryDto) {
     // Parse pagination parameters với default values
     const take = query?.limit && query.limit > 0 ? query.limit : 20; // Default 20 items per page
     const page = query?.page && query.page > 0 ? query.page : 1; // Default page 1
@@ -54,7 +54,7 @@ export class StoryService {
       // Lấy danh sách stories của user
       this.prisma.resStory.findMany({
         where: {
-          user_id: userId, // Chỉ lấy stories của user này
+          user_id: user_id, // Chỉ lấy stories của user này
           expires_at: { gt: now }, // Chỉ lấy stories chưa hết hạn (greater than now)
         },
         take, // Limit số lượng
@@ -74,7 +74,7 @@ export class StoryService {
       // Đếm tổng số active stories của user
       this.prisma.resStory.count({
         where: {
-          user_id: userId,
+          user_id: user_id,
           expires_at: { gt: now },
         },
       }),
@@ -136,11 +136,11 @@ export class StoryService {
 
   /**
    * Tạo story mới (tự động expire sau 24 giờ)
-   * @param userId - ID của user tạo story
+   * @param user_id - ID của user tạo story
    * @param dto - DTO chứa thông tin story (content, media_url, media_type)
    * @returns Story đã tạo
    */
-  async createStory(userId: string, dto: CreateStoryDto) {
+  async createStory(user_id: string, dto: CreateStoryDto) {
     // Tính thời gian expire (24 giờ từ bây giờ)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // Thêm 24 giờ
@@ -148,7 +148,7 @@ export class StoryService {
     // Tạo story mới trong database
     const story = await this.prisma.resStory.create({
       data: {
-        user_id: userId, // ID của user tạo story
+        user_id: user_id, // ID của user tạo story
         content: dto.content, // Text content (optional)
         media_url: dto.media_url, // URL của media (image/video) (optional)
         media_type: dto.media_type, // Loại media: image hoặc video (optional)
@@ -171,18 +171,18 @@ export class StoryService {
 
   /**
    * Xóa story
-   * @param userId - ID của user (để verify ownership)
+   * @param user_id - ID của user (để verify ownership)
    * @param storyId - ID của story cần xóa
    * @returns Message xác nhận đã xóa
    * @throws NotFoundException nếu story không tồn tại hoặc không thuộc về user
    */
-  async deleteStory(userId: string, storyId: string) {
+  async deleteStory(user_id: string, storyId: string) {
     try {
       // Xóa story khỏi database
       await this.prisma.resStory.delete({
         where: {
           id: storyId,
-          user_id: userId, // Chỉ owner mới có thể xóa
+          user_id: user_id, // Chỉ owner mới có thể xóa
         },
       });
 

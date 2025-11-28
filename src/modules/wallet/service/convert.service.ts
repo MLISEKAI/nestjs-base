@@ -102,7 +102,7 @@ export class ConvertService {
   /**
    * Chuyển đổi VEX sang Diamond
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param dto - ConvertVexToDiamondDto chứa vexAmount
    * @returns ConvertVexToDiamondResponseDto chứa thông tin conversion
    *
@@ -123,18 +123,18 @@ export class ConvertService {
    * - Tạo transaction với type 'convert' cho cả VEX (trừ) và Diamond (cộng)
    */
   async convertVexToDiamond(
-    userId: string,
+    user_id: string,
     dto: ConvertVexToDiamondDto,
   ): Promise<ConvertVexToDiamondResponseDto> {
     // Lấy hoặc tạo VEX wallet
     let vexWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: 'vex' },
+      where: { user_id: user_id, currency: 'vex' },
     });
 
     if (!vexWallet) {
       vexWallet = await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: 'vex',
           balance: new Prisma.Decimal(0),
         },
@@ -161,13 +161,13 @@ export class ConvertService {
 
     // Lấy hoặc tạo Diamond wallet
     let diamondWallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency: 'diamond' },
+      where: { user_id: user_id, currency: 'diamond' },
     });
 
     if (!diamondWallet) {
       diamondWallet = await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency: 'diamond',
           balance: new Prisma.Decimal(0),
         },
@@ -197,7 +197,7 @@ export class ConvertService {
       await tx.resWalletTransaction.create({
         data: {
           wallet_id: diamondWallet.id,
-          user_id: userId,
+          user_id: user_id,
           type: 'convert',
           amount: new Prisma.Decimal(totalDiamondsReceived),
           balance_before: diamondWallet.balance,

@@ -112,11 +112,11 @@ export class NotificationService {
   /**
    * Lấy danh sách notifications của user với pagination và filtering
    * Cached for 1 minute (notifications thay đổi thường xuyên nên cache ngắn)
-   * @param userId - ID của user cần lấy notifications
+   * @param user_id - ID của user cần lấy notifications
    * @param query - Query parameters (page, limit, type, status, etc.)
    * @returns Paginated response chứa danh sách notifications
    */
-  async getUserNotifications(userId: string, query?: NotificationQueryDto) {
+  async getUserNotifications(user_id: string, query?: NotificationQueryDto) {
     // Xác định số lượng items mỗi trang (limit)
     // Nếu query.limit có và > 0 thì dùng, không thì mặc định 20
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
@@ -129,11 +129,11 @@ export class NotificationService {
 
     // Build where clause (điều kiện WHERE trong SQL) để filter notifications
     // Khởi tạo với điều kiện cơ bản: chỉ lấy notifications của user này
-    const where: any = { user_id: userId };
+    const where: any = { user_id: user_id };
 
     // Ghi log để debug
     this.logger.debug(
-      `Getting notifications for user: ${userId}, filters: ${JSON.stringify(query)}`,
+      `Getting notifications for user: ${user_id}, filters: ${JSON.stringify(query)}`,
     );
 
     // Filter theo type (hỗ trợ nhiều types, comma-separated)
@@ -159,7 +159,7 @@ export class NotificationService {
     // Ví dụ: notifications:user-123:page:1:limit:20:type:LIKE,COMMENT:status:UNREAD
     const typeKey = query?.type ? `:type:${query.type}` : ''; // Thêm type vào cache key nếu có
     const statusKey = query?.status ? `:status:${query.status}` : ''; // Thêm status vào cache key nếu có
-    const cacheKey = `notifications:${userId}:page:${page}:limit:${take}${typeKey}${statusKey}`;
+    const cacheKey = `notifications:${user_id}:page:${page}:limit:${take}${typeKey}${statusKey}`;
     const cacheTtl = 60; // Cache trong 60 giây (1 phút) vì notifications thay đổi thường xuyên
 
     // Sử dụng cache: nếu có trong cache thì trả về, không thì query database và cache lại
@@ -192,7 +192,7 @@ export class NotificationService {
 
         // Ghi log để debug
         this.logger.debug(
-          `Found ${notifications.length} notifications for user ${userId} (total: ${total})`,
+          `Found ${notifications.length} notifications for user ${user_id} (total: ${total})`,
         );
 
         // Build paginated response với format chuẩn
@@ -207,8 +207,8 @@ export class NotificationService {
    * Lấy số lượng unread notifications
    * Cached for 30 seconds (real-time data)
    */
-  async getUnreadCount(userId: string) {
-    const cacheKey = `notifications:${userId}:unread:count`;
+  async getUnreadCount(user_id: string) {
+    const cacheKey = `notifications:${user_id}:unread:count`;
     const cacheTtl = 30; // 30 giây (real-time)
 
     const count = await this.cacheService.getOrSet(
@@ -216,7 +216,7 @@ export class NotificationService {
       async () => {
         return this.prisma.resNotification.count({
           where: {
-            user_id: userId,
+            user_id: user_id,
             status: NotificationStatus.UNREAD,
           },
         });
@@ -262,10 +262,10 @@ export class NotificationService {
   /**
    * Đánh dấu tất cả notifications là đã đọc
    */
-  async markAllAsRead(userId: string) {
+  async markAllAsRead(user_id: string) {
     await this.prisma.resNotification.updateMany({
       where: {
-        user_id: userId,
+        user_id: user_id,
         status: NotificationStatus.UNREAD,
       },
       data: {
@@ -274,7 +274,7 @@ export class NotificationService {
     });
 
     // Invalidate cache
-    await this.cacheService.delPattern(`notifications:${userId}:*`);
+    await this.cacheService.delPattern(`notifications:${user_id}:*`);
 
     return {
       status: 'success',
@@ -285,11 +285,11 @@ export class NotificationService {
   /**
    * Lấy chi tiết notification theo ID
    */
-  async getNotificationById(notificationId: string, userId: string) {
+  async getNotificationById(notificationId: string, user_id: string) {
     const notification = await this.prisma.resNotification.findFirst({
       where: {
         id: notificationId,
-        user_id: userId, // Đảm bảo chỉ user sở hữu mới xem được
+        user_id: user_id, // Đảm bảo chỉ user sở hữu mới xem được
       },
       include: {
         sender: {
@@ -312,12 +312,12 @@ export class NotificationService {
   /**
    * Đánh dấu một notification là đã đọc
    */
-  async markAsRead(notificationId: string, userId: string) {
+  async markAsRead(notificationId: string, user_id: string) {
     try {
       const notification = await this.prisma.resNotification.findFirst({
         where: {
           id: notificationId,
-          user_id: userId,
+          user_id: user_id,
         },
       });
 
@@ -331,7 +331,7 @@ export class NotificationService {
       });
 
       // Invalidate cache
-      await this.cacheService.delPattern(`notifications:${userId}:*`);
+      await this.cacheService.delPattern(`notifications:${user_id}:*`);
 
       return {
         status: 'success',
@@ -348,17 +348,17 @@ export class NotificationService {
   /**
    * Xóa notification
    */
-  async deleteNotification(notificationId: string, userId: string) {
+  async deleteNotification(notificationId: string, user_id: string) {
     try {
       await this.prisma.resNotification.delete({
         where: {
           id: notificationId,
-          user_id: userId, // Đảm bảo chỉ user sở hữu mới xóa được
+          user_id: user_id, // Đảm bảo chỉ user sở hữu mới xóa được
         },
       });
 
       // Invalidate cache
-      await this.cacheService.delPattern(`notifications:${userId}:*`);
+      await this.cacheService.delPattern(`notifications:${user_id}:*`);
 
       return {
         status: 'success',
@@ -375,15 +375,15 @@ export class NotificationService {
   /**
    * Xóa tất cả notifications của user
    */
-  async deleteAllNotifications(userId: string) {
+  async deleteAllNotifications(user_id: string) {
     await this.prisma.resNotification.deleteMany({
       where: {
-        user_id: userId,
+        user_id: user_id,
       },
     });
 
     // Invalidate cache
-    await this.cacheService.delPattern(`notifications:${userId}:*`);
+    await this.cacheService.delPattern(`notifications:${user_id}:*`);
 
     return {
       status: 'success',
@@ -409,9 +409,9 @@ export class NotificationService {
   /**
    * Helper: Tạo notification cho follow
    */
-  async createFollowNotification(userId: string, followerId: string) {
+  async createFollowNotification(user_id: string, followerId: string) {
     return this.createNotification({
-      user_id: userId,
+      user_id: user_id,
       sender_id: followerId,
       type: NotificationType.FOLLOW,
       title: 'New Follower',
@@ -423,15 +423,15 @@ export class NotificationService {
   /**
    * Helper: Tạo notification cho gift
    */
-  async createGiftNotification(receiverId: string, senderId: string, giftId: string) {
+  async createGiftNotification(receiverId: string, senderId: string, gift_id: string) {
     return this.createNotification({
       user_id: receiverId,
       sender_id: senderId,
       type: NotificationType.GIFT,
       title: 'New Gift',
       content: 'You received a gift',
-      data: JSON.stringify({ giftId }),
-      link: `/gifts/${giftId}`,
+      data: JSON.stringify({ gift_id }),
+      link: `/gifts/${gift_id}`,
     });
   }
 }

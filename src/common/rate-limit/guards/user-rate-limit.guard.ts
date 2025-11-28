@@ -43,16 +43,16 @@ export class UserRateLimitGuard implements CanActivate {
     }
 
     // Get user ID from request
-    const userId = this.getUserId(request);
+    const user_id = this.getUserId(request);
 
-    if (!userId) {
+    if (!user_id) {
       // If no user ID, use IP address as fallback
       const ip = request.ip || request.connection?.remoteAddress || 'unknown';
       return this.checkRateLimit(context, `ip:${ip}`, request.path, config);
     }
 
     // Check rate limit for user
-    return this.checkRateLimit(context, userId, request.path, config);
+    return this.checkRateLimit(context, user_id, request.path, config);
   }
 
   private async checkRateLimit(
@@ -93,7 +93,7 @@ export class UserRateLimitGuard implements CanActivate {
     // Try to get user ID from different sources
     return (
       request.user?.id ||
-      request.user?.userId ||
+      request.user?.user_id ||
       request.params?.user_id ||
       request.body?.user_id ||
       request.query?.user_id ||

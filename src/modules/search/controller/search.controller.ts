@@ -56,8 +56,8 @@ export class SearchController {
     },
   })
   async search(@Query() query: SearchQueryDto, @Req() req?: AuthenticatedRequest) {
-    const userId = req?.user?.id;
-    return this.searchService.search(query, userId);
+    const user_id = req?.user?.id;
+    return this.searchService.search(query, user_id);
   }
 
   @Get('users')
@@ -67,8 +67,8 @@ export class SearchController {
   })
   @ApiOkResponse({ description: 'Danh sách users với pagination' })
   async searchUsers(@Query() query: SearchQueryDto, @Req() req?: AuthenticatedRequest) {
-    const userId = req?.user?.id;
-    return this.searchService.search({ ...query, type: 'users' as any }, userId);
+    const user_id = req?.user?.id;
+    return this.searchService.search({ ...query, type: 'users' as any }, user_id);
   }
 
   @Get('posts')
@@ -78,8 +78,8 @@ export class SearchController {
   })
   @ApiOkResponse({ description: 'Danh sách posts với pagination' })
   async searchPosts(@Query() query: SearchQueryDto, @Req() req?: AuthenticatedRequest) {
-    const userId = req?.user?.id;
-    return this.searchService.search({ ...query, type: 'posts' as any }, userId);
+    const user_id = req?.user?.id;
+    return this.searchService.search({ ...query, type: 'posts' as any }, user_id);
   }
 
   @Get('recommendations/users')
@@ -120,8 +120,8 @@ export class SearchController {
     @Req() req: AuthenticatedRequest,
     @Query() query: RecommendationQueryDto,
   ) {
-    const userId = req.user.id;
-    return this.recommendationService.getRecommendedUsers(userId, query);
+    const user_id = req.user.id;
+    return this.recommendationService.getRecommendedUsers(user_id, query);
   }
 
   @Get('recommendations/posts')
@@ -137,8 +137,8 @@ export class SearchController {
     @Req() req: AuthenticatedRequest,
     @Query() query: RecommendationQueryDto,
   ) {
-    const userId = req.user.id;
-    return this.recommendationService.getRecommendedPosts(userId, query);
+    const user_id = req.user.id;
+    return this.recommendationService.getRecommendedPosts(user_id, query);
   }
 
   @Get('trending/posts')

@@ -24,19 +24,19 @@ export class ProfileServiceDb {
    */
   constructor(private prisma: PrismaService) {}
 
-  async postQuestScan(userId: string, dto: { qrCode: string }) {
+  async postQuestScan(user_id: string, dto: { qrCode: string }) {
     return { message: `Quest scanned successfully: ${dto.qrCode}` };
   }
 
-  async getUserLocation(userId: string) {
-    return this.prisma.resLocation.findUnique({ where: { user_id: userId } });
+  async getUserLocation(user_id: string) {
+    return this.prisma.resLocation.findUnique({ where: { user_id: user_id } });
   }
 
-  async getUserContribution(userId: string) {
-    return this.prisma.resContribution.findUnique({ where: { user_id: userId } });
+  async getUserContribution(user_id: string) {
+    return this.prisma.resContribution.findUnique({ where: { user_id: user_id } });
   }
 
-  async getUserInterests(userId: string) {
-    return this.prisma.resInterest.findMany({ where: { user_id: userId } });
+  async getUserInterests(user_id: string) {
+    return this.prisma.resInterest.findMany({ where: { user_id: user_id } });
   }
 }

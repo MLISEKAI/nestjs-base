@@ -17,11 +17,11 @@ export class UserRateLimitService {
    * Check rate limit for a user
    */
   async checkRateLimit(
-    userId: string,
+    user_id: string,
     endpoint: string,
     config: RateLimitConfig,
   ): Promise<RateLimitResult> {
-    const key = this.getKey(userId, endpoint);
+    const key = this.getKey(user_id, endpoint);
     const now = Date.now();
     const resetTime = new Date(now + config.ttl);
 
@@ -76,7 +76,7 @@ export class UserRateLimitService {
       }
     } catch (error) {
       // Fallback to memory store if Redis fails
-      return this.checkRateLimitMemory(userId, endpoint, config);
+      return this.checkRateLimitMemory(user_id, endpoint, config);
     }
   }
 
@@ -84,11 +84,11 @@ export class UserRateLimitService {
    * Fallback to memory store
    */
   private checkRateLimitMemory(
-    userId: string,
+    user_id: string,
     endpoint: string,
     config: RateLimitConfig,
   ): RateLimitResult {
-    const key = this.getKey(userId, endpoint);
+    const key = this.getKey(user_id, endpoint);
     const now = Date.now();
     const resetTime = new Date(now + config.ttl);
 
@@ -128,8 +128,8 @@ export class UserRateLimitService {
   /**
    * Reset rate limit for a user
    */
-  async resetRateLimit(userId: string, endpoint: string): Promise<void> {
-    const key = this.getKey(userId, endpoint);
+  async resetRateLimit(user_id: string, endpoint: string): Promise<void> {
+    const key = this.getKey(user_id, endpoint);
     await this.cacheService.del(key);
     this.memoryStore.delete(key);
   }
@@ -138,11 +138,11 @@ export class UserRateLimitService {
    * Get rate limit status for a user
    */
   async getRateLimitStatus(
-    userId: string,
+    user_id: string,
     endpoint: string,
     config: RateLimitConfig,
   ): Promise<RateLimitResult> {
-    const key = this.getKey(userId, endpoint);
+    const key = this.getKey(user_id, endpoint);
     const now = Date.now();
 
     try {
@@ -177,8 +177,8 @@ export class UserRateLimitService {
   /**
    * Generate cache key
    */
-  private getKey(userId: string, endpoint: string): string {
-    return `rate_limit:user:${userId}:${endpoint}`;
+  private getKey(user_id: string, endpoint: string): string {
+    return `rate_limit:user:${user_id}:${endpoint}`;
   }
 
   /**

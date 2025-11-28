@@ -30,21 +30,21 @@ export class ReferralController {
   @Get()
   @ApiOperation({ summary: 'Danh sách referral của user' })
   getReferrals(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.referral.getReferrals(userId);
+    const user_id = req.user.id;
+    return this.referral.getReferrals(user_id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Thêm referral cho user hiện tại' })
   addReferral(@Req() req: AuthenticatedRequest, @Body('referred_id') referredId: string) {
-    const userId = req.user.id;
-    return this.referral.addReferral(userId, referredId);
+    const user_id = req.user.id;
+    return this.referral.addReferral(user_id, referredId);
   }
 
   @Delete(':referred_id')
   @ApiOperation({ summary: 'Xóa referral của user hiện tại' })
   removeReferral(@Req() req: AuthenticatedRequest, @Param('referred_id') referredId: string) {
-    const userId = req.user.id;
-    return this.referral.removeReferral(userId, referredId);
+    const user_id = req.user.id;
+    return this.referral.removeReferral(user_id, referredId);
   }
 }

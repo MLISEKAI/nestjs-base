@@ -107,7 +107,7 @@ export class HashtagService {
     };
   }
 
-  async getHashtag(id: string, userId?: string) {
+  async getHashtag(id: string, user_id?: string) {
     const hashtag = await this.prisma.resHashtag.findUnique({
       where: { id },
       select: {
@@ -132,11 +132,11 @@ export class HashtagService {
 
     // Check if user is following
     let isFollowing = false;
-    if (userId) {
+    if (user_id) {
       const follow = await this.prisma.resHashtagFollow.findUnique({
         where: {
           user_id_hashtag_id: {
-            user_id: userId,
+            user_id: user_id,
             hashtag_id: id,
           },
         },
@@ -158,7 +158,7 @@ export class HashtagService {
     id: string,
     sort: 'popular' | 'latest',
     query?: BaseQueryDto,
-    userId?: string,
+    user_id?: string,
   ) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
@@ -244,11 +244,11 @@ export class HashtagService {
         // Check if user liked each post
         const postIds = sortedPosts.map((p) => p.id);
         let userLikes: string[] = [];
-        if (userId && postIds.length > 0) {
+        if (user_id && postIds.length > 0) {
           const likes = await this.prisma.resPostLike.findMany({
             where: {
               post_id: { in: postIds },
-              user_id: userId,
+              user_id: user_id,
             },
             select: { post_id: true },
           });
@@ -330,7 +330,7 @@ export class HashtagService {
     }
   }
 
-  async followHashtag(userId: string, hashtagId: string) {
+  async followHashtag(user_id: string, hashtagId: string) {
     // Check if hashtag exists
     const hashtag = await this.prisma.resHashtag.findUnique({
       where: { id: hashtagId },
@@ -343,7 +343,7 @@ export class HashtagService {
     try {
       await this.prisma.resHashtagFollow.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           hashtag_id: hashtagId,
         },
       });
@@ -358,12 +358,12 @@ export class HashtagService {
     }
   }
 
-  async unfollowHashtag(userId: string, hashtagId: string) {
+  async unfollowHashtag(user_id: string, hashtagId: string) {
     try {
       await this.prisma.resHashtagFollow.delete({
         where: {
           user_id_hashtag_id: {
-            user_id: userId,
+            user_id: user_id,
             hashtag_id: hashtagId,
           },
         },
@@ -378,11 +378,11 @@ export class HashtagService {
     }
   }
 
-  async getFollowStatus(userId: string, hashtagId: string) {
+  async getFollowStatus(user_id: string, hashtagId: string) {
     const follow = await this.prisma.resHashtagFollow.findUnique({
       where: {
         user_id_hashtag_id: {
-          user_id: userId,
+          user_id: user_id,
           hashtag_id: hashtagId,
         },
       },
@@ -393,7 +393,7 @@ export class HashtagService {
     };
   }
 
-  async attachHashtags(userId: string, postId: string, dto: AttachHashtagsDto) {
+  async attachHashtags(user_id: string, postId: string, dto: AttachHashtagsDto) {
     // Verify post ownership
     const post = await this.prisma.resPost.findUnique({
       where: { id: postId },
@@ -404,7 +404,7 @@ export class HashtagService {
       throw new NotFoundException('Post not found');
     }
 
-    if (post.user_id !== userId) {
+    if (post.user_id !== user_id) {
       throw new ForbiddenException('You can only attach hashtags to your own posts');
     }
 
@@ -459,7 +459,7 @@ export class HashtagService {
     return { success: true };
   }
 
-  async detachHashtag(userId: string, postId: string, hashtagId: string) {
+  async detachHashtag(user_id: string, postId: string, hashtagId: string) {
     // Verify post ownership
     const post = await this.prisma.resPost.findUnique({
       where: { id: postId },
@@ -470,7 +470,7 @@ export class HashtagService {
       throw new NotFoundException('Post not found');
     }
 
-    if (post.user_id !== userId) {
+    if (post.user_id !== user_id) {
       throw new ForbiddenException('You can only detach hashtags from your own posts');
     }
 

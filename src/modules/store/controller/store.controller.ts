@@ -54,16 +54,16 @@ export class StoreController {
     },
   })
   getStore(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
-    return this.store.getStore(userId, query);
+    const user_id = req.user.id;
+    return this.store.getStore(user_id, query);
   }
 
   @Post('items')
   @ApiOperation({ summary: 'Thêm item vào store của user hiện tại' })
   @ApiBody({ type: CreateStoreItemDto })
   addStoreItem(@Req() req: AuthenticatedRequest, @Body() dto: CreateStoreItemDto) {
-    const userId = req.user.id;
-    return this.store.addStoreItem(userId, dto);
+    const user_id = req.user.id;
+    return this.store.addStoreItem(user_id, dto);
   }
 
   @Patch('items/:item_id')
@@ -74,14 +74,14 @@ export class StoreController {
     @Param('item_id') itemId: string,
     @Body() dto: UpdateStoreItemDto,
   ) {
-    const userId = req.user.id;
-    return this.store.updateStoreItem(userId, itemId, dto);
+    const user_id = req.user.id;
+    return this.store.updateStoreItem(user_id, itemId, dto);
   }
 
   @Delete('items/:item_id')
   @ApiOperation({ summary: 'Xóa item trong store của user hiện tại' })
   deleteStoreItem(@Req() req: AuthenticatedRequest, @Param('item_id') itemId: string) {
-    const userId = req.user.id;
-    return this.store.deleteStoreItem(userId, itemId);
+    const user_id = req.user.id;
+    return this.store.deleteStoreItem(user_id, itemId);
   }
 }

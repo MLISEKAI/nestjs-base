@@ -112,7 +112,7 @@ export class BenchmarkService {
   /**
    * Run all benchmarks
    */
-  async runAllBenchmarks(userId: string) {
+  async runAllBenchmarks(user_id: string) {
     const results: BenchmarkResult[] = [];
 
     // Benchmark 1: Get user profile
@@ -120,7 +120,7 @@ export class BenchmarkService {
       await this.benchmark(
         'Get User Profile',
         async () => {
-          await this.prisma.resUser.findUnique({ where: { id: userId } });
+          await this.prisma.resUser.findUnique({ where: { id: user_id } });
         },
         10,
       ),
@@ -128,10 +128,10 @@ export class BenchmarkService {
 
     // Benchmark 2: Get user profile with cache
     results.push(
-      await this.benchmarkWithCache('Get User Profile', `user:${userId}:profile`, async () => {
+      await this.benchmarkWithCache('Get User Profile', `user:${user_id}:profile`, async () => {
         return this.cacheService.getOrSet(
-          `user:${userId}:profile`,
-          () => this.prisma.resUser.findUnique({ where: { id: userId } }),
+          `user:${user_id}:profile`,
+          () => this.prisma.resUser.findUnique({ where: { id: user_id } }),
           3600,
         );
       }),
@@ -143,7 +143,7 @@ export class BenchmarkService {
         'Get Gifts List',
         async () => {
           await this.prisma.resGift.findMany({
-            where: { receiver_id: userId },
+            where: { receiver_id: user_id },
             take: 20,
             include: {
               sender: { select: { id: true, nickname: true, avatar: true } },

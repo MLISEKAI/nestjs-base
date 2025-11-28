@@ -34,7 +34,7 @@ export class ProfileViewsAdminController {
   @ApiOkResponse({
     description: 'Danh sách lượt xem theo schema Prisma',
   })
-  getProfileViews(@Param('user_id') userId: string, @Query('full') full?: string) {
-    return this.profileViewsService.getProfileViews(userId, full === 'true');
+  getProfileViews(@Param('user_id') user_id: string, @Query('full') full?: string) {
+    return this.profileViewsService.getProfileViews(user_id, full === 'true');
   }
 }

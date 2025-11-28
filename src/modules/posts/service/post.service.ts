@@ -34,12 +34,12 @@ export class PostService {
     private websocketGateway: WebSocketGateway,
   ) {}
 
-  async getPosts(userId: string, query?: BaseQueryDto) {
+  async getPosts(user_id: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const cacheKey = `posts:${userId}:page:${page}:limit:${take}`;
+    const cacheKey = `posts:${user_id}:page:${page}:limit:${take}`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
@@ -47,7 +47,7 @@ export class PostService {
       async () => {
         const [posts, total] = await Promise.all([
           this.prisma.resPost.findMany({
-            where: { user_id: userId },
+            where: { user_id: user_id },
             include: {
               user: {
                 select: {
@@ -81,7 +81,7 @@ export class PostService {
             skip,
             orderBy: { created_at: 'desc' },
           }),
-          this.prisma.resPost.count({ where: { user_id: userId } }),
+          this.prisma.resPost.count({ where: { user_id: user_id } }),
         ]);
 
         // Format posts để match với PostDto
@@ -112,18 +112,18 @@ export class PostService {
 
   /**
    * Tạo post mới với media và hashtags
-   * @param userId - ID của user đang tạo post
+   * @param user_id - ID của user đang tạo post
    * @param dto - DTO chứa thông tin post (content, media, hashtags, privacy)
    * @returns Post đã tạo với đầy đủ relations (user, media, hashtags, counts)
    */
-  async createPost(userId: string, dto: CreatePostDto) {
+  async createPost(user_id: string, dto: CreatePostDto) {
     // Sử dụng transaction để đảm bảo tính nhất quán dữ liệu
     // Nếu bất kỳ operation nào fail, tất cả sẽ được rollback
     const post = await this.prisma.$transaction(async (tx) => {
       // Bước 1: Tạo post mới trong database
       const newPost = await tx.resPost.create({
         data: {
-          user_id: userId, // ID của user đang tạo post
+          user_id: user_id, // ID của user đang tạo post
           content: dto.content || '', // Nội dung post (có thể để trống nếu chỉ có media)
           privacy: dto.privacy || 'public', // Quyền riêng tư (public, friends, private)
         },
@@ -213,7 +213,7 @@ export class PostService {
     // Emit live update cho followers
     try {
       const followers = await this.prisma.resFollow.findMany({
-        where: { following_id: userId },
+        where: { following_id: user_id },
         select: { follower_id: true },
       });
 
@@ -222,7 +222,7 @@ export class PostService {
           type: 'POST_CREATED',
           post: {
             id: post.id,
-            userId: post.user_id,
+            user_id: post.user_id,
             content: post.content,
             user: post.user,
             createdAt: post.created_at,
@@ -234,8 +234,8 @@ export class PostService {
     }
 
     // Invalidate cache
-    await this.cacheService.delPattern(`posts:${userId}:*`);
-    await this.cacheService.del(`connections:${userId}:stats`);
+    await this.cacheService.delPattern(`posts:${user_id}:*`);
+    await this.cacheService.del(`connections:${user_id}:stats`);
     await this.cacheService.del(`post:${post.id}`);
 
     // Format response
@@ -259,11 +259,11 @@ export class PostService {
     };
   }
 
-  async updatePost(userId: string, postId: string, dto: UpdatePostDto) {
+  async updatePost(user_id: string, postId: string, dto: UpdatePostDto) {
     try {
       // Kiểm tra post tồn tại và thuộc về user
       const existing = await this.prisma.resPost.findFirst({
-        where: { id: postId, user_id: userId },
+        where: { id: postId, user_id: user_id },
       });
 
       if (!existing) {
@@ -379,7 +379,7 @@ export class PostService {
       // Emit live update
       try {
         const followers = await this.prisma.resFollow.findMany({
-          where: { following_id: userId },
+          where: { following_id: user_id },
           select: { follower_id: true },
         });
 
@@ -388,7 +388,7 @@ export class PostService {
             type: 'POST_UPDATED',
             post: {
               id: post.id,
-              userId: post.user_id,
+              user_id: post.user_id,
               content: post.content,
               user: post.user,
               createdAt: post.created_at,
@@ -400,7 +400,7 @@ export class PostService {
       }
 
       // Invalidate cache
-      await this.cacheService.delPattern(`posts:${userId}:*`);
+      await this.cacheService.delPattern(`posts:${user_id}:*`);
       await this.cacheService.del(`post:${postId}`);
 
       // Format response
@@ -430,16 +430,16 @@ export class PostService {
     }
   }
 
-  async deletePost(userId: string, postId: string) {
+  async deletePost(user_id: string, postId: string) {
     try {
       await this.prisma.resPost.delete({
-        where: { id: postId, user_id: userId },
+        where: { id: postId, user_id: user_id },
       });
 
       // Emit live update
       try {
         const followers = await this.prisma.resFollow.findMany({
-          where: { following_id: userId },
+          where: { following_id: user_id },
           select: { follower_id: true },
         });
 
@@ -447,7 +447,7 @@ export class PostService {
           this.websocketGateway.emitLiveUpdate(follow.follower_id, {
             type: 'POST_DELETED',
             postId: postId,
-            userId: userId,
+            user_id: user_id,
           });
         });
       } catch (error) {
@@ -455,7 +455,7 @@ export class PostService {
       }
 
       // Invalidate cache khi delete post
-      await this.cacheService.delPattern(`posts:${userId}:*`);
+      await this.cacheService.delPattern(`posts:${user_id}:*`);
       await this.cacheService.del(`post:${postId}:media`); // Post media cache
       await this.cacheService.delPattern(`post:${postId}:likes:*`); // Post likes cache
       await this.cacheService.del(`post:${postId}:like:stats`); // Post like stats cache
@@ -470,12 +470,12 @@ export class PostService {
     }
   }
 
-  async getFeed(userId: string, query?: BaseQueryDto) {
+  async getFeed(user_id: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
-    const cacheKey = `feed:${userId}:page:${page}:limit:${take}`;
+    const cacheKey = `feed:${user_id}:page:${page}:limit:${take}`;
     const cacheTtl = 60; // 1 phút
 
     return this.cacheService.getOrSet(
@@ -483,11 +483,11 @@ export class PostService {
       async () => {
         // Lấy danh sách users mà user đang follow
         const following = await this.prisma.resFollow.findMany({
-          where: { follower_id: userId },
+          where: { follower_id: user_id },
           select: { following_id: true },
         });
         const followingIds = following.map((f) => f.following_id);
-        followingIds.push(userId); // Bao gồm cả posts của chính user
+        followingIds.push(user_id); // Bao gồm cả posts của chính user
 
         // Lấy posts từ users đang follow (chỉ public hoặc friends)
         const where: any = {
@@ -540,7 +540,7 @@ export class PostService {
         const likes = await this.prisma.resPostLike.findMany({
           where: {
             post_id: { in: postIds },
-            user_id: userId,
+            user_id: user_id,
           },
           select: { post_id: true },
         });
@@ -576,7 +576,7 @@ export class PostService {
     );
   }
 
-  async getPostById(postId: string, userId?: string) {
+  async getPostById(postId: string, user_id?: string) {
     const post = await this.prisma.resPost.findUnique({
       where: { id: postId },
       include: {
@@ -614,18 +614,18 @@ export class PostService {
     }
 
     // Check privacy
-    if (post.privacy === 'private' && post.user_id !== userId) {
+    if (post.privacy === 'private' && post.user_id !== user_id) {
       throw new NotFoundException('Post not found');
     }
 
     // Check if user liked
     let isLiked = false;
-    if (userId) {
+    if (user_id) {
       const like = await this.prisma.resPostLike.findUnique({
         where: {
           post_id_user_id: {
             post_id: postId,
-            user_id: userId,
+            user_id: user_id,
           },
         },
       });

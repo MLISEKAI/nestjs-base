@@ -7,32 +7,32 @@ import { CreateLoveSpaceDto, UpdateLoveSpaceDto } from '../dto/lovespace.dto';
 export class LoveSpaceService {
   constructor(private prisma: PrismaService) {}
 
-  async getLoveSpace(userId: string, query: BaseQueryDto) {
-    const space = await this.prisma.resLoveSpace.findUnique({ where: { user_id: userId } });
+  async getLoveSpace(user_id: string, query: BaseQueryDto) {
+    const space = await this.prisma.resLoveSpace.findUnique({ where: { user_id: user_id } });
     if (!space) throw new NotFoundException('Love Space not found');
     return space;
   }
 
-  async createLoveSpace(userId: string, dto: CreateLoveSpaceDto) {
-    return this.prisma.resLoveSpace.create({ data: { user_id: userId, bio: dto.bio } });
+  async createLoveSpace(user_id: string, dto: CreateLoveSpaceDto) {
+    return this.prisma.resLoveSpace.create({ data: { user_id: user_id, bio: dto.bio } });
   }
 
-  async updateLoveSpace(userId: string, dto: UpdateLoveSpaceDto) {
+  async updateLoveSpace(user_id: string, dto: UpdateLoveSpaceDto) {
     try {
       if (dto.bio === undefined) {
         // Nếu không có bio, cần lấy giá trị hiện tại
         const existing = await this.prisma.resLoveSpace.findUnique({
-          where: { user_id: userId },
+          where: { user_id: user_id },
           select: { bio: true },
         });
         if (!existing) throw new NotFoundException('Love Space not found');
         return this.prisma.resLoveSpace.update({
-          where: { user_id: userId },
+          where: { user_id: user_id },
           data: { bio: existing.bio },
         });
       }
       return await this.prisma.resLoveSpace.update({
-        where: { user_id: userId },
+        where: { user_id: user_id },
         data: { bio: dto.bio },
       });
     } catch (error) {
@@ -43,8 +43,8 @@ export class LoveSpaceService {
     }
   }
 
-  async deleteLoveSpace(userId: string) {
-    await this.prisma.resLoveSpace.deleteMany({ where: { user_id: userId } });
+  async deleteLoveSpace(user_id: string) {
+    await this.prisma.resLoveSpace.deleteMany({ where: { user_id: user_id } });
     return { message: 'Love Space deleted' };
   }
 }

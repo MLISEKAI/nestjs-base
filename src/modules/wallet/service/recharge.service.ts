@@ -86,7 +86,7 @@ export class RechargeService {
   /**
    * Checkout recharge - Tạo transaction và PayPal payment cho việc nạp tiền
    *
-   * @param userId - User ID (từ JWT token)
+   * @param user_id - User ID (từ JWT token)
    * @param dto - CheckoutRechargeDto chứa packageId và currency
    * @returns CheckoutRechargeResponseDto chứa transactionId, price, paymentUrl
    *
@@ -106,7 +106,7 @@ export class RechargeService {
    * - Transaction status ban đầu là 'pending', sẽ update thành 'completed' sau khi PayPal payment thành công
    */
   async checkoutRecharge(
-    userId: string,
+    user_id: string,
     dto: CheckoutRechargeDto,
   ): Promise<CheckoutRechargeResponseDto> {
     const currency = dto.currency || 'diamond'; // Mặc định là diamond
@@ -125,13 +125,13 @@ export class RechargeService {
 
     // Lấy hoặc tạo wallet theo currency
     let wallet = await this.prisma.resWallet.findFirst({
-      where: { user_id: userId, currency },
+      where: { user_id: user_id, currency },
     });
 
     if (!wallet) {
       wallet = await this.prisma.resWallet.create({
         data: {
-          user_id: userId,
+          user_id: user_id,
           currency,
           balance: new Prisma.Decimal(0),
         },
@@ -150,7 +150,7 @@ export class RechargeService {
     await this.prisma.resWalletTransaction.create({
       data: {
         wallet_id: wallet.id,
-        user_id: userId,
+        user_id: user_id,
         type: 'deposit',
         amount: new Prisma.Decimal(amountToAdd),
         balance_before: wallet.balance,

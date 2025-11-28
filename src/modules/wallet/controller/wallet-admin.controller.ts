@@ -78,8 +78,8 @@ export class WalletAdminController {
   @ApiOperation({ summary: '[ADMIN] Lấy thông tin ví của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Ví của user theo schema Prisma' })
-  getWallet(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.walletService.getWallet(userId, query);
+  getWallet(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.walletService.getWallet(user_id, query);
   }
 
   @Post()
@@ -87,8 +87,8 @@ export class WalletAdminController {
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiBody({ type: CreateWalletDto })
   @ApiCreatedResponse({ description: 'Ví được tạo theo schema Prisma' })
-  createWallet(@Param('user_id') userId: string, @Body() dto: CreateWalletDto) {
-    return this.walletService.createWallet(userId, dto);
+  createWallet(@Param('user_id') user_id: string, @Body() dto: CreateWalletDto) {
+    return this.walletService.createWallet(user_id, dto);
   }
 
   @Patch()
@@ -96,15 +96,15 @@ export class WalletAdminController {
   @ApiParam({ name: 'user_id', description: 'ID của user' })
   @ApiBody({ type: UpdateWalletDto })
   @ApiOkResponse({ description: 'Ví sau cập nhật theo schema Prisma' })
-  updateWallet(@Param('user_id') userId: string, @Body() dto: UpdateWalletDto) {
-    return this.walletService.updateWallet(userId, dto);
+  updateWallet(@Param('user_id') user_id: string, @Body() dto: UpdateWalletDto) {
+    return this.walletService.updateWallet(user_id, dto);
   }
 
   @Delete()
   @ApiOperation({ summary: '[ADMIN] Xóa ví của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user' })
-  deleteWallet(@Param('user_id') userId: string) {
-    return this.walletService.deleteWallet(userId);
+  deleteWallet(@Param('user_id') user_id: string) {
+    return this.walletService.deleteWallet(user_id);
   }
 
   @Get('summary')
@@ -113,8 +113,8 @@ export class WalletAdminController {
   })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ type: WalletSummaryResponseDto })
-  getWalletSummary(@Param('user_id') userId: string): Promise<WalletSummaryResponseDto> {
-    return this.walletSummaryService.getWalletSummary(userId);
+  getWalletSummary(@Param('user_id') user_id: string): Promise<WalletSummaryResponseDto> {
+    return this.walletSummaryService.getWalletSummary(user_id);
   }
 
   @Get('transactions/history')
@@ -122,9 +122,9 @@ export class WalletAdminController {
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ type: TransactionHistoryResponseDto })
   getTransactionHistory(
-    @Param('user_id') userId: string,
+    @Param('user_id') user_id: string,
     @Query() query: BaseQueryDto,
   ): Promise<TransactionHistoryResponseDto> {
-    return this.transactionService.getTransactionHistory(userId, query);
+    return this.transactionService.getTransactionHistory(user_id, query);
   }
 }

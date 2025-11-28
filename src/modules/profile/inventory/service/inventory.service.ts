@@ -33,13 +33,13 @@ export class InventoryService {
    */
   constructor(private prisma: PrismaService) {}
 
-  async getInventory(userId: string, query?: BaseQueryDto, itemType?: string) {
+  async getInventory(user_id: string, query?: BaseQueryDto, itemType?: string) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
 
     // Build where clause
-    const where: Prisma.ResInventoryWhereInput = { user_id: userId };
+    const where: Prisma.ResInventoryWhereInput = { user_id: user_id };
 
     // Nếu có itemType, filter theo type của ResItem
     if (itemType) {
@@ -82,15 +82,15 @@ export class InventoryService {
     return buildPaginatedResponse(formattedItems, total, page, take);
   }
 
-  async addInventoryItem(userId: string, dto: CreateInventoryItemDto) {
+  async addInventoryItem(user_id: string, dto: CreateInventoryItemDto) {
     return this.prisma.resInventory.create({
-      data: { user_id: userId, item_id: dto.item_id, quantity: dto.quantity ?? 1 },
+      data: { user_id: user_id, item_id: dto.item_id, quantity: dto.quantity ?? 1 },
     });
   }
 
-  async updateInventoryItem(userId: string, itemId: string, dto: UpdateInventoryItemDto) {
+  async updateInventoryItem(user_id: string, itemId: string, dto: UpdateInventoryItemDto) {
     const existing = await this.prisma.resInventory.findFirst({
-      where: { id: itemId, user_id: userId },
+      where: { id: itemId, user_id: user_id },
     });
     if (!existing) throw new NotFoundException('Inventory item not found');
     return this.prisma.resInventory.update({
@@ -99,9 +99,9 @@ export class InventoryService {
     });
   }
 
-  async deleteInventoryItem(userId: string, itemId: string) {
+  async deleteInventoryItem(user_id: string, itemId: string) {
     const existing = await this.prisma.resInventory.findFirst({
-      where: { id: itemId, user_id: userId },
+      where: { id: itemId, user_id: user_id },
     });
     if (!existing) throw new NotFoundException('Inventory item not found');
     await this.prisma.resInventory.delete({ where: { id: itemId } });

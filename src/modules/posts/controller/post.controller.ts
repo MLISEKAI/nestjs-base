@@ -69,9 +69,9 @@ export class PostController {
   getPosts(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
     // Lấy user_id từ JWT token (user đã được authenticate bởi AuthGuard)
     // req.user được set bởi JWT strategy sau khi verify token thành công
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để lấy danh sách posts của user này với pagination
-    return this.posts.getPosts(userId, query);
+    return this.posts.getPosts(user_id, query);
   }
 
   /**
@@ -87,7 +87,7 @@ export class PostController {
   @ApiOkResponse({ description: 'Danh sách posts trong feed với pagination', type: [PostDto] })
   getFeed(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
     // Gọi service để lấy feed posts với pagination
-    // userId được dùng để filter posts (ví dụ: không hiển thị posts của user đã block)
+    // user_id được dùng để filter posts (ví dụ: không hiển thị posts của user đã block)
     return this.posts.getFeed(req.user.id, query);
   }
 
@@ -101,11 +101,11 @@ export class PostController {
   @ApiParam({ name: 'post_id', description: 'Post ID' })
   @ApiOkResponse({ description: 'Chi tiết post', type: PostDto })
   getPost(@Param('post_id') postId: string, @Req() req?: AuthenticatedRequest) {
-    // userId có thể undefined nếu user chưa đăng nhập (optional authentication)
-    // Nếu có userId, service sẽ trả về thêm thông tin như: user đã like chưa, user đã comment chưa, etc.
-    const userId = req?.user?.id;
+    // user_id có thể undefined nếu user chưa đăng nhập (optional authentication)
+    // Nếu có user_id, service sẽ trả về thêm thông tin như: user đã like chưa, user đã comment chưa, etc.
+    const user_id = req?.user?.id;
     // Gọi service để lấy chi tiết post
-    return this.posts.getPostById(postId, userId);
+    return this.posts.getPostById(postId, user_id);
   }
 
   /**
@@ -124,10 +124,10 @@ export class PostController {
   })
   createPost(@Body() dto: CreatePostDto, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token (user đang tạo post)
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để tạo post mới
     // Service sẽ xử lý: tạo post, upload media, tạo/link hashtags, etc.
-    return this.posts.createPost(userId, dto);
+    return this.posts.createPost(user_id, dto);
   }
 
   /**
@@ -152,9 +152,9 @@ export class PostController {
   ) {
     // Lấy user_id từ JWT token
     // Service sẽ kiểm tra: chỉ cho phép update nếu user_id === post.user_id
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để update post
-    return this.posts.updatePost(userId, postId, dto);
+    return this.posts.updatePost(user_id, postId, dto);
   }
 
   /**
@@ -173,9 +173,9 @@ export class PostController {
   deletePost(@Param('post_id') postId: string, @Req() req: AuthenticatedRequest) {
     // Lấy user_id từ JWT token
     // Service sẽ kiểm tra: chỉ cho phép delete nếu user_id === post.user_id
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service để delete post
     // Service sẽ xóa: post, media, hashtags, likes, comments (cascade delete)
-    return this.posts.deletePost(userId, postId);
+    return this.posts.deletePost(user_id, postId);
   }
 }

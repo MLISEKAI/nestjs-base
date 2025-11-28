@@ -94,8 +94,8 @@ export class GiftsController {
   @ApiOperation({ summary: 'Top quà tặng của user hiện tại' })
   @ApiOkResponse({ type: [TopSupporterDto], description: 'Danh sách top supporter' })
   getTopGifts(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.summaryService.getTopSupporters(userId);
+    const user_id = req.user.id;
+    return this.summaryService.getTopSupporters(user_id);
   }
 
   @Get('gift-wall')
@@ -121,8 +121,8 @@ export class GiftsController {
     },
   })
   getGiftWall(@Req() req: AuthenticatedRequest) {
-    const userId = req.user.id;
-    return this.giftWallService.getGiftWall(userId);
+    const user_id = req.user.id;
+    return this.giftWallService.getGiftWall(user_id);
   }
 
   /**
@@ -200,9 +200,9 @@ export class GiftsController {
     },
   })
   getGiftWallMilestonesAll(@Req() req: AuthenticatedRequest, @Query() query?: BaseQueryDto) {
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Gọi service với milestoneId = undefined để lấy tất cả milestones
-    return this.giftWallService.getGiftWallMilestones(userId, undefined, query);
+    return this.giftWallService.getGiftWallMilestones(user_id, undefined, query);
   }
 
   /**
@@ -290,8 +290,8 @@ export class GiftsController {
     @Param('milestone_id') milestoneId: string,
     @Query() query?: BaseQueryDto,
   ) {
-    const userId = req.user.id;
-    return this.giftWallService.getGiftWallMilestones(userId, milestoneId, query);
+    const user_id = req.user.id;
+    return this.giftWallService.getGiftWallMilestones(user_id, milestoneId, query);
   }
 
   @Get('recent-gifts')
@@ -348,10 +348,10 @@ export class GiftsController {
     },
   })
   getRecentGifts(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
+    const user_id = req.user.id;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const limit = query?.limit && query.limit > 0 ? query.limit : 20;
-    return this.giftWallService.getRecentGifts(userId, page, limit);
+    return this.giftWallService.getRecentGifts(user_id, page, limit);
   }
 
   @Get('inventory')
@@ -380,9 +380,9 @@ export class GiftsController {
     type: PaginatedResponseDto<InventoryItemDto>,
   })
   getInventory(@Req() req: AuthenticatedRequest, @Query() query: BaseQueryDto) {
-    const userId = req.user.id;
+    const user_id = req.user.id;
     // Chỉ hiển thị gift items trong gift inventory
-    return this.inventoryService.getInventory(userId, query, 'gift');
+    return this.inventoryService.getInventory(user_id, query, 'gift');
   }
 
   @Post()
@@ -442,8 +442,8 @@ export class GiftsController {
     type: PurchaseGiftResponseDto,
   })
   async purchaseGift(@Req() req: AuthenticatedRequest, @Body() dto: PurchaseGiftDto) {
-    const userId = req.user.id;
-    return this.crudService.purchaseGift(userId, dto.gift_item_id, dto.quantity ?? 1);
+    const user_id = req.user.id;
+    return this.crudService.purchaseGift(user_id, dto.gift_item_id, dto.quantity ?? 1);
   }
 
   @Get()
@@ -501,9 +501,9 @@ export class GiftsController {
     @Query('type') type?: string,
     @Query('limit') limit?: number,
   ) {
-    const userId = req.user.id;
+    const user_id = req.user.id;
     const itemsLimit = limit && limit > 0 ? limit : 3; // Mặc định 3 items
-    return this.summaryService.getGiftsOverview(userId, type, itemsLimit);
+    return this.summaryService.getGiftsOverview(user_id, type, itemsLimit);
   }
 
   @Get(':id')
@@ -519,8 +519,8 @@ export class GiftsController {
   })
   @ApiOkResponse({ description: 'Chi tiết quà tặng', type: CreateGiftDto })
   findOne(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    const userId = req.user.id;
-    return this.crudService.findOne(id, userId);
+    const user_id = req.user.id;
+    return this.crudService.findOne(id, user_id);
   }
 
   @Delete(':id')
@@ -530,7 +530,7 @@ export class GiftsController {
     schema: { type: 'object', properties: { message: { example: 'Gift deleted' } } },
   })
   remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    const userId = req.user.id;
-    return this.crudService.remove(id, userId);
+    const user_id = req.user.id;
+    return this.crudService.remove(id, user_id);
   }
 }

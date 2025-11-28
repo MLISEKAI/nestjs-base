@@ -14,7 +14,7 @@ export class ConversationService {
   /**
    * Lấy danh sách conversations của user với pagination
    */
-  async getConversations(userId: string, query?: BaseQueryDto): Promise<IPaginatedResponse<any>> {
+  async getConversations(user_id: string, query?: BaseQueryDto): Promise<IPaginatedResponse<any>> {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
     const page = query?.page && query.page > 0 ? query.page : 1;
     const skip = (page - 1) * take;
@@ -24,7 +24,7 @@ export class ConversationService {
       deleted_at: null,
       participants: {
         some: {
-          user_id: userId,
+          user_id: user_id,
           left_at: null, // Chỉ lấy conversations mà user chưa rời
         },
       },
@@ -116,7 +116,7 @@ export class ConversationService {
     // Format response
     const formattedConversations = conversations.map((conv) => {
       const lastMessage = conv.messages[0] || null;
-      const otherParticipants = conv.participants.filter((p) => p.user_id !== userId);
+      const otherParticipants = conv.participants.filter((p) => p.user_id !== user_id);
       const unreadCount = 0; // TODO: Calculate unread count
 
       return {
@@ -152,14 +152,14 @@ export class ConversationService {
   /**
    * Lấy chi tiết conversation
    */
-  async getConversationById(conversationId: string, userId: string) {
+  async getConversationById(conversationId: string, user_id: string) {
     const conversation = await this.prisma.resConversation.findFirst({
       where: {
         id: conversationId,
         deleted_at: null,
         participants: {
           some: {
-            user_id: userId,
+            user_id: user_id,
             left_at: null,
           },
         },
@@ -218,7 +218,7 @@ export class ConversationService {
   /**
    * Tạo conversation mới
    */
-  async createConversation(userId: string, dto: CreateConversationDto) {
+  async createConversation(user_id: string, dto: CreateConversationDto) {
     // DIRECT CONVERSATION
     if (dto.type === ConversationType.DIRECT) {
       if (!dto.otherUserId) {
@@ -227,7 +227,7 @@ export class ConversationService {
 
       const otherUserId = Array.isArray(dto.otherUserId) ? dto.otherUserId[0] : dto.otherUserId;
 
-      if (!otherUserId || otherUserId === userId) {
+      if (!otherUserId || otherUserId === user_id) {
         throw new BadRequestException('You cannot create a direct chat with yourself');
       }
       // Kiểm tra tồn tại direct room giữa 2 người
@@ -238,7 +238,7 @@ export class ConversationService {
             // user hiện tại phải là participant
             {
               participants: {
-                some: { user_id: userId },
+                some: { user_id: user_id },
               },
             },
             // người còn lại phải là participant
@@ -252,7 +252,7 @@ export class ConversationService {
               participants: {
                 every: {
                   user_id: {
-                    in: [userId, otherUserId],
+                    in: [user_id, otherUserId],
                   },
                 },
               },
@@ -262,16 +262,16 @@ export class ConversationService {
       });
 
       if (existing) {
-        return this.getConversationById(existing.id, userId);
+        return this.getConversationById(existing.id, user_id);
       }
 
       // Tạo conversation mới
       return this.prisma.resConversation.create({
         data: {
           type: 'direct',
-          created_by: userId,
+          created_by: user_id,
           participants: {
-            create: [{ user_id: userId }, { user_id: otherUserId }],
+            create: [{ user_id: user_id }, { user_id: otherUserId }],
           },
           settings: { create: {} },
         },
@@ -299,12 +299,12 @@ export class ConversationService {
   /**
    * Xóa conversation (soft delete)
    */
-  async deleteConversation(conversationId: string, userId: string) {
+  async deleteConversation(conversationId: string, user_id: string) {
     // Kiểm tra user có trong conversation không
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -339,10 +339,10 @@ export class ConversationService {
   /**
    * Mark messages as read
    */
-  async markAsRead(conversationId: string, userId: string, messageIds?: string[]) {
+  async markAsRead(conversationId: string, user_id: string, messageIds?: string[]) {
     const where: Prisma.ResMessageWhereInput = {
       conversation_id: conversationId,
-      sender_id: { not: userId }, // Không mark messages của chính mình
+      sender_id: { not: user_id }, // Không mark messages của chính mình
       is_read: false,
     };
 
@@ -359,7 +359,7 @@ export class ConversationService {
     // TODO: Import WebSocketGateway if needed
     // this.websocketGateway.emitMessageRead(conversationId, {
     //   messageIds: messageIds || [],
-    //   userId,
+    //   user_id,
     //   readAt: new Date(),
     // });
 
@@ -377,11 +377,11 @@ export class ConversationService {
   /**
    * Update notifications settings
    */
-  async updateNotifications(conversationId: string, userId: string, enabled: boolean) {
+  async updateNotifications(conversationId: string, user_id: string, enabled: boolean) {
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -401,12 +401,12 @@ export class ConversationService {
   /**
    * Get conversation categories
    */
-  async getCategories(userId: string) {
+  async getCategories(user_id: string) {
     const conversations = await this.prisma.resConversation.findMany({
       where: {
         deleted_at: null,
         participants: {
-          some: { user_id: userId, left_at: null },
+          some: { user_id: user_id, left_at: null },
         },
       },
     });
@@ -425,14 +425,14 @@ export class ConversationService {
   /**
    * Get chat settings
    */
-  async getChatSettings(conversationId: string, userId: string) {
+  async getChatSettings(conversationId: string, user_id: string) {
     const conversation = await this.prisma.resConversation.findFirst({
       where: {
         id: conversationId,
         deleted_at: null,
         participants: {
           some: {
-            user_id: userId,
+            user_id: user_id,
             left_at: null,
           },
         },
@@ -465,16 +465,16 @@ export class ConversationService {
       throw new NotFoundException('Conversation not found');
     }
 
-    const participant = conversation.participants.find((p) => p.user_id === userId);
-    const otherParticipant = conversation.participants.find((p) => p.user_id !== userId);
+    const participant = conversation.participants.find((p) => p.user_id === user_id);
+    const otherParticipant = conversation.participants.find((p) => p.user_id !== user_id);
 
     // Check if blocked
     const isBlocked = otherParticipant
       ? await this.prisma.resBlock.findFirst({
           where: {
             OR: [
-              { blocker_id: userId, blocked_id: otherParticipant.user_id },
-              { blocker_id: otherParticipant.user_id, blocked_id: userId },
+              { blocker_id: user_id, blocked_id: otherParticipant.user_id },
+              { blocker_id: otherParticipant.user_id, blocked_id: user_id },
             ],
           },
         })
@@ -516,11 +516,11 @@ export class ConversationService {
   /**
    * Update display name
    */
-  async updateDisplayName(conversationId: string, userId: string, displayName: string) {
+  async updateDisplayName(conversationId: string, user_id: string, displayName: string) {
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -544,11 +544,11 @@ export class ConversationService {
   /**
    * Update gift sounds
    */
-  async updateGiftSounds(conversationId: string, userId: string, enabled: boolean) {
+  async updateGiftSounds(conversationId: string, user_id: string, enabled: boolean) {
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -568,14 +568,14 @@ export class ConversationService {
   /**
    * Report chat
    */
-  async reportChat(conversationId: string, userId: string, reason: string, details?: string) {
+  async reportChat(conversationId: string, user_id: string, reason: string, details?: string) {
     const conversation = await this.prisma.resConversation.findFirst({
       where: {
         id: conversationId,
         deleted_at: null,
         participants: {
           some: {
-            user_id: userId,
+            user_id: user_id,
             left_at: null,
           },
         },

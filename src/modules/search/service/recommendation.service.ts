@@ -16,9 +16,9 @@ export class RecommendationService {
    * Get recommended users based on mutual connections and similar interests
    * Cached for 10 minutes per user (user-specific recommendations)
    */
-  async getRecommendedUsers(userId: string, query: RecommendationQueryDto) {
+  async getRecommendedUsers(user_id: string, query: RecommendationQueryDto) {
     const limit = query.limit || 10;
-    const cacheKey = `recommendations:users:${userId}:${limit}`;
+    const cacheKey = `recommendations:users:${user_id}:${limit}`;
     const cacheTtl = 600; // 10 minutes
 
     return this.cacheService.getOrSet(
@@ -26,11 +26,11 @@ export class RecommendationService {
       async () => {
         // 1. Lấy danh sách users mà user hiện tại đang follow
         const following = await this.prisma.resFollow.findMany({
-          where: { follower_id: userId },
+          where: { follower_id: user_id },
           select: { following_id: true },
         });
         const followingIds = following.map((f) => f.following_id);
-        followingIds.push(userId); // Exclude self
+        followingIds.push(user_id); // Exclude self
 
         // 2. Lấy danh sách users mà những người bạn đang follow (mutual connections)
         const mutualConnections = await this.prisma.resFollow.findMany({
@@ -53,7 +53,7 @@ export class RecommendationService {
         const sortedUsers = Array.from(mutualCounts.entries())
           .sort((a, b) => b[1] - a[1])
           .slice(0, limit)
-          .map(([userId]) => userId);
+          .map(([user_id]) => user_id);
 
         // 5. Lấy thông tin chi tiết của recommended users
         if (sortedUsers.length === 0) {
@@ -89,7 +89,7 @@ export class RecommendationService {
         });
 
         // Attach connection status
-        return this.connectionsService.attachStatus(userId, recommendedUsers);
+        return this.connectionsService.attachStatus(user_id, recommendedUsers);
       },
       cacheTtl,
     );
@@ -99,9 +99,9 @@ export class RecommendationService {
    * Get recommended posts based on user's interests and following
    * Cached for 5 minutes per user (user-specific recommendations)
    */
-  async getRecommendedPosts(userId: string, query: RecommendationQueryDto) {
+  async getRecommendedPosts(user_id: string, query: RecommendationQueryDto) {
     const limit = query.limit || 10;
-    const cacheKey = `recommendations:posts:${userId}:${limit}`;
+    const cacheKey = `recommendations:posts:${user_id}:${limit}`;
     const cacheTtl = 300; // 5 minutes
 
     return this.cacheService.getOrSet(
@@ -109,7 +109,7 @@ export class RecommendationService {
       async () => {
         // 1. Lấy danh sách users mà user đang follow
         const following = await this.prisma.resFollow.findMany({
-          where: { follower_id: userId },
+          where: { follower_id: user_id },
           select: { following_id: true },
         });
         const followingIds = following.map((f) => f.following_id);

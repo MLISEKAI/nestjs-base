@@ -201,12 +201,12 @@ export class CommentService {
 
   /**
    * Tạo comment mới cho một bài viết
-   * @param userId - ID của user đang comment
+   * @param user_id - ID của user đang comment
    * @param postId - ID của bài viết được comment
    * @param dto - DTO chứa nội dung comment và parent_id (nếu là reply)
    * @returns Thông tin comment đã tạo
    */
-  async createComment(userId: string, postId: string, dto: CreateCommentDto) {
+  async createComment(user_id: string, postId: string, dto: CreateCommentDto) {
     // Validate: comment phải có content hoặc media
     if (!dto.content && (!dto.media || dto.media.length === 0)) {
       throw new NotFoundException('Comment must have content or media');
@@ -258,7 +258,7 @@ export class CommentService {
       const newComment = await tx.resComment.create({
         data: {
           post_id: postId, // ID của bài viết
-          user_id: userId, // ID của user đang comment
+          user_id: user_id, // ID của user đang comment
           content: dto.content || null, // Nội dung comment (có thể null nếu chỉ có media)
           parent_id: actualParentId || null, // ID của comment cha thực tế (đã được normalize về cấp 1)
         },
@@ -322,10 +322,10 @@ export class CommentService {
       // Hoặc: User A comment cấp 1, User B reply cấp 2, User C reply vào B => User A vẫn nhận notification (giống Facebook)
       if (actualParentId && parentComment) {
         // Chỉ gửi nếu người reply không phải là người comment gốc (tránh tự thông báo cho mình)
-        if (parentComment.user_id !== userId) {
+        if (parentComment.user_id !== user_id) {
           await this.notificationService.createNotification({
             user_id: parentComment.user_id, // Người comment gốc (cấp 1) nhận notification
-            sender_id: userId, // Người reply (user đang thực hiện hành động)
+            sender_id: user_id, // Người reply (user đang thực hiện hành động)
             type: NotificationType.COMMENT, // Loại notification là COMMENT
             title: 'New Reply', // Tiêu đề
             content: 'replied to your comment', // Content đơn giản, frontend sẽ ghép với sender.nickname
@@ -341,15 +341,15 @@ export class CommentService {
 
       // Gửi notification cho chủ bài viết (nếu không phải chủ bài viết tự comment)
       // Điều kiện:
-      // 1. post.user_id !== userId: Chủ bài viết không phải là người comment
+      // 1. post.user_id !== user_id: Chủ bài viết không phải là người comment
       // 2. (!actualParentId || parentComment.user_id !== post.user_id):
       //    - Nếu là top-level comment (không có actualParentId) => gửi cho chủ bài viết
       //    - Nếu là reply nhưng người comment gốc không phải chủ bài viết => gửi cho chủ bài viết
       //    (Nếu người comment gốc là chủ bài viết thì đã gửi notification ở trên rồi, không cần gửi lại)
-      if (post.user_id !== userId && (!actualParentId || parentComment.user_id !== post.user_id)) {
+      if (post.user_id !== user_id && (!actualParentId || parentComment.user_id !== post.user_id)) {
         await this.notificationService.createNotification({
           user_id: post.user_id, // Chủ bài viết nhận notification
-          sender_id: userId, // Người comment (user đang thực hiện hành động)
+          sender_id: user_id, // Người comment (user đang thực hiện hành động)
           type: NotificationType.COMMENT, // Loại notification là COMMENT
           title: 'New Comment', // Tiêu đề
           content: 'commented on your post', // Content đơn giản, frontend sẽ ghép với sender.nickname
@@ -372,11 +372,11 @@ export class CommentService {
     };
   }
 
-  async updateComment(userId: string, commentId: string, dto: UpdateCommentDto) {
+  async updateComment(user_id: string, commentId: string, dto: UpdateCommentDto) {
     try {
       // Kiểm tra comment tồn tại và thuộc về user
       const existing = await this.prisma.resComment.findFirst({
-        where: { id: commentId, user_id: userId },
+        where: { id: commentId, user_id: user_id },
       });
 
       if (!existing) {
@@ -464,7 +464,7 @@ export class CommentService {
     }
   }
 
-  async deleteComment(userId: string, commentId: string) {
+  async deleteComment(user_id: string, commentId: string) {
     try {
       // Get comment info before deleting to invalidate cache
       const comment = await this.prisma.resComment.findUnique({
@@ -475,7 +475,7 @@ export class CommentService {
       await this.prisma.resComment.delete({
         where: {
           id: commentId,
-          user_id: userId, // Only owner can delete
+          user_id: user_id, // Only owner can delete
         },
       });
 

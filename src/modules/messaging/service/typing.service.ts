@@ -14,12 +14,12 @@ export class TypingService {
   /**
    * Send typing indicator
    */
-  async sendTypingIndicator(conversationId: string, userId: string, dto: TypingIndicatorDto) {
+  async sendTypingIndicator(conversationId: string, user_id: string, dto: TypingIndicatorDto) {
     // Kiểm tra user có trong conversation không
     const participant = await this.prisma.resConversationParticipant.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId,
+        user_id: user_id,
         left_at: null,
       },
     });
@@ -31,7 +31,7 @@ export class TypingService {
     // Emit WebSocket event
     try {
       this.websocketGateway.emitTyping(conversationId, {
-        userId,
+        user_id,
         isTyping: dto.isTyping,
       });
     } catch (error) {

@@ -39,15 +39,15 @@ export class ProfileViewsServiceDb {
 
   // Lấy danh sách lượt xem hồ sơ
   // Cached for 5 minutes
-  async getProfileViews(userId: string, full: boolean = false) {
-    const cacheKey = `profile:${userId}:views:${full ? 'full' : 'basic'}`;
+  async getProfileViews(user_id: string, full: boolean = false) {
+    const cacheKey = `profile:${user_id}:views:${full ? 'full' : 'basic'}`;
     const cacheTtl = 300; // 5 phút
 
     return this.cacheService.getOrSet(
       cacheKey,
       async () => {
         const views = await this.prisma.resProfileView.findMany({
-          where: { target_user_id: userId },
+          where: { target_user_id: user_id },
           orderBy: { viewed_at: 'desc' },
           include: full ? { viewer: true } : undefined,
         });

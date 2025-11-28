@@ -71,16 +71,16 @@ export class GiftsAdminController {
   @ApiOperation({ summary: '[ADMIN] Xem top gifts của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Danh sách top supporter' })
-  getTopGifts(@Param('user_id') userId: string) {
-    return this.summaryService.getTopSupporters(userId);
+  getTopGifts(@Param('user_id') user_id: string) {
+    return this.summaryService.getTopSupporters(user_id);
   }
 
   @Get('gift-wall')
   @ApiOperation({ summary: '[ADMIN] Xem gift wall của user bất kỳ' })
   @ApiParam({ name: 'user_id', description: 'ID của user muốn xem' })
   @ApiOkResponse({ description: 'Thông tin Gift Wall' })
-  getGiftWall(@Param('user_id') userId: string) {
-    return this.giftWallService.getGiftWall(userId);
+  getGiftWall(@Param('user_id') user_id: string) {
+    return this.giftWallService.getGiftWall(user_id);
   }
 
   /**
@@ -140,8 +140,8 @@ export class GiftsAdminController {
       },
     },
   })
-  getGiftWallMilestonesAll(@Param('user_id') userId: string, @Query() query?: BaseQueryDto) {
-    return this.giftWallService.getGiftWallMilestones(userId, undefined, query);
+  getGiftWallMilestonesAll(@Param('user_id') user_id: string, @Query() query?: BaseQueryDto) {
+    return this.giftWallService.getGiftWallMilestones(user_id, undefined, query);
   }
 
   /**
@@ -208,11 +208,11 @@ export class GiftsAdminController {
     },
   })
   getGiftWallMilestonesById(
-    @Param('user_id') userId: string,
+    @Param('user_id') user_id: string,
     @Param('milestone_id') milestoneId: string,
     @Query() query?: BaseQueryDto,
   ) {
-    return this.giftWallService.getGiftWallMilestones(userId, milestoneId, query);
+    return this.giftWallService.getGiftWallMilestones(user_id, milestoneId, query);
   }
 
   @Get('recent-gifts')
@@ -226,10 +226,10 @@ export class GiftsAdminController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách quà nhận gần đây' })
-  getRecentGifts(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
+  getRecentGifts(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const limit = query?.limit && query.limit > 0 ? query.limit : 20;
-    return this.giftWallService.getRecentGifts(userId, page, limit);
+    return this.giftWallService.getRecentGifts(user_id, page, limit);
   }
 
   @Get('inventory')
@@ -243,8 +243,8 @@ export class GiftsAdminController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách vật phẩm trong inventory' })
-  getInventory(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.inventoryService.getInventory(userId, query);
+  getInventory(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.inventoryService.getInventory(user_id, query);
   }
 
   @Get()
@@ -258,7 +258,7 @@ export class GiftsAdminController {
     description: 'Số lượng mỗi trang (mặc định: 20)',
   })
   @ApiOkResponse({ description: 'Danh sách quà tặng với pagination' })
-  findAll(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.crudService.findAll(userId, query);
+  findAll(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.crudService.findAll(user_id, query);
   }
 }

@@ -40,8 +40,8 @@ export class ClanAdminController {
     type: UserClanDto,
     isArray: true,
   })
-  getClans(@Param('user_id') userId: string, @Query() query: BaseQueryDto) {
-    return this.clans.getClans(userId, query);
+  getClans(@Param('user_id') user_id: string, @Query() query: BaseQueryDto) {
+    return this.clans.getClans(user_id, query);
   }
 
   @Patch('clans/:clan_id')

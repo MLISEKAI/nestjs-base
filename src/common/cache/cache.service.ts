@@ -248,15 +248,15 @@ export class CacheService {
   /**
    * Xóa tất cả cache liên quan đến một user
    * Hữu ích khi user update profile, settings, etc.
-   * @param userId - ID của user cần invalidate cache
+   * @param user_id - ID của user cần invalidate cache
    */
-  async invalidateUserCache(userId: string): Promise<void> {
-    // Xóa tất cả cache keys bắt đầu bằng "user:${userId}:*"
+  async invalidateUserCache(user_id: string): Promise<void> {
+    // Xóa tất cả cache keys bắt đầu bằng "user:${user_id}:*"
     // Ví dụ: user:123:profile, user:123:settings, user:123:posts, etc.
-    await this.delPattern(`user:${userId}:*`);
-    // Xóa tất cả cache keys bắt đầu bằng "profile:${userId}:*"
+    await this.delPattern(`user:${user_id}:*`);
+    // Xóa tất cả cache keys bắt đầu bằng "profile:${user_id}:*"
     // Ví dụ: profile:123:info, profile:123:stats, etc.
-    await this.delPattern(`profile:${userId}:*`);
+    await this.delPattern(`profile:${user_id}:*`);
   }
 
   /**

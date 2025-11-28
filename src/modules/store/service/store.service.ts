@@ -34,11 +34,11 @@ export class StoreService {
 
   /**
    * Lấy danh sách items trong store của user với pagination
-   * @param userId - ID của user
+   * @param user_id - ID của user
    * @param query - Query parameters cho pagination (page, limit)
    * @returns Paginated list of store items
    */
-  async getStore(userId: string, query?: BaseQueryDto): Promise<any> {
+  async getStore(user_id: string, query?: BaseQueryDto): Promise<any> {
     // Parse pagination parameters với default values
     const take = query?.limit && query.limit > 0 ? query.limit : 20; // Default 20 items per page
     const page = query?.page && query.page > 0 ? query.page : 1; // Default page 1
@@ -48,13 +48,13 @@ export class StoreService {
     const [items, total] = await Promise.all([
       // Lấy danh sách store items của user
       this.prisma.resStoreItem.findMany({
-        where: { user_id: userId }, // Chỉ lấy items của user này
+        where: { user_id: user_id }, // Chỉ lấy items của user này
         take, // Limit số lượng
         skip, // Offset cho pagination
         orderBy: { id: 'desc' }, // Sắp xếp theo ID giảm dần (item mới nhất trước)
       }),
       // Đếm tổng số items của user
-      this.prisma.resStoreItem.count({ where: { user_id: userId } }),
+      this.prisma.resStoreItem.count({ where: { user_id: user_id } }),
     ]);
 
     // Convert Decimal price to Number để dễ xử lý ở frontend
@@ -66,15 +66,15 @@ export class StoreService {
 
   /**
    * Thêm item mới vào store
-   * @param userId - ID của user (owner của store)
+   * @param user_id - ID của user (owner của store)
    * @param dto - DTO chứa thông tin item (name, price)
    * @returns Store item đã tạo
    */
-  async addStoreItem(userId: string, dto: CreateStoreItemDto) {
+  async addStoreItem(user_id: string, dto: CreateStoreItemDto) {
     // Tạo store item mới trong database
     return this.prisma.resStoreItem.create({
       data: {
-        user_id: userId, // ID của user sở hữu item
+        user_id: user_id, // ID của user sở hữu item
         name: dto.name, // Tên item
         price: dto.price, // Giá item (Decimal)
       },
@@ -83,19 +83,19 @@ export class StoreService {
 
   /**
    * Cập nhật thông tin store item
-   * @param userId - ID của user (để verify ownership)
+   * @param user_id - ID của user (để verify ownership)
    * @param itemId - ID của item cần update
    * @param dto - DTO chứa thông tin mới (name, price)
    * @returns Store item đã update
    * @throws NotFoundException nếu item không tồn tại hoặc không thuộc về user
    */
-  async updateStoreItem(userId: string, itemId: string, dto: UpdateStoreItemDto) {
+  async updateStoreItem(user_id: string, itemId: string, dto: UpdateStoreItemDto) {
     try {
       // Nếu thiếu một trong hai field (name hoặc price), cần lấy giá trị hiện tại
       if (dto.name === undefined || dto.price === undefined) {
         // Query item hiện tại để lấy giá trị
         const existing = await this.prisma.resStoreItem.findFirst({
-          where: { id: itemId, user_id: userId }, // Verify ownership
+          where: { id: itemId, user_id: user_id }, // Verify ownership
           select: { name: true, price: true },
         });
         
@@ -114,7 +114,7 @@ export class StoreService {
       
       // Update cả name và price
       return await this.prisma.resStoreItem.update({
-        where: { id: itemId, user_id: userId }, // Verify ownership
+        where: { id: itemId, user_id: user_id }, // Verify ownership
         data: { name: dto.name, price: dto.price }, // Update cả 2 fields
       });
     } catch (error) {
@@ -128,16 +128,16 @@ export class StoreService {
 
   /**
    * Xóa item khỏi store
-   * @param userId - ID của user (để verify ownership)
+   * @param user_id - ID của user (để verify ownership)
    * @param itemId - ID của item cần xóa
    * @returns Message xác nhận đã xóa
    * @throws NotFoundException nếu item không tồn tại hoặc không thuộc về user
    */
-  async deleteStoreItem(userId: string, itemId: string) {
+  async deleteStoreItem(user_id: string, itemId: string) {
     try {
       // Xóa store item khỏi database
       await this.prisma.resStoreItem.delete({
-        where: { id: itemId, user_id: userId }, // Verify ownership
+        where: { id: itemId, user_id: user_id }, // Verify ownership
       });
       
       // Trả về message xác nhận

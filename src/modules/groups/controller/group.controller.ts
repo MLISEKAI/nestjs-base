@@ -195,8 +195,8 @@ export class GroupController {
     type: GroupListResponseDto,
     description: 'Danh sách nhóm công khai mà người dùng đang tham gia',
   })
-  getUserGroups(@Param('user_id') userId: string, @Query() query?: BaseQueryDto) {
-    return this.groupService.getUserGroups(userId, query);
+  getUserGroups(@Param('user_id') user_id: string, @Query() query?: BaseQueryDto) {
+    return this.groupService.getUserGroups(user_id, query);
   }
 
   @Post()

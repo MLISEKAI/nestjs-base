@@ -172,7 +172,7 @@ export class AddGroupMembersDto {
       'Danh sách ID người dùng muốn thêm vào nhóm (bắt buộc) - Mảng các ID người dùng bạn muốn mời vào nhóm',
   })
   @IsString({ each: true })
-  userIds: string[];
+  user_id: string[];
 }
 
 /**
