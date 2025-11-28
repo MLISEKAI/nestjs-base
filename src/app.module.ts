@@ -8,8 +8,15 @@ import { AppService } from './app.service';
 // Import các feature modules
 import { UsersModule } from './modules/users/users.module';
 import { ProfileModuleDb } from './modules/profile/profile.module';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
+import { HttpExceptionFilter, PostStatusInterceptor } from './common';
+import { TracingModule } from './common/tracing/tracing.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RedisBaseModule } from './redis/redis-base.module';
+import { ResUserModule } from './modules/users/user.module';
+import { ResAssociateModule } from './modules/associate/associate.module';
 import { CommonModule } from './common/common.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
@@ -56,6 +63,7 @@ import jwtConfig from './config/jwt.config';
  */
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig, jwtConfig],
@@ -66,8 +74,28 @@ import jwtConfig from './config/jwt.config';
         limit: 100,
       },
     ]),
+    // FirebaseModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (config: ConfigService) => {
+    //     const credentialBase64 = config.get<string>('FIREBASE_CREDENTIAL') || '';
+    //     const configCredential = JSON.parse(Buffer.from(credentialBase64, 'base64').toString());
+    //     return {
+    //       googleApplicationCredential: {
+    //         projectId: configCredential?.project_id,
+    //         privateKey: configCredential?.private_key,
+    //         clientEmail: configCredential?.client_email,
+    //         clientId: configCredential?.client_id,
+    //       },
+    //     };
+    //   },
+    // }),
+    RedisBaseModule,
     PrismaModule,
+    TracingModule,
     AuthModule,
+    ResUserModule,
+    ResAssociateModule,
     CommonModule,
     UsersModule,
     ProfileModuleDb,
@@ -98,6 +126,14 @@ import jwtConfig from './config/jwt.config';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PostStatusInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
     },
   ],
 })

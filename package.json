@@ -17,10 +17,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prisma:dev": " env-cmd -f .env npx prisma migrate dev --create-only --schema=./src/prisma/schema.prisma",
-    "prisma:deploy": "npx prisma migrate deploy --schema=./src/prisma/schema.prisma",
-    "prisma:generate": "npx prisma generate --schema=./src/prisma/schema.prisma",
-    "prisma:reset": "npx prisma migrate reset --schema=./src/prisma/schema.prisma",
+    "prisma:dev": "env-cmd -f .env yarn prisma migrate dev --create-only --schema=./src/prisma/schema.prisma",
+    "prisma:deploy": "yarn prisma migrate deploy --schema=./src/prisma/schema.prisma",
+    "prisma:generate": "yarn prisma generate --schema=./src/prisma/schema.prisma",
+    "prisma:reset": "yarn prisma migrate reset --schema=./src/prisma/schema.prisma",
     "seed:gifts": "ts-node -r tsconfig-paths/register src/prisma/seed-gifts.ts",
     "seed:wallet": "ts-node -r tsconfig-paths/register src/prisma/seed-wallet.ts",
     "seed:posts": "ts-node -r tsconfig-paths/register src/prisma/seed-posts.ts",
@@ -29,7 +29,7 @@
     "ndb:debug": "ndb node -r tsconfig-paths/register -r ts-node/register src/main.ts"
   },
   "engines": {
-    "npm": ">=10.0.0",
+    "yarn": ">=1.22.0",
     "node": ">=20.0.0"
   },
   "dependencies": {

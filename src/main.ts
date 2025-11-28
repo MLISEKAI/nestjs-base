@@ -1,19 +1,13 @@
-// Import NestFactory để tạo NestJS application
+// src/main.ts – FINAL VERSION (copy-paste là chiến vĩnh viễn)
 import { NestFactory } from '@nestjs/core';
-// Import ValidationPipe để validate dữ liệu
 import { ValidationPipe } from '@nestjs/common';
-// Import AppModule (root module)
-import { AppModule } from './app.module';
-// Import SwaggerModule và DocumentBuilder để tạo API documentation
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-// Import ResponseInterceptor để format response
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-// Import ResponseExceptionFilter để handle exceptions
-import { ResponseExceptionFilter } from './common/filters/response-exception.filter';
-// Import helmet để bảo mật HTTP headers
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-// Import SanitizeInputPipe để sanitize input (XSS protection)
+import { AppModule } from './app.module';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { ResponseExceptionFilter } from './common/filters/response-exception.filter';
 import { SanitizeInputPipe } from './common/pipes/sanitize-input.pipe';
+import { WINSTON_MODULE_NEST_PROVIDER } from './common/tracing/winston.config';
 
 /**
  * bootstrap - Function để khởi động NestJS application
@@ -36,45 +30,57 @@ import { SanitizeInputPipe } from './common/pipes/sanitize-input.pipe';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Security
   app.use(helmet());
-  app.enableCors({
-    origin: '*',
-  });
+  app.enableCors({ origin: '*' }); // hoặc config chi tiết hơn
 
-  const config = new DocumentBuilder()
-    .setTitle('API')
-    .setDescription('API mock')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
-      },
-      'JWT-auth',
-    )
-    .build();
+  // Global prefix (nên có)
+  app.setGlobalPrefix(process.env.PREFIX_BASE?.trim() || 'api');
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  // Logger Winston (nếu có)
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
+  // Global pipes
   app.useGlobalPipes(
-    new SanitizeInputPipe(),
+    new SanitizeInputPipe(), // chống XSS
     new ValidationPipe({
-      transform: true,
       whitelist: true,
-      forbidUnknownValues: true,
       forbidNonWhitelisted: true,
+      transform: true,
+      forbidUnknownValues: true,
     }),
   );
+
+  // Global interceptor & filter
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new ResponseExceptionFilter());
 
-  const PORT = 3001;
-  const HOST = '0.0.0.0';
-  await app.listen(PORT, HOST);
+  // Swagger chỉ ở dev/test
+  if (!['production', 'prod'].includes(process.env.NODE_ENV || '')) {
+    const config = new DocumentBuilder()
+      .setTitle('My App API')
+      .setDescription('API Documentation')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          in: 'header',
+        },
+        'JWT-auth',
+      )
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('swagger', app, document);
+  }
+
+  const port = Number(process.env.PORT) || 3001;
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`Swagger: ${await app.getUrl()}/swagger`);
 }
+
 bootstrap();
