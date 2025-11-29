@@ -41,7 +41,7 @@ export class ConnectionsController {
 
   @Get('stats')
   @UseInterceptors(CacheInterceptor)
-  @CacheResult(120) // Cache 2 phút
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({
     summary: 'Lấy thống kê tổng quan của user hiện tại',
     description:
@@ -107,7 +107,7 @@ export class ConnectionsController {
 
   @Get('following')
   @UseInterceptors(CacheInterceptor)
-  @CacheResult(120) // Cache 2 phút
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({
     summary: 'Danh sách following của user hiện tại',
     description:
@@ -170,7 +170,7 @@ export class ConnectionsController {
 
   @Get('followers')
   @UseInterceptors(CacheInterceptor)
-  @CacheResult(120) // Cache 2 phút
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({ summary: 'Danh sách followers của user hiện tại' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({
@@ -212,6 +212,8 @@ export class ConnectionsController {
   }
 
   @Get('friends')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({ summary: 'Danh sách friends của user hiện tại' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({
@@ -253,6 +255,8 @@ export class ConnectionsController {
   }
 
   @Get('connections')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({ summary: 'Lấy danh sách kết nối theo loại của user hiện tại' })
   @ApiQuery({
     name: 'type',

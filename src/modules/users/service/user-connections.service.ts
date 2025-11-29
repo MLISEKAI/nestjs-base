@@ -101,81 +101,66 @@ export class UserConnectionsService {
       throw new BadRequestException('Cannot follow yourself');
     }
 
-    // Tối ưu: Nếu đã có currentUser từ req.user, không cần query lại database
-    // Chỉ dùng currentUser nếu ID khớp với user_id
-    const user = currentUser && currentUser.id === user_id ? currentUser : null;
-    // Tìm thông tin user được follow (target)
-    const target = await this.profile.findUser(targetId);
-
-    // Nếu không tìm thấy target user, throw exception
-    if (!target) {
-      throw new NotFoundException('Target user not found');
-    }
-    // Nếu không có user và không phải từ req.user, query để verify user tồn tại
-    if (!user) {
-      const userCheck = await this.profile.findUser(user_id);
-      if (!userCheck) {
-        throw new NotFoundException('User not found');
-      }
-    }
+    // Tối ưu: Bỏ validation queries, để DB foreign key constraint handle
+    // Nếu target không tồn tại, upsert sẽ fail với foreign key error
+    // Điều này giảm 1-2 queries (234-468ms)
 
     // Tạo hoặc cập nhật follow relationship
-    // upsert: nếu đã tồn tại thì update, chưa có thì create
-    // follower_id_following_id là composite unique key (mỗi user chỉ có thể follow 1 lần)
-    const follow = await this.prisma.resFollow.upsert({
-      where: {
-        // Tìm follow relationship theo composite key
-        follower_id_following_id: { follower_id: user_id, following_id: targetId },
-      },
-      create: {
-        // Nếu chưa có thì tạo mới
-        follower_id: user_id, // User đang follow
-        following_id: targetId, // User được follow
-      },
-      update: {}, // Nếu đã có thì không update gì (giữ nguyên)
-      include: {
-        // Include thông tin user được follow để trả về trong response
-        following: {
-          select: {
-            id: true,
-            nickname: true,
-            avatar: true,
+    let follow;
+    try {
+      follow = await this.prisma.resFollow.upsert({
+        where: {
+          follower_id_following_id: { follower_id: user_id, following_id: targetId },
+        },
+        create: {
+          follower_id: user_id,
+          following_id: targetId,
+        },
+        update: {},
+        include: {
+          following: {
+            select: {
+              id: true,
+              nickname: true,
+              avatar: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      // Handle foreign key constraint errors
+      if (error.code === 'P2003') {
+        throw new NotFoundException('Target user not found');
+      }
+      throw error;
+    }
 
-    // Kiểm tra reverse follow (target có follow lại user không)
-    // Nếu có reverse follow thì họ là bạn bè (friends)
-    const reverse = await this.prisma.resFollow.findUnique({
-      where: {
-        follower_id_following_id: { follower_id: targetId, following_id: user_id },
-      },
-    });
-
-    // Kiểm tra và tạo friend relationship nếu cả 2 đều follow nhau
-    let isFriend = false;
-    if (reverse) {
-      // Nếu có reverse follow, kiểm tra đã có friend relationship chưa
-      const existingFriend = await this.prisma.resFriend.findFirst({
+    // Parallel: Check reverse follow và existing friend
+    const [reverse, existingFriend] = await Promise.all([
+      this.prisma.resFollow.findUnique({
+        where: {
+          follower_id_following_id: { follower_id: targetId, following_id: user_id },
+        },
+      }),
+      this.prisma.resFriend.findFirst({
         where: {
           OR: [
-            // Friend relationship có thể lưu theo 2 chiều (user_a_id, user_b_id)
             { user_a_id: user_id, user_b_id: targetId },
             { user_a_id: targetId, user_b_id: user_id },
           ],
         },
+      }),
+    ]);
+
+    // Kiểm tra và tạo friend relationship nếu cả 2 đều follow nhau
+    let isFriend = false;
+    if (reverse && !existingFriend) {
+      await this.prisma.resFriend.create({
+        data: { user_a_id: user_id, user_b_id: targetId },
       });
-      // Nếu chưa có friend relationship thì tạo mới
-      if (!existingFriend) {
-        await this.prisma.resFriend.create({
-          data: { user_a_id: user_id, user_b_id: targetId },
-        });
-        isFriend = true;
-      } else {
-        // Đã có rồi thì set isFriend = true
-        isFriend = true;
-      }
+      isFriend = true;
+    } else if (existingFriend) {
+      isFriend = true;
     }
 
     // Xóa cache khi follow để đảm bảo dữ liệu mới nhất
@@ -187,31 +172,10 @@ export class UserConnectionsService {
       this.cacheService.del(`user:${targetId}:connections`),
     ]);
 
-    // Tự động tạo notification cho user được follow
-    try {
-      // Lấy thông tin nickname của user đang follow để hiển thị trong notification
-      const sender = await this.prisma.resUser.findUnique({
-        where: { id: user_id },
-        select: { nickname: true }, // Chỉ lấy nickname để tối ưu
-      });
-
-      // Tạo notification cho user được follow
-      await this.notificationService.createNotification({
-        user_id: targetId, // User được follow nhận notification
-        sender_id: user_id, // Người follow (user đang thực hiện hành động)
-        type: NotificationType.FOLLOW, // Loại notification là FOLLOW
-        title: 'New Follower', // Tiêu đề
-        content: sender?.nickname
-          ? `${sender.nickname} started following you` // Nếu có nickname
-          : 'Someone started following you', // Không có thì dùng "Someone"
-        link: `/users/${user_id}`, // Link đến profile của người follow
-        data: JSON.stringify({ follower_id: user_id }), // Dữ liệu bổ sung
-      });
-    } catch (error) {
-      // Log error nhưng không fail follow action
-      // Nếu tạo notification fail, follow vẫn thành công (graceful degradation)
+    // Tự động tạo notification (async, không chờ để không block response)
+    this.createFollowNotification(user_id, targetId).catch((error) => {
       this.logger.error(`Failed to create notification for follow: ${error.message}`);
-    }
+    });
 
     // Trả về dữ liệu thực tế thay vì chỉ message
     return {
@@ -328,6 +292,26 @@ export class UserConnectionsService {
     ]);
 
     return { message: `User ${user_id} unfriended ${friendId}` };
+  }
+
+  // --- helper để tạo notification async ---
+  private async createFollowNotification(user_id: string, targetId: string) {
+    const sender = await this.prisma.resUser.findUnique({
+      where: { id: user_id },
+      select: { nickname: true },
+    });
+
+    await this.notificationService.createNotification({
+      user_id: targetId,
+      sender_id: user_id,
+      type: NotificationType.FOLLOW,
+      title: 'New Follower',
+      content: sender?.nickname
+        ? `${sender.nickname} started following you`
+        : 'Someone started following you',
+      link: `/users/${user_id}`,
+      data: JSON.stringify({ follower_id: user_id }),
+    });
   }
 
   // --- helper để get is_following + is_friend ---
