@@ -179,9 +179,13 @@ export class UserConnectionsService {
     }
 
     // Xóa cache khi follow để đảm bảo dữ liệu mới nhất
-    // Xóa cache stats của cả 2 user (follower và following)
-    await this.cacheService.del(`connections:${user_id}:stats`);
-    await this.cacheService.del(`connections:${targetId}:stats`);
+    // Xóa cache stats và connections của cả 2 user (follower và following)
+    await Promise.all([
+      this.cacheService.del(`connections:${user_id}:stats`),
+      this.cacheService.del(`connections:${targetId}:stats`),
+      this.cacheService.del(`user:${user_id}:connections`),
+      this.cacheService.del(`user:${targetId}:connections`),
+    ]);
 
     // Tự động tạo notification cho user được follow
     try {
@@ -252,8 +256,12 @@ export class UserConnectionsService {
     }
 
     // Invalidate cache khi unfollow
-    await this.cacheService.del(`connections:${user_id}:stats`);
-    await this.cacheService.del(`connections:${targetId}:stats`);
+    await Promise.all([
+      this.cacheService.del(`connections:${user_id}:stats`),
+      this.cacheService.del(`connections:${targetId}:stats`),
+      this.cacheService.del(`user:${user_id}:connections`),
+      this.cacheService.del(`user:${targetId}:connections`),
+    ]);
 
     return { message: `User ${user_id} unfollowed ${targetId}` };
   }
@@ -291,8 +299,12 @@ export class UserConnectionsService {
     }
 
     // Invalidate cache khi remove follower
-    await this.cacheService.del(`connections:${user_id}:stats`);
-    await this.cacheService.del(`connections:${followerId}:stats`);
+    await Promise.all([
+      this.cacheService.del(`connections:${user_id}:stats`),
+      this.cacheService.del(`connections:${followerId}:stats`),
+      this.cacheService.del(`user:${user_id}:connections`),
+      this.cacheService.del(`user:${followerId}:connections`),
+    ]);
 
     return { message: `Follower ${followerId} removed from user ${user_id}` };
   }
@@ -308,8 +320,12 @@ export class UserConnectionsService {
     });
 
     // Invalidate cache khi unfriend
-    await this.cacheService.del(`connections:${user_id}:stats`);
-    await this.cacheService.del(`connections:${friendId}:stats`);
+    await Promise.all([
+      this.cacheService.del(`connections:${user_id}:stats`),
+      this.cacheService.del(`connections:${friendId}:stats`),
+      this.cacheService.del(`user:${user_id}:connections`),
+      this.cacheService.del(`user:${friendId}:connections`),
+    ]);
 
     return { message: `User ${user_id} unfriended ${friendId}` };
   }
@@ -319,21 +335,41 @@ export class UserConnectionsService {
     currentuser_id: string,
     users: any[],
   ): Promise<UserConnectionDto[]> {
-    const followingIds = await this.prisma.resFollow.findMany({
-      where: { follower_id: currentuser_id },
-      select: { following_id: true },
-    });
-    const followingSet = new Set(followingIds.map((f) => f.following_id));
+    // Cache following và friend sets để tránh query lại nhiều lần
+    const cacheKey = `user:${currentuser_id}:connections`;
+    const cacheTtl = 300; // 5 phút - tăng để giảm query DB
+    
+    const connections = await this.cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const [followingIds, friendIds] = await Promise.all([
+          this.prisma.resFollow.findMany({
+            where: { follower_id: currentuser_id },
+            select: { following_id: true },
+          }),
+          this.prisma.resFriend.findMany({
+            where: { OR: [{ user_a_id: currentuser_id }, { user_b_id: currentuser_id }] },
+            select: { user_a_id: true, user_b_id: true },
+          }),
+        ]);
 
-    const friendIds = await this.prisma.resFriend.findMany({
-      where: { OR: [{ user_a_id: currentuser_id }, { user_b_id: currentuser_id }] },
-      select: { user_a_id: true, user_b_id: true },
-    });
-    const friendSet = new Set<string>();
-    friendIds.forEach((f) => {
-      if (f.user_a_id === currentuser_id) friendSet.add(f.user_b_id);
-      else friendSet.add(f.user_a_id);
-    });
+        const followingSet = new Set(followingIds.map((f) => f.following_id));
+        const friendSet = new Set<string>();
+        friendIds.forEach((f) => {
+          if (f.user_a_id === currentuser_id) friendSet.add(f.user_b_id);
+          else friendSet.add(f.user_a_id);
+        });
+
+        return {
+          following: Array.from(followingSet),
+          friends: Array.from(friendSet),
+        };
+      },
+      cacheTtl,
+    );
+
+    const followingSet = new Set(connections.following);
+    const friendSet = new Set(connections.friends);
 
     return users.map((u) => ({
       id: u.id,

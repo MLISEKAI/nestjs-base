@@ -70,7 +70,7 @@ export class UserController {
 
   @Get()
   @UseInterceptors(CacheInterceptor) // Cache search results
-  @CacheResult(60) // Cache 1 phút (search results thay đổi thường xuyên)
+  @CacheResult(600) // Cache 10 phút - tăng để response nhanh hơn
   @UseGuards(OptionalAuthGuard) // Optional auth: Nếu có token thì lấy user, không có thì vẫn cho phép
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Tìm kiếm tất cả người dùng theo nickname hoặc ID' })
@@ -120,6 +120,14 @@ export class UserController {
   })
   async searchUsers(@Req() req, @Query() query: SearchUsersQueryDto) {
     const currentUserId = req?.user?.id ?? null;
+    
+    // Cache toàn bộ response (bao gồm cả status) để tránh gọi attachStatus mỗi lần
+    const searchKey = query.search?.trim() || 'all';
+    const sortKey = query.sort || 'created_at:asc';
+    const userKey = currentUserId || 'guest';
+    const cacheKey = `users:search:full:${searchKey}:${userKey}:page:${query.page || 1}:limit:${query.limit || 20}:sort:${sortKey}`;
+    
+    // CacheInterceptor sẽ tự động cache response này
     // Loại bỏ user hiện tại khỏi kết quả nếu có authenticated
     const result = await this.profileService.searchUsers({
       ...query,

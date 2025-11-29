@@ -45,18 +45,15 @@ export class CacheInterceptor implements NestInterceptor {
       // Check cache
       const cachedData = await this.cacheService.get(cacheKey);
       if (cachedData) {
-        this.logger.debug(`✅ Cache HIT: ${cacheKey}`);
+        // Bỏ logger để giảm overhead
         return of(cachedData);
       }
-
-      this.logger.debug(`❌ Cache MISS: ${cacheKey}`);
 
       // Cache miss - execute handler và cache result
       return next.handle().pipe(
         tap(async (data) => {
           try {
             await this.cacheService.set(cacheKey, data, ttl);
-            this.logger.debug(`💾 Cached: ${cacheKey} (TTL: ${ttl}s)`);
           } catch (error) {
             this.logger.error(`Failed to cache: ${cacheKey}`, error);
           }
@@ -69,9 +66,21 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   private generateCacheKey(request: any, prefix?: string): string {
-    const { method, url, user } = request;
-    const userId = user?.id || 'anonymous';
-    const baseKey = prefix || `${method}:${url}`;
+    const { method, url, user, query } = request;
+    const userId = user?.id;
+    
+    // Parse URL để loại bỏ parameters không cần thiết
+    const urlObj = new URL(url, 'http://localhost');
+    const pathname = urlObj.pathname;
+    
+    // Chỉ lấy các query params quan trọng cho cache key
+    const relevantParams = ['page', 'limit', 'search', 'sort'];
+    const queryParams = relevantParams
+      .filter(param => query?.[param])
+      .map(param => `${param}=${query[param]}`)
+      .join('&');
+    
+    const baseKey = prefix || `${method}:${pathname}${queryParams ? '?' + queryParams : ''}`;
     return `cache:${baseKey}:${userId}`;
   }
 }

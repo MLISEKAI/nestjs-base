@@ -145,7 +145,7 @@ export class UserProfileService {
     const sortKey = params?.sort || 'created_at:asc';
     const excludeKey = params?.excludeUserId ? `:exclude:${params.excludeUserId}` : '';
     const cacheKey = `users:search:${searchKey}:page:${page}:limit:${take}:sort:${sortKey}${excludeKey}`;
-    const cacheTtl = 300; // 5 phút (search results thay đổi thường xuyên)
+    const cacheTtl = 600; // 10 phút - tăng để giảm cache miss
 
     return this.cacheService.getOrSet(
       cacheKey,
@@ -162,8 +162,7 @@ export class UserProfileService {
               nickname: true,
               avatar: true,
               bio: true,
-              created_at: true,
-              updated_at: true,
+              // Bỏ created_at và updated_at để giảm data transfer
             },
           }),
           this.prisma.resUser.count({ where }),
