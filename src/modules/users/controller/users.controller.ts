@@ -184,6 +184,8 @@ export class UserController {
   }
 
   @Get('me/balance')
+  @UseInterceptors(CacheInterceptor) // Cache balance data
+  @CacheResult(300) // Cache 5 phút
   @UseGuards(AuthGuard('account-auth'))
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Lấy thông tin cấp độ và XP của user hiện tại' })

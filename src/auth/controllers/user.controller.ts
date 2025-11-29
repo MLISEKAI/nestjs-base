@@ -17,7 +17,8 @@ export class UserController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard('account-auth'))
   async getCurrentUser(@Req() req: any) {
-    return this.authService.getCurrentUser(req.user);
+    // req.user đã có đầy đủ thông tin từ JWT strategy, không cần query DB
+    return req.user;
   }
 
   @Post('link')

@@ -4,11 +4,22 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 // Import Redis client type
 import Redis from 'ioredis';
+// Import memory cache service
+import { MemoryCacheService } from './memory-cache.service';
 
 /**
  * @Injectable() - Decorator đánh dấu class này là một NestJS service
- * CacheService - Service quản lý Redis cache để tối ưu performance
- * Cache giúp giảm số lần query database bằng cách lưu kết quả vào Redis
+ * CacheService - 2-layer cache: Memory (L1) + Redis (L2)
+ * 
+ * Cache strategy:
+ * - L1 (Memory): Rất nhanh (<1ms), limited size (1000 items)
+ * - L2 (Redis): Chậm hơn (~50-100ms), unlimited size
+ * 
+ * Flow:
+ * 1. Check memory cache first
+ * 2. If miss, check Redis
+ * 3. If found in Redis, populate memory cache
+ * 4. If miss both, return null
  */
 @Injectable()
 export class CacheService {
@@ -27,7 +38,10 @@ export class CacheService {
    * Constructor - Dependency Injection
    * @InjectRedis() - Inject Redis client được cấu hình trong module
    */
-  constructor(@InjectRedis() private readonly redis: Redis) {
+  constructor(
+    @InjectRedis() private readonly redis: Redis,
+    private readonly memoryCache: MemoryCacheService,
+  ) {
     // Setup Redis event handlers để theo dõi trạng thái kết nối
 
     // Event: Khi Redis kết nối thành công
@@ -73,6 +87,13 @@ export class CacheService {
    * @template T - Type của giá trị trả về
    */
   async get<T>(key: string): Promise<T | null> {
+    // L1: Check memory cache first (very fast <1ms)
+    const memoryValue = this.memoryCache.get<T>(key);
+    if (memoryValue !== undefined) {
+      return memoryValue;
+    }
+
+    // L2: Check Redis if memory miss
     // Kiểm tra Redis đã kết nối chưa
     // Nếu chưa kết nối, trả về null ngay (fail gracefully)
     if (!this.isRedisConnected) {
@@ -84,7 +105,12 @@ export class CacheService {
       // Nếu không tìm thấy (null hoặc undefined), trả về null
       if (!value) return null;
       // Parse JSON string thành object/array và cast về type T
-      return JSON.parse(value) as T;
+      const parsed = JSON.parse(value) as T;
+      
+      // Populate memory cache for next time (write-through)
+      this.memoryCache.set(key, parsed);
+      
+      return parsed;
     } catch (error) {
       // Không log connection errors nhiều lần (tránh spam log)
       // Chỉ log các lỗi khác (parse error, etc.)
@@ -103,6 +129,11 @@ export class CacheService {
    * @param ttl - Thời gian sống của cache (giây), mặc định 1 giờ
    */
   async set(key: string, value: any, ttl: number = this.defaultTtl): Promise<void> {
+    // Write to both layers (write-through cache)
+    // L1: Memory cache (instant)
+    this.memoryCache.set(key, value, ttl);
+    
+    // L2: Redis (persistent)
     // Kiểm tra Redis đã kết nối chưa
     if (!this.isRedisConnected) {
       return; // Fail silently if Redis is not connected
@@ -126,6 +157,9 @@ export class CacheService {
    * @param key - Cache key cần xóa
    */
   async del(key: string): Promise<void> {
+    // Delete from both layers
+    this.memoryCache.del(key);
+    
     // Kiểm tra Redis đã kết nối chưa
     if (!this.isRedisConnected) {
       return; // Fail silently if Redis is not connected
@@ -155,6 +189,9 @@ export class CacheService {
    * - Sẽ tìm và xóa: "notifications:user-123:page:1:limit:20", "notifications:user-123:unread:count", etc.
    */
   async delPattern(pattern: string): Promise<void> {
+    // Delete from both layers
+    this.memoryCache.delPattern(pattern);
+    
     // Kiểm tra Redis đã kết nối chưa
     if (!this.isRedisConnected) {
       return; // Fail silently if Redis is not connected

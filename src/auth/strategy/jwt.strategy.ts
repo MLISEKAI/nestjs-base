@@ -14,6 +14,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ResUserService } from 'src/modules/users/service/user.service';
 // Import ConfigService để đọc JWT config
 import { ConfigService } from '@nestjs/config';
+// Import CacheService để cache user data
+import { CacheService } from '../../common/cache/cache.service';
+// Import MemoryCacheService để cache JWT validation (faster)
+import { MemoryCacheService } from '../../common/cache/memory-cache.service';
 
 /**
  * Interface cho JWT payload
@@ -63,11 +67,13 @@ export class AccountStrategy
    * @param moduleRef - ModuleRef để lazy load ResUserService
    * @param configService - ConfigService để đọc JWT config
    * @param prisma - PrismaService để check token blacklist
+   * @param memoryCache - MemoryCacheService để cache JWT validation (in-memory, very fast)
    */
   constructor(
     private readonly moduleRef: ModuleRef,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly memoryCache: MemoryCacheService,
   ) {
     // Configure JWT Strategy
     super({
@@ -118,20 +124,56 @@ export class AccountStrategy
       throw new UnauthorizedException('Invalid token payload: missing jti');
     }
 
-    // Check token blacklist (nếu token đã bị revoke/logout)
-    const blacklisted = await this.prisma.resTokenBlacklist.findUnique({
-      where: { jti: payload.jti },
-    });
+    // Cache key cho JWT validation
+    const cacheKey = `jwt:validation:${payload.jti}`;
+    
+    // Check memory cache first (very fast <1ms, TTL 60s)
+    const cached = this.memoryCache.get<any>(cacheKey);
+    if (cached) {
+      console.log('✅ JWT Cache HIT:', payload.jti.substring(0, 8));
+      return cached;
+    }
+    
+    console.log('❌ JWT Cache MISS:', payload.jti.substring(0, 8));
+
+    // Parallel queries để giảm latency
+    const [blacklisted, user] = await Promise.all([
+      // Check token blacklist (nếu token đã bị revoke/logout)
+      this.prisma.resTokenBlacklist.findUnique({
+        where: { jti: payload.jti },
+        select: { jti: true }, // Chỉ select jti để giảm data transfer
+      }),
+      // Load user info từ database - chỉ select fields cần thiết
+      this.prisma.resUser.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          union_id: true,
+          role: true,
+          nickname: true,
+          avatar: true,
+          bio: true,
+          is_blocked: true,
+          // Bỏ associates để giảm query time
+          // Nếu cần associates, endpoint riêng sẽ load
+        },
+      }),
+    ]);
+
     if (blacklisted) {
       throw new UnauthorizedException('Token has been revoked');
     }
 
-    // Load user info từ database
-    // findUser(payload.sub, true) - true = include associates
-    const user = await this.accountService.findUser(payload.sub, true);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+
+    if (user.is_blocked) {
+      throw new UnauthorizedException('User has been blocked');
+    }
+
+    // Cache user data in memory for 60 seconds (no Redis overhead)
+    this.memoryCache.set(cacheKey, user, 60);
 
     // Return user object (sẽ được attach vào req.user)
     return user;
