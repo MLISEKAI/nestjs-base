@@ -6,8 +6,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile } from 'passport-facebook';
 // Import ConfigService để đọc Facebook OAuth config
 import { ConfigService } from '@nestjs/config';
-// Import AuthService để login sau khi OAuth thành công
-import { AuthService } from '../auth.service';
 
 /**
  * @Injectable() - Đánh dấu class này là NestJS service
@@ -16,15 +14,11 @@ import { AuthService } from '../auth.service';
  * Chức năng:
  * - Redirect user đến Facebook OAuth consent screen
  * - Xử lý callback từ Facebook sau khi user authorize
- * - Login user sau khi OAuth thành công (khác với GoogleStrategy)
+ * - Extract user info từ Facebook profile
  *
  * @extends PassportStrategy(Strategy, 'facebook')
  *   - Strategy: passport-facebook Strategy
  *   - 'facebook': Tên của strategy (dùng trong @UseGuards(AuthGuard('facebook')))
- *
- * Lưu ý:
- * - Khác với GoogleStrategy: FacebookStrategy tự động login user trong validate()
- * - GoogleStrategy chỉ extract profile, controller sẽ gọi loginOAuth()
  */
 @Injectable()
 export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
@@ -35,12 +29,8 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
    * Constructor - Dependency Injection
    *
    * @param configService - ConfigService để đọc Facebook OAuth config
-   * @param authService - AuthService để login user sau khi OAuth thành công
    */
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly authService: AuthService,
-  ) {
+  constructor(private readonly configService: ConfigService) {
     // Đọc Facebook OAuth config từ environment variables
     const clientID = configService.get<string>('FACEBOOK_APP_ID');
     const clientSecret = configService.get<string>('FACEBOOK_APP_SECRET');
@@ -71,28 +61,16 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
   /**
    * validate - Method được Passport gọi sau khi Facebook OAuth flow thành công
    *
-   * @param accessToken - Facebook OAuth access token
-   * @param refreshToken - Facebook OAuth refresh token
+   * @param _accessToken - Facebook OAuth access token (không dùng trong server-side flow)
+   * @param _refreshToken - Facebook OAuth refresh token (không dùng trong server-side flow)
    * @param profile - Facebook user profile
-   * @param done - Callback function để return result
-   * @returns JWT tokens (từ authService.loginOAuth) hoặc error
-   *
-   * Quy trình:
-   * 1. Check Facebook OAuth config
-   * 2. Extract email, providerId, nickname từ Facebook profile
-   * 3. Gọi authService.loginOAuth() để login user
-   * 4. Return JWT tokens (sẽ được attach vào req.user)
+   * @returns FacebookProfile object (sẽ được attach vào req.user)
    *
    * Lưu ý:
-   * - Khác với GoogleStrategy: FacebookStrategy tự động login user trong validate()
-   * - GoogleStrategy chỉ extract profile, controller sẽ gọi loginOAuth()
+   * - Extract email và nickname từ Facebook profile
+   * - Return FacebookProfile để controller có thể sử dụng
    */
-  async validate(
-    accessToken: string,
-    refreshToken: string,
-    profile: Profile,
-    done: (error: any, user?: any) => void,
-  ) {
+  validate(_accessToken: string, _refreshToken: string, profile: Profile) {
     // Check Facebook OAuth config
     const clientID = this.configService.get<string>('FACEBOOK_APP_ID');
     const clientSecret = this.configService.get<string>('FACEBOOK_APP_SECRET');
@@ -101,36 +79,20 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       this.logger.warn(
         'Facebook OAuth is not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in environment variables.',
       );
-      return done(new ServiceUnavailableException('Facebook OAuth is not configured'));
+      throw new ServiceUnavailableException('Facebook OAuth is not configured');
     }
 
-    try {
-      // Extract email từ Facebook profile
-      const email = profile.emails?.[0]?.value;
-      // Extract providerId (Facebook user ID)
-      const providerId = profile.id;
-      // Extract nickname (displayName hoặc username)
-      const nickname = profile.displayName || profile.username || 'Facebook User';
+    // Extract email từ Facebook profile
+    const email = profile.emails?.[0]?.value;
+    // Extract nickname (displayName hoặc username)
+    const nickname = profile.displayName || profile.username || 'Facebook User';
 
-      // Gọi authService.loginOAuth() để login user
-      // Service sẽ: tìm hoặc tạo user, tạo JWT tokens
-      // isServerSideFlow=true vì đây là server-side flow đã được verify bởi Passport Strategy
-      const result = await this.authService.loginOAuth(
-        {
-          provider: 'facebook',
-          provider_id: providerId,
-          email,
-          nickname,
-        },
-        undefined, // ipAddress không cần trong server-side flow
-        true, // isServerSideFlow: true - đã verify bởi Passport Strategy
-      );
-
-      // Return JWT tokens (sẽ được attach vào req.user)
-      return done(null, result);
-    } catch (error) {
-      // Return error nếu có lỗi
-      return done(error);
-    }
+    // Return FacebookProfile object
+    return {
+      provider: 'facebook',
+      providerId: profile.id, // Facebook user ID
+      email,
+      nickname,
+    };
   }
 }

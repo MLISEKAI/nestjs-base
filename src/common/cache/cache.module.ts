@@ -36,33 +36,31 @@ import { CacheService } from './cache.service';
     RedisModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const redisHost = configService.get<string>('REDIS_HOST');
-        const redisPort = configService.get<number>('REDIS_PORT');
+        const redisHost = configService.get<string>('REDIS_HOST') || 'localhost';
+        const redisPort = parseInt(configService.get<string>('REDIS_PORT') || '6379', 10);
         const redisPassword = configService.get<string>('REDIS_PASSWORD');
-        const redisDb = configService.get<number>('REDIS_DB') || 0;
+        const redisDb = parseInt(configService.get<string>('REDIS_DB') || '0', 10);
 
-        // Build URL from individual params if REDIS_URL not provided
-        const finalUrl = (redisHost && redisPort 
-            ? `redis://${redisPassword ? `:${redisPassword}@` : ''}${redisHost}:${redisPort}/${redisDb}`
-            : 'redis://localhost:6379');
+        // Build Redis URL with password authentication
+        const finalUrl = redisPassword
+          ? `redis://:${redisPassword}@${redisHost}:${redisPort}/${redisDb}`
+          : `redis://${redisHost}:${redisPort}/${redisDb}`;
 
         return {
           type: 'single',
           url: finalUrl,
           options: {
-            retryStrategy: () => {
-              // Return null to stop all retry attempts
-              return null;
+            retryStrategy: (times: number) => {
+              if (times > 3) return null; // Stop after 3 retries
+              return Math.min(times * 100, 3000); // Exponential backoff
             },
-            maxRetriesPerRequest: 0, // Don't retry individual requests
-            enableOfflineQueue: false, // Disable offline queue to prevent connection spam
-            lazyConnect: true, // Don't connect immediately
-            connectTimeout: 3000, // 3 second timeout
-            showFriendlyErrorStack: false,
-            enableReadyCheck: false,
-            enableAutoPipelining: false,
-            // Disable automatic reconnection
-            reconnectOnError: () => false,
+            maxRetriesPerRequest: 3,
+            enableOfflineQueue: false,
+            connectTimeout: 10000, // 10 seconds
+            commandTimeout: 5000, // 5 seconds
+            keepAlive: 30000,
+            showFriendlyErrorStack: true,
+            enableReadyCheck: true,
           },
         };
       },

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test OAuth Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 10px;
+      padding: 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin: 30px 0;
+    }
+    
+    button {
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .google-btn {
+      background: #4285f4;
+      color: white;
+    }
+    
+    .google-btn:hover {
+      background: #357ae8;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+    }
+    
+    .facebook-btn {
+      background: #1877f2;
+      color: white;
+    }
+    
+    .facebook-btn:hover {
+      background: #166fe5;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(24, 119, 242, 0.4);
+    }
+    
+    .info-box {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    
+    .info-box h3 {
+      margin-top: 0;
+      color: #667eea;
+    }
+    
+    .info-box code {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .response-box {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .response-box pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .success {
+      color: #4caf50;
+    }
+    
+    .error {
+      color: #f44336;
+    }
+    
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+      color: #856404;
+    }
+    
+    .steps {
+      counter-reset: step-counter;
+      list-style: none;
+      padding: 0;
+    }
+    
+    .steps li {
+      counter-increment: step-counter;
+      margin: 15px 0;
+      padding-left: 40px;
+      position: relative;
+    }
+    
+    .steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      background: #667eea;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Test OAuth Login</h1>
+    <p class="subtitle">Test Google & Facebook OAuth Integration</p>
+    
+    <div class="warning">
+      ⚠️ <strong>Lưu ý:</strong> Server phải đang chạy trên <code>http://localhost:3001</code>
+    </div>
+    
+    <div class="button-group">
+      <button class="google-btn" onclick="loginWithGoogle()">
+        <span style="font-size: 20px;">🔐</span>
+        Login with Google
+      </button>
+      
+      <button class="facebook-btn" onclick="loginWithFacebook()">
+        <span style="font-size: 20px;">🔐</span>
+        Login with Facebook
+      </button>
+    </div>
+    
+    <div class="info-box">
+      <h3>📖 Hướng Dẫn Test</h3>
+      <ol class="steps">
+        <li>Đảm bảo server đang chạy: <code>npm run start:dev</code></li>
+        <li>Click button "Login with Google" hoặc "Login with Facebook"</li>
+        <li>Đăng nhập và authorize trên Google/Facebook</li>
+        <li>Sau khi thành công, bạn sẽ thấy JWT tokens bên dưới</li>
+      </ol>
+    </div>
+    
+    <div class="info-box">
+      <h3>🔧 Config Required</h3>
+      <p><strong>File .env:</strong></p>
+      <ul>
+        <li><code>GOOGLE_CLIENT_ID</code> - Google OAuth Client ID</li>
+        <li><code>GOOGLE_CLIENT_SECRET</code> - Google OAuth Client Secret</li>
+        <li><code>GOOGLE_CALLBACK_URL</code> - http://localhost:3001/api/auth/oauth/google/callback</li>
+        <li><code>FACEBOOK_APP_ID</code> - Facebook App ID</li>
+        <li><code>FACEBOOK_APP_SECRET</code> - Facebook App Secret</li>
+        <li><code>FACEBOOK_CALLBACK_URL</code> - http://localhost:3001/api/auth/oauth/facebook/callback</li>
+      </ul>
+    </div>
+    
+    <div id="response-container" style="display: none;">
+      <h3>📝 Response:</h3>
+      <div class="response-box">
+        <pre id="response"></pre>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const API_BASE_URL = 'http://localhost:3001/api';
+    
+    function loginWithGoogle() {
+      console.log('Redirecting to Google OAuth...');
+      window.location.href = `${API_BASE_URL}/auth/oauth/google`;
+    }
+    
+    function loginWithFacebook() {
+      console.log('Redirecting to Facebook OAuth...');
+      window.location.href = `${API_BASE_URL}/auth/oauth/facebook`;
+    }
+    
+    // Check if we have response data in URL or localStorage
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check URL params (if backend redirects with tokens)
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
+      const expiresAt = urlParams.get('expires_at');
+      
+      if (accessToken) {
+        displayResponse({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: expiresAt
+        }, true);
+      }
+      
+      // Check if we're on the callback page (backend might return JSON directly)
+      if (window.location.pathname.includes('/callback')) {
+        // Try to parse response from body
+        try {
+          const bodyText = document.body.innerText;
+          const jsonMatch = bodyText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const data = JSON.parse(jsonMatch[0]);
+            displayResponse(data, true);
+          }
+        } catch (e) {
+          console.error('Failed to parse response:', e);
+        }
+      }
+    });
+    
+    function displayResponse(data, isSuccess) {
+      const container = document.getElementById('response-container');
+      const responseEl = document.getElementById('response');
+      
+      container.style.display = 'block';
+      
+      if (isSuccess) {
+        responseEl.innerHTML = `<span class="success">✅ OAuth Login Success!</span>\n\n${JSON.stringify(data, null, 2)}`;
+        
+        // Save tokens to localStorage
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+          localStorage.setItem('refresh_token', data.refresh_token);
+          localStorage.setItem('expires_at', data.expires_at);
+          
+          responseEl.innerHTML += '\n\n<span class="success">✅ Tokens saved to localStorage</span>';
+        }
+      } else {
+        responseEl.innerHTML = `<span class="error">❌ OAuth Login Failed!</span>\n\n${JSON.stringify(data, null, 2)}`;
+      }
+      
+      // Scroll to response
+      container.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

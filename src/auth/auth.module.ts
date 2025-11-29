@@ -1,8 +1,15 @@
 // Import Module decorator từ NestJS
 import { Module } from '@nestjs/common';
-// Import AuthService và AuthController
+// Import AuthService và Controllers
 import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { RegistrationController } from './controllers/registration.controller';
+import { LoginController } from './controllers/login.controller';
+import { VerificationController } from './controllers/verification.controller';
+import { PasswordController } from './controllers/password.controller';
+import { TwoFactorController } from './controllers/two-factor.controller';
+import { TokenController } from './controllers/token.controller';
+import { UserController } from './controllers/user.controller';
+import { OAuthController } from './controllers/oauth.controller';
 // Import PrismaModule để query database
 import { PrismaModule } from '../prisma/prisma.module';
 // Import JwtModule và PassportModule để xử lý authentication
@@ -25,6 +32,12 @@ import { TwoFactorService } from './security/two-factor.service';
 // Import HttpModule để gọi external APIs (Google, Facebook)
 import { HttpModule } from '@nestjs/axios';
 // import { AuthRateLimitService } from './security/auth-rate-limit.service';
+// Import new services
+import { RegistrationService } from './services/registration.service';
+import { LoginService } from './services/login.service';
+import { OAuthService } from './services/oauth.service';
+import { EmailVerificationService } from './services/email-verification.service';
+import { PasswordResetService } from './services/password-reset.service';
 
 /**
  * @Module() - Đánh dấu class này là NestJS module
@@ -81,8 +94,23 @@ import { HttpModule } from '@nestjs/axios';
     VerificationService,
     TwoFactorService,
     // AuthRateLimitService,
+    // New services
+    RegistrationService,
+    LoginService,
+    OAuthService,
+    EmailVerificationService,
+    PasswordResetService,
   ],
-  controllers: [AuthController],
+  controllers: [
+    RegistrationController,
+    LoginController,
+    VerificationController,
+    PasswordController,
+    TwoFactorController,
+    TokenController,
+    UserController,
+    OAuthController,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

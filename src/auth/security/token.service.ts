@@ -80,8 +80,11 @@ export class TokenService {
   }
 
   async createSession(user: ResUser, ipAddress?: string): Promise<SessionTokens> {
-    const access = await this.generateAccessToken(user.id, user.role);
-    const refresh = await this.createRefreshToken(user.id, ipAddress);
+    // OPTIMIZATION: Generate access token và create refresh token song song
+    const [access, refresh] = await Promise.all([
+      this.generateAccessToken(user.id, user.role),
+      this.createRefreshToken(user.id, ipAddress),
+    ]);
 
     return {
       accessToken: access.token,
