@@ -69,6 +69,8 @@ export class UserController {
   ) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor) // Cache search results
+  @CacheResult(60) // Cache 1 phút (search results thay đổi thường xuyên)
   @UseGuards(OptionalAuthGuard) // Optional auth: Nếu có token thì lấy user, không có thì vẫn cho phép
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Tìm kiếm tất cả người dùng theo nickname hoặc ID' })

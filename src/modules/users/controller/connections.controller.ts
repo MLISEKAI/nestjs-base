@@ -9,7 +9,10 @@ import {
   UsePipes,
   ValidationPipe,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor } from '../../../common/interceptors/cache.interceptor';
+import { CacheResult } from '../../../common/decorators/cache-result.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -37,6 +40,8 @@ export class ConnectionsController {
   constructor(private readonly connectionsService: UserConnectionsService) {}
 
   @Get('stats')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(120) // Cache 2 phút
   @ApiOperation({
     summary: 'Lấy thống kê tổng quan của user hiện tại',
     description:
@@ -101,6 +106,8 @@ export class ConnectionsController {
   }
 
   @Get('following')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(120) // Cache 2 phút
   @ApiOperation({
     summary: 'Danh sách following của user hiện tại',
     description:
@@ -162,6 +169,8 @@ export class ConnectionsController {
   }
 
   @Get('followers')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(120) // Cache 2 phút
   @ApiOperation({ summary: 'Danh sách followers của user hiện tại' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
   @ApiQuery({

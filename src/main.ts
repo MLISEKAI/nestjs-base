@@ -9,6 +9,8 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { ResponseExceptionFilter } from './common/filters/response-exception.filter';
 import { SanitizeInputPipe } from './common/pipes/sanitize-input.pipe';
 import { WINSTON_MODULE_NEST_PROVIDER } from './common/tracing/winston.config';
+import { PrismaService } from './prisma/prisma.service';
+import { CacheService } from './common/cache/cache.service';
 
 /**
  * bootstrap - Function để khởi động NestJS application
@@ -86,6 +88,22 @@ async function bootstrap() {
 
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`Swagger: ${await app.getUrl()}/swagger`);
+
+  // Warm up connections để giảm cold start time
+  try {
+    const prisma = app.get(PrismaService);
+    const cache = app.get(CacheService);
+    
+    // Warm up Prisma connection
+    await prisma.$queryRaw`SELECT 1`;
+    console.log('✅ Database connection warmed up');
+    
+    // Warm up Redis connection
+    await cache.exists('warmup');
+    console.log('✅ Redis connection warmed up');
+  } catch (error) {
+    console.warn('⚠️ Connection warm up failed (non-critical):', error.message);
+  }
 }
 
 bootstrap();

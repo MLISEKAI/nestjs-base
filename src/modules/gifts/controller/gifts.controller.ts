@@ -11,7 +11,10 @@ import {
   ValidationPipe, // Pipe để validate và transform dữ liệu
   UseGuards, // Decorator để sử dụng guard (authentication, authorization)
   Req, // Decorator để lấy request object
+  UseInterceptors, // Decorator để sử dụng interceptor
 } from '@nestjs/common';
+import { CacheInterceptor } from '../../../common/interceptors/cache.interceptor';
+import { CacheResult } from '../../../common/decorators/cache-result.decorator';
 // Import các decorator từ Swagger để tạo API documentation
 import {
   ApiTags, // Nhóm các endpoints trong Swagger UI
@@ -91,6 +94,8 @@ export class GiftsController {
   ) {}
 
   @Get('top-supporters')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(300) // Cache 5 phút (thay đổi không thường xuyên)
   @ApiOperation({ summary: 'Top quà tặng của user hiện tại' })
   @ApiOkResponse({ type: [TopSupporterDto], description: 'Danh sách top supporter' })
   getTopGifts(@Req() req: AuthenticatedRequest) {
@@ -99,6 +104,8 @@ export class GiftsController {
   }
 
   @Get('gift-wall')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({ summary: 'Lấy thông tin tổng quan Gift Wall của user hiện tại' })
   @ApiOkResponse({
     description: 'Thông tin Gift Wall',
