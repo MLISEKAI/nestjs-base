@@ -1,4 +1,4 @@
-import { ErrorSystemCode } from '../enum/error.enum';
+import { ErrorSystemCode } from '../enums/error.enum';
 import { currentTraceId } from '../tracing/tracing.utils';
 
 export class ApiResponse {

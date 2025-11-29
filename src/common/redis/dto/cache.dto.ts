@@ -1,4 +1,5 @@
-import { objectToBase64 } from 'src/utils/string-utils';
+import { objectToBase64 } from 'src/common/utils/string-utils';
+
 export class KeyCachingSystem {
   static INIT_LOGIN_TRANSACTION = (transactionId: string) => `login:${transactionId}`;
 

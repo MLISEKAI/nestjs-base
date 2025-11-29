@@ -5,10 +5,9 @@ import { DecodedIdToken } from 'node_modules/firebase-admin/lib/auth/token-verif
 import path from 'path';
 import { mappingPagination, UserAuthRequest } from 'src/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { RedisCachingService } from 'src/redis/cache.service';
-import { KeyCachingSystem } from 'src/redis/dto/cache.dto';
-import { generateNumberUnique } from 'src/utils';
-import { getProviderAssociate } from 'src/utils/string-utils';
+import { CacheService } from 'src/common/cache/cache.service';
+import { KeyCachingSystem } from 'src/common/redis/dto/cache.dto';
+import { getProviderAssociate } from 'src/common/utils/string-utils';
 import { v4 as uuid } from 'uuid';
 import { PaginationAssociates, PaginationUser, UpdateProfileDto } from './dto/user.dto';
 
@@ -16,7 +15,7 @@ import { PaginationAssociates, PaginationUser, UpdateProfileDto } from './dto/us
 export class ResUserService {
   private logger = new Logger(ResUserService.name);
   constructor(
-    private cachingManager: RedisCachingService,
+    private cacheService: CacheService,
     private prismaService: PrismaService, // private awsService: AwsService,
   ) {}
 
@@ -145,10 +144,8 @@ export class ResUserService {
       if (!account) {
         throw new BadRequestException(`Account ${userId} not found!`);
       }
-      await this.cachingManager.setItem(
-        KeyCachingSystem.USER_INFO(userId),
-        JSON.stringify(account),
-      );
+      const cacheKey = `${process.env.NODE_ENV}:${KeyCachingSystem.USER_INFO(userId)}`;
+      await this.cacheService.set(cacheKey, account, 3600); // Cache 1 hour
       this.logger.log(`Fn caching profile userId ${userId} - Successfully!`);
       return account;
     } catch (error: any) {
@@ -175,16 +172,17 @@ export class ResUserService {
     }
   }
 
-  async getUserCachingByUid(userId: string): Promise<ResUser> {
+  async getUserCachingByUid(userId: string): Promise<any> {
     try {
-      const userCached = await this.cachingManager.getItem(KeyCachingSystem.USER_INFO(userId));
-
-      let userInfo: any;
-      if (userCached) {
-        userInfo = userCached;
-      } else {
-        userInfo = await this.handlerCachingUserById(userId);
-      }
+      const cacheKey = `${process.env.NODE_ENV}:${KeyCachingSystem.USER_INFO(userId)}`;
+      
+      // Use cache-aside pattern
+      const userInfo = await this.cacheService.getOrSet(
+        cacheKey,
+        () => this.handlerCachingUserById(userId),
+        3600 // Cache 1 hour
+      );
+      
       return userInfo;
     } catch (error) {
       this.logger.error(`❌ Func getUserInfoCached: ${error?.message}`);
@@ -227,3 +225,9 @@ export class ResUserService {
     }
   }
 }
+function generateNumberUnique(length: number): number {
+  const min = Math.pow(10, length - 1);
+  const max = Math.pow(10, length) - 1;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+

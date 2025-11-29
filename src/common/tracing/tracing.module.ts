@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import { ClsModule } from 'nestjs-cls';
-import { generateMemorable } from 'src/utils';
 import { WINSTON_CONFIG } from './winston.config';
+import { generateMemorable } from '../utils/random-memorable';
 
 @Module({
   imports: [

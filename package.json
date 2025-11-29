@@ -76,6 +76,7 @@
     "sanitize-html": "^2.17.0",
     "sharp": "^0.34.5",
     "socket.io": "^4.8.1",
+    "string-template": "1.0.0",
     "swagger-ui-express": "^5.0.1",
     "triple-beam": "^1.4.1",
     "unique-username-generator": "^1.5.1",

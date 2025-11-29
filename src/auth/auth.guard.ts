@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { handlerErrorSystem } from 'src/common';
-import { ErrorSystemCode } from 'src/common/enum/error.enum';
+import { ErrorSystemCode } from 'src/common/enums/error.enum';
 import { SystemException } from 'src/common/exception/system-exception';
 import { ResUserService } from 'src/modules/users/user.service';
 

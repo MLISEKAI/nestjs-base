@@ -3,8 +3,8 @@ import * as _ from 'lodash';
 import { HeaderRequest } from '../types/request.type';
 import { UserAuthRequest } from '../types/user-request';
 import { SystemException } from '../exception/system-exception';
-import { ErrorSystemCode } from '../enum/error.enum';
 import { Prisma } from '@prisma/client';
+import { ErrorSystemCode } from '../enums/error.enum';
 
 const logger: Logger = new Logger('MainDecorator');
 

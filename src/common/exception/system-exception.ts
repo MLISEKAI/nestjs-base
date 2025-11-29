@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { ErrorSystemCode, ErrorSystemMessage } from '../enum/error.enum';
+import { ErrorSystemCode, ErrorSystemMessage } from '../enums/error.enum';
 
 export class SystemException extends HttpException {
   constructor(errorCode: ErrorSystemCode, message?: string) {

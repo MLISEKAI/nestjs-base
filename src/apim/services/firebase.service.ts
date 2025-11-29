@@ -1,0 +1,181 @@
+// Import Injectable, OnModuleInit và Logger từ NestJS
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+// Import ConfigService để đọc environment variables
+import { ConfigService } from '@nestjs/config';
+// Import Firebase Admin SDK
+import * as admin from 'firebase-admin';
+// Import file system utilities
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+/**
+ * @Injectable() - Đánh dấu class này là NestJS service
+ * FirebaseService - Service xử lý Firebase operations (Firebase Storage, etc.)
+ *
+ * Chức năng chính:
+ * - Initialize Firebase Admin SDK
+ * - Upload files lên Firebase Storage
+ * - Quản lý Firebase Storage bucket
+ *
+ * Lưu ý:
+ * - Cần config FIREBASE_SERVICE_ACCOUNT_PATH hoặc FIREBASE_SERVICE_ACCOUNT_BASE64 trong .env
+ * - Có thể dùng FIREBASE_PROJECT_ID và FIREBASE_STORAGE_BUCKET
+ * - Service account có thể load từ file path hoặc base64 string
+ */
+@Injectable()
+export class FirebaseService implements OnModuleInit {
+  // Logger để log các events và errors
+  private readonly logger = new Logger(FirebaseService.name);
+  // Firebase Storage bucket instance
+  private bucket: any = null;
+  // Firebase project ID
+  private projectId: string | null = null;
+
+  /**
+   * Constructor - Dependency Injection
+   * NestJS tự động inject ConfigService khi tạo instance của service
+   */
+  constructor(private readonly configService: ConfigService) {}
+
+  async onModuleInit() {
+    const defaultPath = './src/config/firebase-service-account.json';
+    const configuredPath =
+      this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH') ?? defaultPath;
+    const base64Credential = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_BASE64');
+    const explicitProjectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
+    const storageBucket = this.configService.get<string>('FIREBASE_STORAGE_BUCKET');
+
+    let serviceAccount: admin.ServiceAccount | undefined;
+    let resolvedProjectId = explicitProjectId;
+
+    if (configuredPath) {
+      const absolutePath = resolve(process.cwd(), configuredPath);
+      if (existsSync(absolutePath)) {
+        try {
+          serviceAccount = JSON.parse(readFileSync(absolutePath, 'utf8'));
+          const accountProjectId =
+            serviceAccount.projectId ??
+            (serviceAccount as typeof serviceAccount & { project_id?: string }).project_id;
+          resolvedProjectId = accountProjectId ?? resolvedProjectId;
+          this.projectId = resolvedProjectId;
+          this.logger.log(`Loaded Firebase service account from ${configuredPath}`);
+        } catch (error) {
+          this.logger.error(
+            `Failed to parse Firebase service account at ${configuredPath}`,
+            error as Error,
+          );
+        }
+      } else if (configuredPath !== defaultPath) {
+        this.logger.warn(
+          `Firebase service account file not found at ${configuredPath}. Falling back to other options.`,
+        );
+      }
+    }
+
+    if (!serviceAccount && base64Credential) {
+      try {
+        serviceAccount = JSON.parse(Buffer.from(base64Credential, 'base64').toString('utf8'));
+        const accountProjectId =
+          serviceAccount.projectId ??
+          (serviceAccount as typeof serviceAccount & { project_id?: string }).project_id;
+        resolvedProjectId = accountProjectId ?? resolvedProjectId;
+        this.projectId = resolvedProjectId;
+        this.logger.log('Loaded Firebase service account from FIREBASE_SERVICE_ACCOUNT_BASE64');
+      } catch (error) {
+        this.logger.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_BASE64', error as Error);
+      }
+    }
+
+    if (!serviceAccount && !resolvedProjectId) {
+      this.logger.warn(
+        'Firebase is not fully configured. Provide FIREBASE_SERVICE_ACCOUNT_PATH (or BASE64) or FIREBASE_PROJECT_ID.',
+      );
+      return;
+    }
+
+    try {
+      if (!admin.apps.length) {
+        if (serviceAccount) {
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            storageBucket: storageBucket || `${resolvedProjectId}.appspot.com`,
+          });
+        } else {
+          admin.initializeApp({
+            projectId: resolvedProjectId,
+            storageBucket: storageBucket || `${resolvedProjectId}.appspot.com`,
+          });
+        }
+      }
+
+      this.bucket = admin.storage().bucket(storageBucket || `${resolvedProjectId}.appspot.com`);
+      this.logger.log('Firebase Admin SDK initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize Firebase Admin SDK', error as Error);
+    }
+  }
+
+  async uploadFile(file: Express.Multer.File, path: string): Promise<string> {
+    if (!this.bucket) {
+      throw new Error('Firebase Storage is not configured');
+    }
+
+    const fileName = `${path}/${Date.now()}-${file.originalname}`;
+    const fileUpload = this.bucket.file(fileName);
+
+    const stream = fileUpload.createWriteStream({
+      metadata: {
+        contentType: file.mimetype,
+      },
+    });
+
+    return new Promise((resolve, reject) => {
+      stream.on('error', (error: any) => {
+        this.logger.error('File upload error', error);
+
+        // Cải thiện error message cho bucket không tồn tại
+        if (error?.response?.status === 404 || error?.code === 404) {
+          const bucketName = this.bucket?.name || 'unknown';
+          const projectId = this.projectId || bucketName.split('.')[0] || 'your-project-id';
+          const errorMessage = `Firebase Storage bucket "${bucketName}" does not exist. Please enable Storage in Firebase Console: https://console.firebase.google.com/project/${projectId}/storage`;
+          this.logger.error(errorMessage);
+          reject(new Error(errorMessage));
+        } else {
+          reject(error);
+        }
+      });
+
+      stream.on('finish', async () => {
+        try {
+          await fileUpload.makePublic();
+          const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
+          resolve(publicUrl);
+        } catch (error) {
+          this.logger.error('Failed to make file public', error);
+          // Vẫn trả về URL dù không make public được
+          const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
+          resolve(publicUrl);
+        }
+      });
+
+      stream.end(file.buffer);
+    });
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    if (!this.bucket) {
+      throw new Error('Firebase Storage is not configured');
+    }
+
+    try {
+      await this.bucket.file(path).delete();
+    } catch (error) {
+      this.logger.error('File deletion error', error);
+      throw error;
+    }
+  }
+
+  isConfigured(): boolean {
+    return this.bucket !== null;
+  }
+}

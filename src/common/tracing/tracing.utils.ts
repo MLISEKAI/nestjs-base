@@ -1,5 +1,5 @@
 import { ClsServiceManager } from 'nestjs-cls';
-import { generateMemorable } from 'src/utils';
+import { generateMemorable } from '../utils';
 
 export function currentTraceId(): string {
   return ClsServiceManager.getClsService()?.get('traceId') || generateMemorable();

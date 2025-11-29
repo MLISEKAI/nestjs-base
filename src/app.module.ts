@@ -14,8 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import { HttpExceptionFilter, PostStatusInterceptor } from './common';
 import { TracingModule } from './common/tracing/tracing.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { RedisBaseModule } from './redis/redis-base.module';
-import { ResUserModule } from './modules/users/user.module';
+
 import { ResAssociateModule } from './modules/associate/associate.module';
 import { CommonModule } from './common/common.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -90,11 +89,11 @@ import jwtConfig from './config/jwt.config';
     //     };
     //   },
     // }),
-    RedisBaseModule,
+    CacheModule, // Global cache module with Redis
     PrismaModule,
     TracingModule,
     AuthModule,
-    ResUserModule,
+    UsersModule,
     ResAssociateModule,
     CommonModule,
     UsersModule,
@@ -116,7 +115,6 @@ import jwtConfig from './config/jwt.config';
     SearchModule,
     MessagingModule,
     RoomModule,
-    CacheModule,
     MonitoringModule,
     RateLimitModule,
   ],

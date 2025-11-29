@@ -1,6 +1,5 @@
 import { BadRequestException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AbstractService } from './abstract.service';
-import { RedisCachingService } from 'src/redis/cache.service';
 import { GiphyResponse } from '../interfaces/giphy.interface';
 
 @Injectable()
