@@ -125,6 +125,9 @@ model ResUser {
 
   @@index([union_id, deleted_at])
   @@index([union_id])
+  @@index([nickname])
+  @@index([created_at])
+  @@index([is_deleted, is_blocked])
   @@map("res_user")
 }
 

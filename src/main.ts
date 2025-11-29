@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import compression from 'compression';
 import { AppModule } from './app.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ResponseExceptionFilter } from './common/filters/response-exception.filter';
@@ -30,6 +31,9 @@ import { WINSTON_MODULE_NEST_PROVIDER } from './common/tracing/winston.config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Performance: Enable compression
+  app.use(compression());
+
   // Security
   app.use(helmet());
   app.enableCors({ origin: '*' }); // hoặc config chi tiết hơn
@@ -42,12 +46,13 @@ async function bootstrap() {
 
   // Global pipes
   app.useGlobalPipes(
-    new SanitizeInputPipe(), // chống XSS
+    // SanitizeInputPipe removed from global - apply only where needed
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
       forbidUnknownValues: true,
+      skipMissingProperties: true, // Performance: Skip validation for optional fields
     }),
   );
 

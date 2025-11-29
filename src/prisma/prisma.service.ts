@@ -24,17 +24,28 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   constructor() {
     super({
-      log: ['error', 'warn'],
+      log: [
+        { emit: 'event', level: 'query' },
+        { emit: 'stdout', level: 'error' },
+        { emit: 'stdout', level: 'warn' },
+      ],
       errorFormat: 'pretty',
     });
   }
 
   async onModuleInit() {
+    // Log slow queries (> 100ms)
+    this.$on('query' as never, (e: any) => {
+      if (e.duration > 100) {
+        this.logger.warn(`⚠️ Slow query detected (${e.duration}ms): ${e.query.substring(0, 100)}...`);
+      }
+    });
+
     try {
       await this.$connect();
-      this.logger.log('Database connected successfully');
+      this.logger.log('✅ Database connected successfully');
     } catch (error) {
-      this.logger.error('Failed to connect to database', error);
+      this.logger.error('❌ Failed to connect to database', error);
       throw error;
     }
   }

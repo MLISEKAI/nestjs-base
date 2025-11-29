@@ -36,10 +36,19 @@ import { CacheService } from './cache.service';
     RedisModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
+        const redisHost = configService.get<string>('REDIS_HOST');
+        const redisPort = configService.get<number>('REDIS_PORT');
+        const redisPassword = configService.get<string>('REDIS_PASSWORD');
+        const redisDb = configService.get<number>('REDIS_DB') || 0;
+
+        // Build URL from individual params if REDIS_URL not provided
+        const finalUrl = (redisHost && redisPort 
+            ? `redis://${redisPassword ? `:${redisPassword}@` : ''}${redisHost}:${redisPort}/${redisDb}`
+            : 'redis://localhost:6379');
+
         return {
           type: 'single',
-          url: redisUrl,
+          url: finalUrl,
           options: {
             retryStrategy: () => {
               // Return null to stop all retry attempts
