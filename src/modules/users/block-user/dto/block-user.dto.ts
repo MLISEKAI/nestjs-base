@@ -3,7 +3,7 @@ import { IsString, IsNotEmpty, IsUUID } from 'class-validator';
 
 export class BlockUserDto {
   @ApiProperty({
-    example: '66c4df4e-9a44-4bbf-84b0-68661ca433f0',
+    example: 'user_id',
     description: 'ID của user bị chặn',
   })
   @IsNotEmpty()

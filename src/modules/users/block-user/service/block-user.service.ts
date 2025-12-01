@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CacheService } from 'src/common/cache/cache.service';
 
 @Injectable()
 export class BlockUserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cacheService: CacheService,
+  ) {}
 
   /**
    * Block a user
@@ -15,40 +19,19 @@ export class BlockUserService {
       throw new BadRequestException('Cannot block yourself');
     }
 
-    // Check if users exist
-    const [blocker, blocked] = await Promise.all([
-      this.prisma.resUser.findUnique({ where: { id: blockerId } }),
-      this.prisma.resUser.findUnique({ where: { id: blockedId } }),
-    ]);
-
-    if (!blocker) {
-      throw new NotFoundException('Blocker user not found');
-    }
-
-    if (!blocked) {
-      throw new NotFoundException('User to block not found');
-    }
-
-    // Check if already blocked
-    const existingBlock = await this.prisma.resBlock.findUnique({
+    // Tối ưu: Dùng upsert thay vì create để handle already blocked
+    const block = await this.prisma.resBlock.upsert({
       where: {
         blocker_id_blocked_id: {
           blocker_id: blockerId,
           blocked_id: blockedId,
         },
       },
-    });
-
-    if (existingBlock) {
-      throw new BadRequestException('User is already blocked');
-    }
-
-    // Create block relationship
-    const block = await this.prisma.resBlock.create({
-      data: {
+      create: {
         blocker_id: blockerId,
         blocked_id: blockedId,
       },
+      update: {}, // Nếu đã tồn tại, không update gì (idempotent)
       include: {
         blocked: {
           select: {
@@ -92,6 +75,10 @@ export class BlockUserService {
       }),
     ]);
 
+    // Invalidate cache
+    await this.cacheService.delPattern(`cache:GET:*/block/*:${blockerId}`);
+    await this.cacheService.delPattern(`cache:GET:*/block/*:${blockedId}`);
+
     return {
       message: 'User blocked successfully',
       data: block,
@@ -122,6 +109,10 @@ export class BlockUserService {
         id: block.id,
       },
     });
+
+    // Invalidate cache
+    await this.cacheService.delPattern(`cache:GET:*/block/*:${blockerId}`);
+    await this.cacheService.delPattern(`cache:GET:*/block/*:${blockedId}`);
 
     return {
       message: 'User unblocked successfully',

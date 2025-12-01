@@ -9,7 +9,10 @@ import {
   Body,
   UseGuards,
   Req,
+  UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor } from '../../../../common/interceptors/cache.interceptor';
+import { CacheResult } from '../../../../common/decorators/cache-result.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -82,6 +85,8 @@ export class BlockUserController {
   }
 
   @Get('blocked')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({ summary: 'Lấy danh sách người dùng đã chặn' })
   @ApiOkResponse({
     description: 'Danh sách users đã bị chặn',
@@ -112,6 +117,8 @@ export class BlockUserController {
   }
 
   @Get('blocked-by')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({ summary: 'Lấy danh sách người dùng đã chặn mình' })
   @ApiOkResponse({
     description: 'Danh sách users đã chặn mình',

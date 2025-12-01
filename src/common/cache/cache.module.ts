@@ -8,6 +8,10 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { CacheService } from './cache.service';
 // Import MemoryCacheService
 import { MemoryCacheService } from './memory-cache.service';
+// Import CacheWarmingService
+import { CacheWarmingService } from './cache-warming.service';
+// Import CacheAdminController
+import { CacheAdminController } from './cache-admin.controller';
 
 /**
  * @Global() - Module này là global, có thể được inject vào bất kỳ module nào mà không cần import
@@ -69,7 +73,8 @@ import { MemoryCacheService } from './memory-cache.service';
       inject: [ConfigService],
     }),
   ],
-  providers: [MemoryCacheService, CacheService],
+  controllers: [CacheAdminController],
+  providers: [MemoryCacheService, CacheService, CacheWarmingService],
   exports: [CacheService, MemoryCacheService], // Export MemoryCacheService để dùng ở modules khác
 })
 export class CacheModule {}
