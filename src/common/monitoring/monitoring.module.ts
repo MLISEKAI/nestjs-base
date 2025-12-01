@@ -3,8 +3,10 @@ import { Module, Global, OnModuleInit } from '@nestjs/common';
 // Import services
 import { PerformanceService } from './performance.service';
 import { BenchmarkService } from './benchmark.service';
+import { MetricsService } from './metrics.service';
 // Import controllers
 import { PerformanceController } from './controller/performance.controller';
+import { MetricsController } from './controller/metrics.controller';
 // Import modules
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { CacheModule } from '../cache/cache.module';
@@ -38,9 +40,17 @@ import { createPrismaLoggerMiddleware } from './prisma-logger.middleware';
 @Global()
 @Module({
   imports: [PrismaModule, CacheModule],
-  controllers: [PerformanceController],
-  providers: [PerformanceService, BenchmarkService],
-  exports: [PerformanceService, BenchmarkService],
+  controllers: [PerformanceController, MetricsController],
+  providers: [
+    PerformanceService,
+    BenchmarkService,
+    MetricsService,
+    {
+      provide: 'MetricsService',
+      useExisting: MetricsService,
+    },
+  ],
+  exports: [PerformanceService, BenchmarkService, MetricsService, 'MetricsService'],
 })
 export class MonitoringModule implements OnModuleInit {
   constructor(

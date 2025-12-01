@@ -10,7 +10,10 @@ import {
   Query, // Decorator để lấy query parameters từ URL
   UseGuards, // Decorator để sử dụng guard (authentication, authorization)
   Req, // Decorator để lấy request object
+  UseInterceptors, // Decorator để sử dụng interceptor
 } from '@nestjs/common';
+import { CacheInterceptor } from '../../../common/interceptors/cache.interceptor';
+import { CacheResult } from '../../../common/decorators/cache-result.decorator';
 // Import các decorator từ Swagger để tạo API documentation
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 // Import AuthGuard từ Passport để xác thực JWT token
@@ -49,6 +52,8 @@ export class NotificationController {
    * và treat 'unread' như là :id parameter hoặc không match đúng route
    */
   @Get('unread/count')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(60) // Cache 1 phút (thay đổi thường xuyên)
   @ApiOperation({ summary: 'Số lượng thông báo chưa đọc - Hiển thị badge đỏ' })
   getUnreadCount(@Req() req: AuthenticatedRequest) {
     return this.notificationService.getUnreadCount(req.user.id);
@@ -60,6 +65,8 @@ export class NotificationController {
    * Nếu đặt sau generic @Get(), generic route sẽ match trước và override route này.
    */
   @Get(':id')
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(300) // Cache 5 phút
   @ApiOperation({ summary: 'Chi tiết thông báo - Lấy chi tiết thông báo khi người dùng nhấn vào' })
   @ApiParam({ name: 'id', description: 'Notification ID' })
   getNotification(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
@@ -77,6 +84,8 @@ export class NotificationController {
    * @Query() - Lấy query parameters từ URL (page, limit, type, status)
    */
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheResult(120) // Cache 2 phút
   @ApiOperation({
     summary: 'Danh sách thông báo - Lấy danh sách thông báo (phân trang)',
     description:

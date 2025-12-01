@@ -1,5 +1,5 @@
 // Import các decorator và class từ NestJS
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
 // Import decorator để inject Redis client
 import { InjectRedis } from '@nestjs-modules/ioredis';
 // Import Redis client type
@@ -41,6 +41,7 @@ export class CacheService {
   constructor(
     @InjectRedis() private readonly redis: Redis,
     private readonly memoryCache: MemoryCacheService,
+    @Optional() @Inject('MetricsService') private readonly metricsService?: any, // Optional to avoid circular dependency
   ) {
     // Setup Redis event handlers để theo dõi trạng thái kết nối
 
@@ -90,6 +91,7 @@ export class CacheService {
     // L1: Check memory cache first (very fast <1ms)
     const memoryValue = this.memoryCache.get<T>(key);
     if (memoryValue !== undefined) {
+      this.metricsService?.recordCacheHit();
       return memoryValue;
     }
 
@@ -97,18 +99,23 @@ export class CacheService {
     // Kiểm tra Redis đã kết nối chưa
     // Nếu chưa kết nối, trả về null ngay (fail gracefully)
     if (!this.isRedisConnected) {
+      this.metricsService?.recordCacheMiss();
       return null; // Fail silently if Redis is not connected
     }
     try {
       // Lấy giá trị từ Redis (dạng string JSON)
       const value = await this.redis.get(key);
       // Nếu không tìm thấy (null hoặc undefined), trả về null
-      if (!value) return null;
+      if (!value) {
+        this.metricsService?.recordCacheMiss();
+        return null;
+      }
       // Parse JSON string thành object/array và cast về type T
       const parsed = JSON.parse(value) as T;
       
       // Populate memory cache for next time (write-through)
       this.memoryCache.set(key, parsed);
+      this.metricsService?.recordCacheHit();
       
       return parsed;
     } catch (error) {

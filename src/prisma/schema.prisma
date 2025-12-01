@@ -201,6 +201,8 @@ model ResFollow {
   @@unique([follower_id, following_id])
   @@index([follower_id])
   @@index([following_id])
+  @@index([follower_id, created_at]) // Performance: Get following list sorted by date
+  @@index([following_id, created_at]) // Performance: Get followers list sorted by date
   @@map("res_follow")
 }
 
@@ -250,6 +252,10 @@ model ResFriend {
   userB ResUser @relation("FriendsB", fields: [user_b_id], references: [id])
 
   @@unique([user_a_id, user_b_id])
+  @@index([user_a_id]) // Performance: Get user A's friends
+  @@index([user_b_id]) // Performance: Get user B's friends
+  @@index([user_a_id, created_at]) // Performance: Get user A's friends sorted by date
+  @@index([user_b_id, created_at]) // Performance: Get user B's friends sorted by date
   @@map("res_friend")
 }
 
@@ -801,6 +807,8 @@ model ResPost {
   @@index([user_id])
   @@index([created_at])
   @@index([privacy])
+  @@index([user_id, created_at]) // Performance: Get user's posts sorted by date
+  @@index([privacy, created_at]) // Performance: Get public posts sorted by date
   @@map("res_post")
 }
 
@@ -824,6 +832,8 @@ model ResComment {
   @@index([user_id])
   @@index([parent_id])
   @@index([created_at])
+  @@index([post_id, created_at]) // Performance: Get post comments sorted by date
+  @@index([user_id, created_at]) // Performance: Get user's comments sorted by date
   @@map("res_comment")
 }
 
