@@ -38,6 +38,9 @@ import { HashtagService } from './service/hashtag.service';
 import { ReportController } from './controller/report.controller';
 import { ReportService } from './service/report.service';
 
+// Ranking
+import { RankingService } from './service/ranking.service';
+
 @Module({
   imports: [
     PrismaModule,
@@ -66,6 +69,7 @@ import { ReportService } from './service/report.service';
     LatestFeedService,
     HashtagService,
     ReportService,
+    RankingService,
   ],
   exports: [PostService, CommentService, LikeService, HashtagService],
 })

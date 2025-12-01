@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { BaseQueryDto } from '../../../common/dto/base-query.dto';
+import { RankingService } from './ranking.service';
 import type {
   PostWithRelations,
   FormattedPost,
@@ -10,7 +11,10 @@ import { PostPrivacy } from '@prisma/client';
 
 @Injectable()
 export class FeedService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rankingService: RankingService,
+  ) {}
 
   /**
    * Generate trace ID
@@ -57,12 +61,16 @@ export class FeedService {
   }
 
   /**
-   * Get friends feed
+   * Get friends feed (with ranking)
    */
-  async getFriendsFeed(user_id: string, query?: BaseQueryDto & { since?: string }) {
+  async getFriendsFeed(
+    user_id: string,
+    query?: BaseQueryDto & { since?: string; ranked?: boolean },
+  ) {
     const page = query?.page !== undefined && query.page >= 0 ? query.page : 0;
     const limit = query?.limit && query.limit > 0 && query.limit <= 50 ? query.limit : 20;
     const skip = page * limit;
+    const useRanking = query?.ranked !== false; // Default: true
 
     // Get user's friends
     const friends = await this.prisma.resFriend.findMany({
@@ -131,14 +139,20 @@ export class FeedService {
 
     const totalPages = Math.ceil(total / limit);
 
+    // Apply ranking if enabled
+    let formattedPosts = posts.map((post) => this.formatPost(post, user_id));
+    if (useRanking && formattedPosts.length > 0) {
+      formattedPosts = await this.rankingService.rankPosts(formattedPosts, user_id);
+    }
+
     return {
       error: false,
       code: 0,
       message: 'Success',
       data: {
-        items: posts.map((post) => this.formatPost(post, user_id)),
+        items: formattedPosts,
         meta: {
-          item_count: posts.length,
+          item_count: formattedPosts.length,
           total_items: total,
           items_per_page: limit,
           total_pages: totalPages,
@@ -150,7 +164,7 @@ export class FeedService {
   }
 
   /**
-   * Get latest feed (all posts)
+   * Get latest feed (all posts) - No ranking, always chronological
    */
   async getLatestFeed(user_id: string, query?: BaseQueryDto & { since?: string }) {
     const page = query?.page !== undefined && query.page >= 0 ? query.page : 0;
@@ -228,12 +242,13 @@ export class FeedService {
   }
 
   /**
-   * Get community feed with hot topics
+   * Get community feed with hot topics (with ranking)
    */
-  async getCommunityFeed(user_id: string, query?: BaseQueryDto) {
+  async getCommunityFeed(user_id: string, query?: BaseQueryDto & { ranked?: boolean }) {
     const page = query?.page !== undefined && query.page >= 0 ? query.page : 0;
     const limit = query?.limit && query.limit > 0 && query.limit <= 50 ? query.limit : 20;
     const skip = page * limit;
+    const useRanking = query?.ranked !== false; // Default: true
 
     // Get hot topics (trending hashtags) - using raw query since model might not be generated yet
     const hotTopics = (await this.prisma.$queryRaw`
@@ -301,15 +316,21 @@ export class FeedService {
       engagement_score: Math.min(100, (topic.post_count / 1000) * 10), // Mock engagement score
     }));
 
+    // Apply ranking if enabled
+    let formattedPosts = posts.map((post) => this.formatPost(post, user_id));
+    if (useRanking && formattedPosts.length > 0) {
+      formattedPosts = await this.rankingService.rankPosts(formattedPosts, user_id);
+    }
+
     return {
       error: false,
       code: 0,
       message: 'Success',
       data: {
         hot_topics: formattedHotTopics,
-        items: posts.map((post) => this.formatPost(post, user_id)),
+        items: formattedPosts,
         meta: {
-          item_count: posts.length,
+          item_count: formattedPosts.length,
           total_items: total,
           items_per_page: limit,
           total_pages: totalPages,

@@ -1,5 +1,5 @@
 // Import các decorator và class từ NestJS để tạo service
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef, Optional } from '@nestjs/common';
 // Import PrismaService để thao tác với database
 import { PrismaService } from 'src/prisma/prisma.service';
 // Import CacheService để quản lý Redis cache
@@ -33,6 +33,24 @@ export class PostService {
     @Inject(forwardRef(() => WebSocketGateway))
     private websocketGateway: WebSocketGateway,
   ) {}
+
+  /**
+   * Invalidate feed cache when post is created/updated/deleted
+   */
+  private async invalidateFeedCache(userId: string): Promise<void> {
+    try {
+      // Invalidate feed cache patterns
+      await Promise.all([
+        this.cacheService.delPattern(`feed:*:personalized:*`),
+        this.cacheService.delPattern(`feed:*:following:*`),
+        this.cacheService.delPattern(`feed:*:discover:*`),
+        this.cacheService.delPattern(`feed:*:trending:*`),
+        this.cacheService.del('feed:trending:global'),
+      ]);
+    } catch (error) {
+      console.error('Failed to invalidate feed cache:', error);
+    }
+  }
 
   async getPosts(user_id: string, query?: BaseQueryDto) {
     const take = query?.limit && query.limit > 0 ? query.limit : 20;
@@ -237,6 +255,9 @@ export class PostService {
     await this.cacheService.delPattern(`posts:${user_id}:*`);
     await this.cacheService.del(`connections:${user_id}:stats`);
     await this.cacheService.del(`post:${post.id}`);
+    
+    // Invalidate feed cache
+    await this.invalidateFeedCache(user_id);
 
     // Format response
     return {
@@ -402,6 +423,9 @@ export class PostService {
       // Invalidate cache
       await this.cacheService.delPattern(`posts:${user_id}:*`);
       await this.cacheService.del(`post:${postId}`);
+      
+      // Invalidate feed cache
+      await this.invalidateFeedCache(user_id);
 
       // Format response
       return {
@@ -460,6 +484,9 @@ export class PostService {
       await this.cacheService.delPattern(`post:${postId}:likes:*`); // Post likes cache
       await this.cacheService.del(`post:${postId}:like:stats`); // Post like stats cache
       await this.cacheService.delPattern(`post:${postId}:comments:*`); // Post comments cache
+      
+      // Invalidate feed cache
+      await this.invalidateFeedCache(user_id);
 
       return { message: 'Post deleted' };
     } catch (error) {

@@ -75,11 +75,16 @@ Xây dựng một backend mạng xã hội hoàn chỉnh với:
   - [x] Metrics tracking with traceId
   - [x] Documentation complete
 
-- [ ] **Feed Algorithm Optimization** (Priority: High)
-  - Implement feed ranking algorithm
-  - Cache personalized feeds
-  - Optimize feed query performance
-  - Add feed refresh mechanism
+- [x] **Feed Algorithm Optimization** (Priority: High) ✅ COMPLETED
+  - [x] Implement feed ranking algorithm (5 weighted factors)
+  - [x] Integrate ranking into existing feed services
+  - [x] Cache user interactions (1 hour TTL)
+  - [x] Diversity filtering (max 3 posts per author)
+  - [x] Optional ranking with query parameter `ranked`
+  - [x] Friends Feed: Ranked by default
+  - [x] Community Feed: Ranked by default
+  - [x] Latest Feed: Always chronological
+  - [x] Documentation complete
 
 ---
 
@@ -375,24 +380,24 @@ Xây dựng một backend mạng xã hội hoàn chỉnh với:
 - ✅ Monitoring: 100%
 - ✅ Reliability: 100%
 - ✅ Core Modules: 100%
-- 🔄 Advanced Features: 50% (Selective Warmup ✅)
+- ✅ Advanced Features: 100% (Selective Warmup ✅, Feed Algorithm ✅)
 - 🔄 Performance Optimization: 30% (Database Indexes ✅)
 - ⏳ Scalability: 0%
 - ⏳ Advanced Monitoring: 0%
 - ⏳ Security Enhancements: 0%
 - ⏳ Testing: 0%
-- ⏳ Documentation: 30%
+- ⏳ Documentation: 40%
 - ⏳ DevOps: 0%
 - ⏳ Feature Enhancements: 0%
 
 ### Sprint Planning
 
-#### Current Sprint (Sprint 6)
+#### Current Sprint (Sprint 6) ✅ COMPLETED
 **Goal**: Advanced Features & Performance Optimization
-- [ ] Selective cache warmup
-- [ ] Feed algorithm optimization
-- [ ] Add missing database indexes
-- [ ] Optimize slow queries
+- [x] Selective cache warmup ✅
+- [x] Feed algorithm optimization ✅
+- [x] Add missing database indexes ✅
+- [ ] Optimize slow queries (Next Sprint)
 
 #### Next Sprint (Sprint 7)
 **Goal**: Scalability & Distributed Systems
